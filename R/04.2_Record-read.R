@@ -3,6 +3,7 @@
 #' Uses a `dbplyr`-based query to read records from the associated table.
 #' You can specify filter conditions and return behavior, similar to SQLAlchemy.
 #'
+#' @name Record$read
 #' @param ... Filter expressions passed as unquoted arguments (e.g. age > 18, name == "Alice")
 #' @param mode Character string: one of `"all"`, `"one_or_none"`, or `"get"`.
 #'   - `"all"` returns a list of `Record` objects (default)

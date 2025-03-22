@@ -1,11 +1,10 @@
 test_that("Engine connects, runs queries, and executes SQL", {
-  skip_if(Sys.getenv("DB_USER") == "" || Sys.getenv("DB_PASS") == "",
-          "DB_USER or DB_PASS not set")
-
+ 
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
     dbname = ":memory:"
   )
+
 
   # Ensure connection is valid
   con <- engine$get_connection()
@@ -37,17 +36,10 @@ test_that("Engine connects, runs queries, and executes SQL", {
 
 
 test_that("Engine can generate a BaseModel using model() method", {
-  skip_if(Sys.getenv("DB_USER") == "" || Sys.getenv("DB_PASS") == "",
-          "DB_USER or DB_PASS not set")
-
+  
   engine <- Engine$new(
-    drv = RPostgres::Postgres(),
-    dbname = Sys.getenv("DB_DATABASE", "public_db"),
-    host = Sys.getenv("DB_HOST", "analytics.rockybrands.com"),
-    port = Sys.getenv("DB_PORT", "5432"),
-    user = Sys.getenv("DB_USER"),
-    password = Sys.getenv("DB_PASS"),
-    sslmode = "require"
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:"
   )
 
   user_model <- engine$model("users")
@@ -65,17 +57,9 @@ test_that("Engine can generate a BaseModel using model() method", {
 
 
 test_that("Engine can generate a BaseModel using model() method", {
-  skip_if(Sys.getenv("DB_USER") == "" || Sys.getenv("DB_PASS") == "",
-          "DB_USER or DB_PASS not set")
-
   engine <- Engine$new(
-    drv = RPostgres::Postgres(),
-    dbname = Sys.getenv("DB_DATABASE", "public_db"),
-    host = Sys.getenv("DB_HOST", "analytics.rockybrands.com"),
-    port = Sys.getenv("DB_PORT", "5432"),
-    user = Sys.getenv("DB_USER"),
-    password = Sys.getenv("DB_PASS"),
-    sslmode = "require"
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:"
   )
 
   user_model <- engine$model("users")

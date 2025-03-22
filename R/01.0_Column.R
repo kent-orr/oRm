@@ -4,9 +4,9 @@
 #' in a table model. Intended for use within `BaseModel` definitions.
 #'
 #' @param type Character string representing the column's SQL data type (e.g. `"INTEGER"`, `"TEXT"`).
-#' @param default The default value to use if none is supplied when creating a record. If `nullable = FALSE` and `default` is not provided, a basic default will be inferred from `type`.
+#' @param default The default value to use if none is supplied when creating a record. If `nullable = FALSE` and `default` is not provided, a basic default will be inferred from `type`. **Note:** currently not used when creating tables — for future support.
 #' @param key Logical, whether this field is part of the primary key. **Note:** currently not used when creating tables — for future support.
-#' @param nullable Logical, whether the field is allowed to be `NULL`. Defaults to `TRUE`.
+#' @param nullable Logical, whether the field is allowed to be `NULL`. Defaults to `TRUE`. **Note:** currently not used when creating tables — for future support.
 #' @param ... Reserved for future dialect-specific extensions (e.g. `unique`, `collate`, `check`). Currently stored but **not used** during table creation.
 #'
 #' @return An object of class `"Column"`, used to define fields in a `BaseModel`.

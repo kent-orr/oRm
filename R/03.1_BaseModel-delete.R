@@ -1,5 +1,21 @@
 #' Delete rows matching a filter expression
-#' @param ... Unquoted dplyr-style filter expressions
+#'
+#' This method deletes rows from the associated table based on the provided filter expressions.
+#' It uses dplyr-style filter expressions to specify the rows to be deleted.
+#'
+#' @name BaseModel$delete_where
+#' @param ... Unquoted dplyr-style filter expressions.
+#'   These expressions should be used to filter the rows to be deleted.
+#'   For example, `age > 18` will delete all rows where the `age` column is greater than 18.
+#' @return The number of rows deleted.
+#' @examples
+#' \dontrun{
+#' # Delete all rows where the 'age' column is greater than 18
+#' my_model$delete_where(age > 18)
+#'
+#' # Delete all rows where the 'name' column is 'Alice' and 'age' is less than 30
+#' my_model$delete_where(name == "Alice", age < 30)
+#' }
 #' @export
 BaseModel$set("public", "delete_where", function(...) {
   con <- self$get_connection()
