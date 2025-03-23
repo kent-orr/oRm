@@ -81,8 +81,8 @@ TableModel <- R6::R6Class(
     #' @description
     #' Create a new Record object with this model.
     #' @param ... Named values to initialize the record's data.
-    record = function(...) {
-      Record$new(self, data = list(...))
+    record = function(..., .data=list()) {
+      Record$new(self, ..., .data)
     },
 
     #' @description
