@@ -89,7 +89,7 @@ test_that("Column keeps default = NULL when nullable = TRUE", {
 #     dbname = ":memory:"
 #   )
 #
-#   # Define a BaseModel with default and required fields
+#   # Define a TableModel with default and required fields
 #   User <- engine$model(
 #     "users",
 #     id = Column("INTEGER", key = TRUE, nullable = FALSE),

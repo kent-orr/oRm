@@ -1,11 +1,11 @@
-#' BaseModel Class
+#' TableModel Class
 #'
 #' @description
-#' The BaseModel class is the foundation for creating object-relational mappings in oRm.
+#' The TableModel class is the foundation for creating object-relational mappings in oRm.
 #' It provides methods for table creation, record manipulation, and querying.
 #'
 #' @details
-#' BaseModel is an R6 class that represents a database table. It manages the connection
+#' TableModel is an R6 class that represents a database table. It manages the connection
 #' to the database, defines the table structure, and provides methods for interacting
 #' with the table data.
 #'
@@ -15,7 +15,7 @@
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{initialize(tablename, engine, ...)}}{Constructor for creating a new BaseModel instance.}
+#'   \item{\code{initialize(tablename, engine, ...)}}{Constructor for creating a new TableModel instance.}
 #'   \item{\code{get_connection()}}{Returns the database connection from the engine.}
 #'   \item{\code{get_fields_for_dbi()}}{Converts Column definitions to DBI-compatible format.}
 #'   \item{\code{create_table()}}{Creates the table in the database.}
@@ -31,21 +31,21 @@
 #' @importFrom dbplyr sql_build build_sql
 #' @importFrom crayon green yellow blue magenta silver
 #' @export
-BaseModel <- R6::R6Class(
-  "BaseModel",
+TableModel <- R6::R6Class(
+  "TableModel",
   public = list(
     tablename = NULL,
     engine = NULL,
     fields = list(),
 
     #' @description
-    #' Constructor for a new BaseModel.
+    #' Constructor for a new TableModel.
     #' @param tablename The name of the database table.
     #' @param engine The Engine object for database connection.
     #' @param ... Column definitions.
     initialize = function(tablename, engine, ...) {
       if (missing(tablename) || missing(engine)) {
-        stop("Both 'tablename' and 'engine' must be provided to BaseModel.")
+        stop("Both 'tablename' and 'engine' must be provided to TableModel.")
       }
 
       self$tablename <- tablename

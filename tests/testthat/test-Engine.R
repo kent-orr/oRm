@@ -35,7 +35,7 @@ test_that("Engine connects, runs queries, and executes SQL", {
 })
 
 
-test_that("Engine can generate a BaseModel using model() method", {
+test_that("Engine can generate a TableModel using model() method", {
   
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
@@ -44,7 +44,7 @@ test_that("Engine can generate a BaseModel using model() method", {
 
   user_model <- engine$model("users")
 
-  expect_s3_class(user_model, "BaseModel")
+  expect_s3_class(user_model, "TableModel")
   expect_equal(user_model$tablename, "users")
   expect_identical(user_model$engine, engine)
 
@@ -56,7 +56,7 @@ test_that("Engine can generate a BaseModel using model() method", {
 })
 
 
-test_that("Engine can generate a BaseModel using model() method", {
+test_that("Engine can generate a TableModel using model() method", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
     dbname = ":memory:"
@@ -64,7 +64,7 @@ test_that("Engine can generate a BaseModel using model() method", {
 
   user_model <- engine$model("users")
 
-  expect_true(inherits(user_model, "BaseModel"))
+  expect_true(inherits(user_model, "TableModel"))
   expect_equal(user_model$tablename, "users")
   expect_identical(user_model$engine, engine)
 

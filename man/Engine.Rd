@@ -139,7 +139,7 @@ The number of rows affected
 \if{html}{\out{<a id="method-Engine-model"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-model}{}}}
 \subsection{Method \code{model()}}{
-Create a new BaseModel instance for a given table
+Create a new TableModel instance for a given table
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ...)}\if{html}{\out{</div>}}
 }
@@ -149,12 +149,12 @@ Create a new BaseModel instance for a given table
 \describe{
 \item{\code{tablename}}{Name of the table}
 
-\item{\code{...}}{Additional arguments passed to BaseModel$new()}
+\item{\code{...}}{Additional arguments passed to TableModel$new()}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new BaseModel instance
+A new TableModel instance
 }
 }
 \if{html}{\out{<hr>}}

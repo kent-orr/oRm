@@ -1,4 +1,4 @@
-test_that("BaseModel$read() works with filter expressions and mode", {
+test_that("TableModel$read() works with filter expressions and mode", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
     dbname = ":memory:"

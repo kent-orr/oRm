@@ -5,12 +5,12 @@
 #' for creating, updating, and deleting individual records.
 #'
 #' @details
-#' Record is an R6 class that works in conjunction with the BaseModel class. Each Record
+#' Record is an R6 class that works in conjunction with the TableModel class. Each Record
 #' instance corresponds to a single row in the database table represented by its associated
-#' BaseModel. The class provides methods for CRUD (Create, Read, Update, Delete) operations
+#' TableModel. The class provides methods for CRUD (Create, Read, Update, Delete) operations
 #' on individual records.
 #'
-#' @field model A BaseModel object. Represents the database table this record belongs to.
+#' @field model A TableModel object. Represents the database table this record belongs to.
 #' @field data A list. Contains the data for this record, with column names as keys.
 #'
 #' @section Methods:
@@ -31,11 +31,11 @@ Record <- R6::R6Class(
     data = list(),
 
     #' @description Constructor for Record.
-    #' @param model A BaseModel object.
+    #' @param model A TableModel object.
     #' @param data A named list of field values.
     initialize = function(model, data = list()) {
-      if (!inherits(model, "BaseModel")) {
-        stop("Record must be initialized with a BaseModel.")
+      if (!inherits(model, "TableModel")) {
+        stop("Record must be initialized with a TableModel.")
       }
       unknown_cols <- setdiff(names(data), names(model$fields))
       if (length(unknown_cols) > 0) {

@@ -8,9 +8,9 @@ The Record class represents a single row in a database table. It provides method
 for creating, updating, and deleting individual records.
 }
 \details{
-Record is an R6 class that works in conjunction with the BaseModel class. Each Record
+Record is an R6 class that works in conjunction with the TableModel class. Each Record
 instance corresponds to a single row in the database table represented by its associated
-BaseModel. The class provides methods for CRUD (Create, Read, Update, Delete) operations
+TableModel. The class provides methods for CRUD (Create, Read, Update, Delete) operations
 on individual records.
 }
 \section{Methods}{
@@ -26,7 +26,7 @@ on individual records.
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{model}}{A BaseModel object. Represents the database table this record belongs to.}
+\item{\code{model}}{A TableModel object. Represents the database table this record belongs to.}
 
 \item{\code{data}}{A list. Contains the data for this record, with column names as keys.}
 }
@@ -54,7 +54,7 @@ Constructor for Record.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{model}}{A BaseModel object.}
+\item{\code{model}}{A TableModel object.}
 
 \item{\code{data}}{A named list of field values.}
 }

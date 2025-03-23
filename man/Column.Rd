@@ -18,11 +18,11 @@ Column(type, default = NULL, key = FALSE, nullable = TRUE, ...)
 \item{...}{Reserved for future dialect-specific extensions (e.g. `unique`, `collate`, `check`). Currently stored but **not used** during table creation.}
 }
 \value{
-An object of class `"Column"`, used to define fields in a `BaseModel`.
+An object of class `"Column"`, used to define fields in a `TableModel`.
 }
 \description{
 Creates a `Column` object describing the type and constraints for a field
-in a table model. Intended for use within `BaseModel` definitions.
+in a table model. Intended for use within `TableModel` definitions.
 }
 \examples{
 Column("TEXT", nullable = FALSE)

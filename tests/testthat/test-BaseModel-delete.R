@@ -1,4 +1,4 @@
-test_that("BaseModel$delete_where() deletes rows using filter expressions", {
+test_that("TableModel$delete_where() deletes rows using filter expressions", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
     dbname = ":memory:"

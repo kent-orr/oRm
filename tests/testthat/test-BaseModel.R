@@ -1,12 +1,12 @@
-test_that("BaseModel initializes and defines fields correctly", {
+test_that("TableModel initializes and defines fields correctly", {
 
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
     dbname = ":memory:"
   )
 
-  model <- BaseModel$new(
-    tablename = "test_basemodel",
+  model <- TableModel$new(
+    tablename = "test_TableModel",
     engine = engine,
     id = Column("INTEGER", key = TRUE, nullable = FALSE),
     name = Column("TEXT", nullable = FALSE),
@@ -14,7 +14,7 @@ test_that("BaseModel initializes and defines fields correctly", {
   )
 
   # Check table name and engine binding
-  expect_equal(model$tablename, "test_basemodel")
+  expect_equal(model$tablename, "test_TableModel")
   expect_identical(model$engine, engine)
 
   # Check that all expected fields are present
@@ -30,14 +30,14 @@ test_that("BaseModel initializes and defines fields correctly", {
   con <- model$get_connection()
   expect_true(DBI::dbIsValid(con))
 
-  DBI::dbExecute(con, "DROP TABLE IF EXISTS test_basemodel")
+  DBI::dbExecute(con, "DROP TABLE IF EXISTS test_TableModel")
   model$create_table()
-  expect_true("test_basemodel" %in% DBI::dbListTables(con))
+  expect_true("test_TableModel" %in% DBI::dbListTables(con))
 
   # Print shouldn't error
   # expect_no_error(invisible(model$print()))
 
   # Clean up
-  DBI::dbExecute(con, "DROP TABLE IF EXISTS test_basemodel")
+  DBI::dbExecute(con, "DROP TABLE IF EXISTS test_TableModel")
   engine$close()
 })

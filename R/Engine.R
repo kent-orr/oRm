@@ -4,7 +4,7 @@
 #' The Engine class manages database connections and provides methods for
 #' interacting with the database.
 #' 
-#' @include BaseModel.R
+#' @include TableModel.R
 #'
 #' @export
 Engine <- R6::R6Class(
@@ -80,12 +80,12 @@ Engine <- R6::R6Class(
     },
 
     #' @description
-    #' Create a new BaseModel instance for a given table
+    #' Create a new TableModel instance for a given table
     #' @param tablename Name of the table
-    #' @param ... Additional arguments passed to BaseModel$new()
-    #' @return A new BaseModel instance
+    #' @param ... Additional arguments passed to TableModel$new()
+    #' @return A new TableModel instance
     model = function(tablename, ...) {
-      BaseModel$new(tablename = tablename, engine = self, ...)
+      TableModel$new(tablename = tablename, engine = self, ...)
     }
   )
 
