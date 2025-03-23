@@ -48,4 +48,4 @@ User$
 
 ```
 
-![Visualization of oRm classes](graphviz.svg)
+![Visualization of oRm classes](oRm_diagram.svg)
