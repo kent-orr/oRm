@@ -3,6 +3,8 @@
 #' @description
 #' The Engine class manages database connections and provides methods for
 #' interacting with the database.
+#' 
+#' @include BaseModel.R
 #'
 #' @export
 Engine <- R6::R6Class(
