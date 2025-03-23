@@ -32,18 +32,23 @@ Record <- R6::R6Class(
 
     #' @description Constructor for Record.
     #' @param model A TableModel object.
-    #' @param data A named list of field values.
-    initialize = function(model, data = list()) {
+    #' @param .data A named list of field values.
+    initialize = function(model, ..., .data = list()) {
       if (!inherits(model, "TableModel")) {
         stop("Record must be initialized with a TableModel.")
       }
-      unknown_cols <- setdiff(names(data), names(model$fields))
+
+      args = c(list(...), .data)
+
+      unknown_cols <- setdiff(names(args), names(model$fields))
       if (length(unknown_cols) > 0) {
         stop("Unknown fields in data: ", paste(unknown_cols, collapse = ", "))
       }
+
       self$model <- model
-      self$data <- data
+      self$data <- args
     },
+
 
     #' @description Insert this record into the database.
     #' @return Invisible NULL
