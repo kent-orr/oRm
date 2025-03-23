@@ -23,24 +23,6 @@ on individual records.
 }
 }
 
-\examples{
-\dontrun{
-# Assuming we have a User model
-user_model <- BaseModel$new("users", my_engine, id = Column("INTEGER", key = TRUE), name = Column("TEXT"))
-
-# Create a new record
-new_user <- Record$new(user_model, list(id = 1, name = "Alice"))
-new_user$create()
-
-# Update a record
-new_user$data$name <- "Alicia"
-new_user$update()
-
-# Delete a record
-new_user$delete()
-}
-
-}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -64,37 +46,59 @@ new_user$delete()
 \if{html}{\out{<a id="method-Record-new"></a>}}
 \if{latex}{\out{\hypertarget{method-Record-new}{}}}
 \subsection{Method \code{new()}}{
+Constructor for Record.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Record$new(model, data = list())}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{model}}{A BaseModel object.}
+
+\item{\code{data}}{A named list of field values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Record-create"></a>}}
 \if{latex}{\out{\hypertarget{method-Record-create}{}}}
 \subsection{Method \code{create()}}{
+Insert this record into the database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Record$create()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Invisible NULL
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Record-update"></a>}}
 \if{latex}{\out{\hypertarget{method-Record-update}{}}}
 \subsection{Method \code{update()}}{
+Update this record in the database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Record$update()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Invisible NULL
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Record-delete"></a>}}
 \if{latex}{\out{\hypertarget{method-Record-delete}{}}}
 \subsection{Method \code{delete()}}{
+Delete this record from the database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Record$delete()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Invisible NULL
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Record-clone"></a>}}

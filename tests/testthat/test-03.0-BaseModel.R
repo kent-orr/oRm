@@ -1,6 +1,4 @@
 test_that("BaseModel initializes and defines fields correctly", {
-  skip_if(Sys.getenv("DB_USER") == "" || Sys.getenv("DB_PASS") == "",
-          "DB_USER or DB_PASS not set")
 
   engine <- Engine$new(
     drv = RSQLite::SQLite(),

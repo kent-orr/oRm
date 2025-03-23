@@ -21,180 +21,126 @@
 #'   \item{\code{delete()}}{Deletes this record from the database.}
 #' }
 #'
-#' @examples
-#' \dontrun{
-#' # Assuming we have a User model
-#' user_model <- BaseModel$new("users", my_engine, id = Column("INTEGER", key = TRUE), name = Column("TEXT"))
-#'
-#' # Create a new record
-#' new_user <- Record$new(user_model, list(id = 1, name = "Alice"))
-#' new_user$create()
-#'
-#' # Update a record
-#' new_user$data$name <- "Alicia"
-#' new_user$update()
-#'
-#' # Delete a record
-#' new_user$delete()
-#' }
-#'
+#' @importFrom DBI dbQuoteLiteral dbQuoteIdentifier dbExecute dbAppendTable
 #' @export
 Record <- R6::R6Class(
   "Record",
   public = list(
+
     model = NULL,
     data = list(),
+
+    #' @description Constructor for Record.
+    #' @param model A BaseModel object.
+    #' @param data A named list of field values.
     initialize = function(model, data = list()) {
       if (!inherits(model, "BaseModel")) {
         stop("Record must be initialized with a BaseModel.")
       }
       unknown_cols <- setdiff(names(data), names(model$fields))
       if (length(unknown_cols) > 0) {
-        stop("Unknown fields in data: ",
-             paste(unknown_cols, collapse = ", "))
+        stop("Unknown fields in data: ", paste(unknown_cols, collapse = ", "))
       }
       self$model <- model
       self$data <- data
+    },
+
+    #' @description Insert this record into the database.
+    #' @return Invisible NULL
+    create = function() {
+      con <- self$model$get_connection()
+
+      required_fields <- names(self$model$fields)[
+        vapply(self$model$fields, function(x) !x$nullable, logical(1))
+      ]
+      missing_fields <- setdiff(required_fields, names(self$data))
+      if (length(missing_fields) > 0) {
+        stop("Missing required fields: ", paste(missing_fields, collapse = ", "))
+      }
+
+      DBI::dbAppendTable(
+        conn = con,
+        name = self$model$tablename,
+        value = as.data.frame(self$data, stringsAsFactors = FALSE)
+      )
+    },
+
+    #' @description Update this record in the database.
+    #' @return Invisible NULL
+    update = function() {
+      con <- self$model$get_connection()
+
+      key_fields <- names(self$model$fields)[
+        vapply(self$model$fields, function(x) isTRUE(x$key), logical(1))
+      ]
+      if (length(key_fields) == 0) {
+        stop("No primary key fields defined in model.")
+      }
+
+      missing_keys <- setdiff(key_fields, names(self$data))
+      if (length(missing_keys) > 0) {
+        stop("Cannot update without all primary key fields: ",
+             paste(missing_keys, collapse = ", "))
+      }
+
+      non_key_fields <- setdiff(names(self$data), key_fields)
+      if (length(non_key_fields) == 0) {
+        stop("No non-key fields to update.")
+      }
+
+      set_clause <- paste0(
+        non_key_fields, " = ",
+        sapply(self$data[non_key_fields], DBI::dbQuoteLiteral, conn = con),
+        collapse = ", "
+      )
+
+      where_clause <- paste0(
+        key_fields, " = ",
+        sapply(self$data[key_fields], DBI::dbQuoteLiteral, conn = con),
+        collapse = " AND "
+      )
+
+      sql <- sprintf(
+        "UPDATE %s SET %s WHERE %s",
+        DBI::dbQuoteIdentifier(con, self$model$tablename),
+        set_clause,
+        where_clause
+      )
+
+      DBI::dbExecute(con, sql)
+    },
+
+    #' @description Delete this record from the database.
+    #' @return Invisible NULL
+    delete = function() {
+      con <- self$model$get_connection()
+
+      key_fields <- names(self$model$fields)[
+        vapply(self$model$fields, function(x) isTRUE(x$key), logical(1))
+      ]
+      if (length(key_fields) == 0) {
+        stop("No primary key fields defined in model.")
+      }
+
+      missing_keys <- setdiff(key_fields, names(self$data))
+      if (length(missing_keys) > 0) {
+        stop("Cannot delete without all primary key fields: ",
+             paste(missing_keys, collapse = ", "))
+      }
+
+      where_clause <- paste0(
+        key_fields, " = ",
+        sapply(self$data[key_fields], DBI::dbQuoteLiteral, conn = con),
+        collapse = " AND "
+      )
+
+      sql <- sprintf(
+        "DELETE FROM %s WHERE %s",
+        DBI::dbQuoteIdentifier(con, self$model$tablename),
+        where_clause
+      )
+
+      DBI::dbExecute(con, sql)
     }
-    )
   )
-
-
-#' Create a new record in the database
-#'
-#' @description
-#' Inserts the current Record instance as a new row in the associated database table.
-#'
-#' @return Invisible NULL. Called for side effects.
-#'
-#' @examples
-#' \dontrun{
-#' new_user <- Record$new(user_model, list(id = 1, name = "Alice"))
-#' new_user$create()
-#' }
-Record$set("public", "create", function() {
-  con <- self$model$get_connection()
-
-  # Check required fields
-  required_fields <- names(self$model$fields)[
-    vapply(self$model$fields, function(x) !x$nullable, logical(1))
-  ]
-  missing_fields <- setdiff(required_fields, names(self$data))
-  if (length(missing_fields) > 0) {
-    stop("Missing required fields: ", paste(missing_fields, collapse = ", "))
-  }
-
-  # Insert the row
-  DBI::dbAppendTable(
-    conn = con,
-    name = self$model$tablename,
-    value = as.data.frame(self$data, stringsAsFactors = FALSE)
-  )
-})
-
-#' Update the current record in the database
-#'
-#' @description
-#' Updates the corresponding row in the database with the current data in the Record instance.
-#'
-#' @return Invisible NULL. Called for side effects.
-#'
-#' @examples
-#' \dontrun{
-#' user$data$name <- "Alicia"
-#' user$update()
-#' }
-Record$set("public", "update", function() {
-  con <- self$model$get_connection()
-
-  # Identify key fields
-  key_fields <- names(self$model$fields)[
-    vapply(self$model$fields, function(x) isTRUE(x$key), logical(1))
-  ]
-
-  if (length(key_fields) == 0) {
-    stop("No primary key fields defined in model.")
-  }
-
-  # Ensure all key fields are in self$data
-  missing_keys <- setdiff(key_fields, names(self$data))
-  if (length(missing_keys) > 0) {
-    stop("Cannot update without all primary key fields: ",
-         paste(missing_keys, collapse = ", "))
-  }
-
-  # Separate key and non-key fields
-  non_key_fields <- setdiff(names(self$data), key_fields)
-  if (length(non_key_fields) == 0) {
-    stop("No non-key fields to update.")
-  }
-
-  # Build SET clause
-  set_clause <- paste0(
-    non_key_fields, " = ",
-    sapply(self$data[non_key_fields], DBI::dbQuoteLiteral, conn = con),
-    collapse = ", "
-  )
-
-  # Build WHERE clause
-  where_clause <- paste0(
-    key_fields, " = ",
-    sapply(self$data[key_fields], DBI::dbQuoteLiteral, conn = con),
-    collapse = " AND "
-  )
-
-  sql <- sprintf(
-    "UPDATE %s SET %s WHERE %s",
-    DBI::dbQuoteIdentifier(con, self$model$tablename),
-    set_clause,
-    where_clause
-  )
-
-  DBI::dbExecute(con, sql)
-})
-
-#' Delete the current record from the database
-#'
-#' @description
-#' Removes the corresponding row from the database table.
-#'
-#' @return Invisible NULL. Called for side effects.
-#'
-#' @examples
-#' \dontrun{
-#' user$delete()
-#' }
-Record$set("public", "delete", function() {
-  con <- self$model$get_connection()
-
-  # Identify key fields
-  key_fields <- names(self$model$fields)[
-    vapply(self$model$fields, function(x) isTRUE(x$key), logical(1))
-  ]
-
-  if (length(key_fields) == 0) {
-    stop("No primary key fields defined in model.")
-  }
-
-  # Ensure all key fields are in self$data
-  missing_keys <- setdiff(key_fields, names(self$data))
-  if (length(missing_keys) > 0) {
-    stop("Cannot delete without all primary key fields: ",
-         paste(missing_keys, collapse = ", "))
-  }
-
-  # Build WHERE clause
-  where_clause <- paste0(
-    key_fields, " = ",
-    sapply(self$data[key_fields], DBI::dbQuoteLiteral, conn = con),
-    collapse = " AND "
-  )
-
-  sql <- sprintf(
-    "DELETE FROM %s WHERE %s",
-    DBI::dbQuoteIdentifier(con, self$model$tablename),
-    where_clause
-  )
-
-  DBI::dbExecute(con, sql)
-})
+)

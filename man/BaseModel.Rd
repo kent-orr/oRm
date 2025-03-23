@@ -2,7 +2,7 @@
 % Please edit documentation in R/BaseModel.R
 \name{BaseModel}
 \alias{BaseModel}
-\title{Base Model Class}
+\title{BaseModel Class}
 \description{
 The BaseModel class is the foundation for creating object-relational mappings in oRm.
 It provides methods for table creation, record manipulation, and querying.
@@ -21,48 +21,11 @@ with the table data.
   \item{\code{create_table()}}{Creates the table in the database.}
   \item{\code{print()}}{Prints a formatted representation of the model.}
   \item{\code{record(...)}}{Creates a new Record instance for this model.}
-  \item{\code{delete_where(...)}}{Deletes rows from the table based on filter conditions.}
   \item{\code{read(..., mode)}}{Reads records from the table with optional filtering.}
+  \item{\code{delete_where(...)}}{Deletes rows from the table based on filter conditions.}
 }
 }
 
-\examples{
-\dontrun{
-# Create a new BaseModel
-User <- BaseModel$new(
-  tablename = "users",
-  engine = my_engine,
-  id = Column("INTEGER", key = TRUE),
-  name = Column("VARCHAR")
-)
-
-# Create the table in the database
-User$create_table()
-
-# Insert a new record
-User$record(id = 1, name = "Alice")$create()
-
-# Read records
-all_users <- User$read()
-alice <- User$read(name == "Alice", mode = "one_or_none")
-
-# Delete records
-User$delete_where(name == "Alice")
-}
-
-
-## ------------------------------------------------
-## Method `BaseModel$delete_where`
-## ------------------------------------------------
-
-\dontrun{
-# Delete all rows where the 'age' column is greater than 18
-my_model$delete_where(age > 18)
-
-# Delete all rows where the 'name' column is 'Alice' and 'age' is less than 30
-my_model$delete_where(name == "Alice", age < 30)
-}
-}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -92,15 +55,28 @@ my_model$delete_where(name == "Alice", age < 30)
 \if{html}{\out{<a id="method-BaseModel-new"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-new}{}}}
 \subsection{Method \code{new()}}{
+Constructor for a new BaseModel.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$new(tablename, engine, ...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{tablename}}{The name of the database table.}
+
+\item{\code{engine}}{The Engine object for database connection.}
+
+\item{\code{...}}{Column definitions.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-BaseModel-get_connection"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-get_connection}{}}}
 \subsection{Method \code{get_connection()}}{
+Retrieve the active database connection from the engine.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$get_connection(...)}\if{html}{\out{</div>}}
 }
@@ -110,6 +86,7 @@ my_model$delete_where(name == "Alice", age < 30)
 \if{html}{\out{<a id="method-BaseModel-get_fields_for_dbi"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-get_fields_for_dbi}{}}}
 \subsection{Method \code{get_fields_for_dbi()}}{
+Generate DBI-compatible field definitions from Column objects.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$get_fields_for_dbi()}\if{html}{\out{</div>}}
 }
@@ -119,6 +96,7 @@ my_model$delete_where(name == "Alice", age < 30)
 \if{html}{\out{<a id="method-BaseModel-create_table"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-create_table}{}}}
 \subsection{Method \code{create_table()}}{
+Create the associated table in the database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$create_table()}\if{html}{\out{</div>}}
 }
@@ -128,6 +106,7 @@ my_model$delete_where(name == "Alice", age < 30)
 \if{html}{\out{<a id="method-BaseModel-record"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-record}{}}}
 \subsection{Method \code{record()}}{
+Create a new Record object with this model.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$record(...)}\if{html}{\out{</div>}}
 }
@@ -135,23 +114,16 @@ my_model$delete_where(name == "Alice", age < 30)
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Named list of values to insert into the table.
-The names should match the column names in the table.}
+\item{\code{...}}{Named values to initialize the record's data.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The new record object.
-Read records from the table using dynamic filters
-
-Uses a `dbplyr`-based query to read records from the associated table.
-You can specify filter conditions and return behavior, similar to SQLAlchemy.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-BaseModel-read"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-read}{}}}
 \subsection{Method \code{read()}}{
+Read records using dynamic filters and return in the specified mode.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$read(..., mode = c("all", "one_or_none", "get"))}\if{html}{\out{</div>}}
 }
@@ -159,27 +131,18 @@ You can specify filter conditions and return behavior, similar to SQLAlchemy.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Filter expressions passed as unquoted arguments (e.g. age > 18, name == "Alice")}
+\item{\code{...}}{Unquoted expressions for filtering.}
 
-\item{\code{mode}}{Character string: one of `"all"`, `"one_or_none"`, or `"get"`.
-- `"all"` returns a list of `Record` objects (default)
-- `"one_or_none"` returns a single `Record` or `NULL`
-- `"get"` returns a single `Record` and errors if more or less than one match}
+\item{\code{mode}}{One of "all", "one_or_none", or "get".}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-One or more `Record` objects depending on the mode.
-Delete rows matching a filter expression
-
-This method deletes rows from the associated table based on the provided filter expressions.
-It uses dplyr-style filter expressions to specify the rows to be deleted.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-BaseModel-delete_where"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-delete_where}{}}}
 \subsection{Method \code{delete_where()}}{
+Delete rows from the table based on filter expressions.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$delete_where(...)}\if{html}{\out{</div>}}
 }
@@ -187,34 +150,16 @@ It uses dplyr-style filter expressions to specify the rows to be deleted.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Unquoted dplyr-style filter expressions.
-These expressions should be used to filter the rows to be deleted.
-For example, `age > 18` will delete all rows where the `age` column is greater than 18.}
+\item{\code{...}}{Unquoted dplyr-style filters.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Returns}{
-The number of rows deleted.
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-# Delete all rows where the 'age' column is greater than 18
-my_model$delete_where(age > 18)
-
-# Delete all rows where the 'name' column is 'Alice' and 'age' is less than 30
-my_model$delete_where(name == "Alice", age < 30)
-}
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-BaseModel-print"></a>}}
 \if{latex}{\out{\hypertarget{method-BaseModel-print}{}}}
 \subsection{Method \code{print()}}{
+Print a formatted overview of the model, including its fields.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseModel$print(...)}\if{html}{\out{</div>}}
 }
