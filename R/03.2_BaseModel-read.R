@@ -14,10 +14,10 @@
 #' @importFrom dplyr tbl filter collect
 #' @importFrom rlang sym
 #' @export
-Record$set("public", "read", function(..., mode = c("all", "one_or_none", "get")) {
+BaseModel$set("public", "read", function(..., mode = c("all", "one_or_none", "get")) {
   mode <- match.arg(mode)
-  con <- self$model$get_connection()
-  tbl_ref <- dplyr::tbl(con, self$model$tablename)
+  con <- self$get_connection()
+  tbl_ref <- dplyr::tbl(con, self$tablename)
 
   # Capture expressions from ...
   filters <- rlang::enquos(...)
@@ -29,18 +29,22 @@ Record$set("public", "read", function(..., mode = c("all", "one_or_none", "get")
 
   rows <- dplyr::collect(tbl_ref)
 
+  create_record <- function(row_data) {
+    Record$new(model = self, data = as.list(row_data))
+  }
+
   if (mode == "get") {
     if (nrow(rows) != 1) {
       stop("Expected exactly one row, got: ", nrow(rows))
     }
-    return(Record$new(model = self$model, data = as.list(rows[1, , drop = TRUE])))
+    return(create_record(rows[1, , drop = TRUE]))
   }
 
   if (mode == "one_or_none") {
     if (nrow(rows) > 1) {
       stop("Expected zero or one row, but got multiple")
     } else if (nrow(rows) == 1) {
-      return(Record$new(model = self$model, data = as.list(rows[1, , drop = TRUE])))
+      return(create_record(rows[1, , drop = TRUE]))
     } else {
       return(NULL)
     }
@@ -48,6 +52,6 @@ Record$set("public", "read", function(..., mode = c("all", "one_or_none", "get")
 
   # Default: all
   lapply(seq_len(nrow(rows)), function(i) {
-    Record$new(model = self$model, data = as.list(rows[i, , drop = TRUE]))
+    create_record(rows[i, , drop = TRUE])
   })
 })

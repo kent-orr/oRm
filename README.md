@@ -16,55 +16,37 @@ if (!require(remotes)) {
 remotes::install_github("kent-orr/oRm")
 
 ## Getting Started
-To get started with oRm, follow these steps:
+To get started with oRm you will want to create an engine and define object models. An engine passes args to a DBI::dbConnect call, so it can interface with most any database that DBI can. 
 
-1. Load the package:  
+![graphviz.svg]
 
 ```r
 library(oRm)
-```  
-2. Define an engine
 
-```r
-engine = Engine$new()
+engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:"
+  )
+
+User = engine$model(
+  tablename = "users",
+  name = Column('VARCHAR'),
+  id = Column('INTEGER')
+)
+
+User$create_table()
+
+new_user = Record$new(User, list(id = 1, name = "John Doe"))
+new_user$create()
+
+second_user = Record$new(User, list(id = 2, name = "Jane Doe"))
+second_user$create()
+
+DBI::dbGetQuery(engine$get_connection(), "SELECT * FROM users")
+
+second_user$delete()
+DBI::dbGetQuery(engine$get_connection(), "SELECT * FROM users")
+
+User$
+
 ```
-
-3. Apply  
-Create a connection to the database:
-```r
-# Connect to a SQLite database
-con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
-
-# Initialize the "users" table in the database
-User$new()$create_table(con)
-```
-
-Apply
-4.
-Perform CRUD operations:
-# Create a new user
-user <- User$new(name = "Alice", email = "alice@example.com")
-user$save(con)
-
-# Read a user by ID
-user_id <- 1
-found_user <- User$new()$read(con, id == user_id)
-
-# Update a user
-found_user$name <- "Alice Updated"
-found_user$save(con)
-
-# Delete a user
-found_user$delete(con)
-Apply
-Documentation
-For more detailed information about oRm, check out the package documentation:
-Package documentation
-Vignettes
-Function references
-Contributing
-Contributions to oRm are welcome! If you have any bug reports, feature requests, or code contributions, please feel free to open an issue or submit a pull request on GitHub.
-License
-oRm is distributed under the MIT License.
-Acknowledgments
-oRm was inspired by the popular Python ORM library, SQLAlchemy.
