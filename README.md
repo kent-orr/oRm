@@ -7,19 +7,15 @@ oRm is an open-source Object-Relational Mapping (ORM) framework for R, designed 
 You can install the latest version of oRm from GitHub using the `remotes` package:
 
 ```r
-# Install remotes if not already installed
 if (!require(remotes)) {
   install.packages("remotes")
 }
-
-# Install oRm from GitHub
 remotes::install_github("kent-orr/oRm")
+```
 
 ## Getting Started
 To get started with oRm you will want to create an engine and define object models. An engine passes args to a DBI::dbConnect call, so it can interface with most any database that DBI can. 
-```
 
-![Visualization of oRm classes](graphviz.svg)
 
 ```r
 library(oRm)
@@ -51,3 +47,5 @@ DBI::dbGetQuery(engine$get_connection(), "SELECT * FROM users")
 User$
 
 ```
+
+![Visualization of oRm classes](graphviz.svg)
