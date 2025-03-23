@@ -58,9 +58,9 @@ test_that("TableModel$read() works with filter expressions and mode", {
   User$create_table()
 
   # Insert multiple users
-  Record$new(User, list(id = 1, name = "Alice", age = 30))$create()
-  Record$new(User, list(id = 2, name = "Bob", age = 25))$create()
-  Record$new(User, list(id = 3, name = "Charlie", age = 17))$create()
+  Record$new(User, id = 1, name = "Alice", age = 30)$create()
+  Record$new(User, id = 2, name = "Bob", age = 25)$create()
+  Record$new(User, id = 3, name = "Charlie", age = 17)$create()
 
   # one_or_none: should return one Record
   rec <- Record$new(User)
@@ -105,9 +105,9 @@ test_that("TableModel$delete_where() deletes rows using filter expressions", {
   User$create_table()
 
   # Create three users
-  Record$new(User, list(id = 1, name = "Alice", age = 30))$create()
-  Record$new(User, list(id = 2, name = "Bob", age = 17))$create()
-  Record$new(User, list(id = 3, name = "Charlie", age = 25))$create()
+  Record$new(User, id = 1, name = "Alice", age = 30)$create()
+  Record$new(User, id = 2, name = "Bob", age = 17)$create()
+  Record$new(User, id = 3, name = "Charlie", age = 25)$create()
 
   con <- User$get_connection()
 

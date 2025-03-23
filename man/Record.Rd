@@ -48,7 +48,7 @@ on individual records.
 \subsection{Method \code{new()}}{
 Constructor for Record.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Record$new(model, data = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Record$new(model, ..., .data = list())}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -56,7 +56,7 @@ Constructor for Record.
 \describe{
 \item{\code{model}}{A TableModel object.}
 
-\item{\code{data}}{A named list of field values.}
+\item{\code{.data}}{A named list of field values.}
 }
 \if{html}{\out{</div>}}
 }

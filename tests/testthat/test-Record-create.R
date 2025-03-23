@@ -15,7 +15,7 @@ test_that("Record$create() inserts a row into the database", {
   User$create_table()
 
   # Create and insert a record (omitting age and city)
-  rec <- Record$new(User, list(id = 1, name = "Alice"))
+  rec <- Record$new(User, id = 1, name = "Alice")
   rec$create()
 
   # Fetch the row from the DB

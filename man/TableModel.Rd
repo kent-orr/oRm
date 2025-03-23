@@ -108,7 +108,7 @@ Create the associated table in the database.
 \subsection{Method \code{record()}}{
 Create a new Record object with this model.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$record(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$record(..., .data = list())}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

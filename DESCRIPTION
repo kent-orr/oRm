@@ -13,13 +13,14 @@ Imports:
     DBI,
     dbplyr,
     dplyr,
+    pool,
     R6
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Collate: 
-    'TableModel.R'
     'Column.R'
+    'TableModel.R'
     'Engine.R'
     'Record.R'

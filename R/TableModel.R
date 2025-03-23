@@ -123,6 +123,7 @@ TableModel <- R6::R6Class(
     #' @param ... Unquoted dplyr-style filters.
     delete_where = function(...) {
       con <- self$get_connection()
+      on.exit(self.close())
 
       tbl_filtered <- dplyr::tbl(con, self$tablename) %>% dplyr::filter(...)
       sql_query <- dbplyr::sql_build(tbl_filtered)

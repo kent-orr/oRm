@@ -15,7 +15,7 @@ test_that("Record$delete() removes the row from the database", {
   User$create_table()
 
   # Insert a record
-  user <- Record$new(User, list(id = 1, name = "Alice", age = 30))
+  user <- Record$new(User, id = 1, name = "Alice", age = 30)
   user$create()
 
   # Confirm it exists
