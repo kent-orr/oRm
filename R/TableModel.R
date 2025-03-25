@@ -1,51 +1,78 @@
-#' TableModel Class
+#' Define a database column for a model
 #'
-#' @description
-#' The TableModel class is the foundation for creating object-relational mappings in oRm.
-#' It provides methods for table creation, record manipulation, and querying.
+#' Creates a `Column` object describing the type and constraints for a field
+#' in a table model. Intended for use within `TableModel` or `BaseModel` definitions.
 #'
-#' @details
-#' TableModel is an R6 class that represents a database table. It manages the connection
-#' to the database, defines the table structure, and provides methods for interacting
-#' with the table data.
+#' @param type Character string representing the column's SQL data type
+#'   (e.g. `"INTEGER"`, `"TEXT"`, `"VARCHAR"`).
+#' @param default The default value to use if none is supplied when creating a record.
+#'   If `NULL`, no default will be applied at the SQL level.
+#' @param primary_key Logical. Whether this field is part of the primary key.
+#'   Defaults to `FALSE`.
+#' @param nullable Logical. Whether the column may accept `NULL` values.
+#'   Defaults to `TRUE`.
+#' @param unique Logical. Whether the column should be constrained as `UNIQUE`.
+#'   Defaults to `FALSE`. Currently unused in table creation.
+#' @param foreign_key Optional character string specifying a foreign key reference
+#'   in the format `"referenced_table.referenced_column"`. Currently used for SQL generation.
+#' @param on_delete Character string indicating `ON DELETE` behavior (e.g., `"CASCADE"`, `"SET NULL"`).
+#'   Only relevant if `foreign_key` is set. Optional.
+#' @param on_update Character string indicating `ON UPDATE` behavior (e.g., `"CASCADE"`, `"RESTRICT"`).
+#'   Only relevant if `foreign_key` is set. Optional.
+#' @param ... Reserved for future extensions, such as `check`, `collate`, or custom constraints.
 #'
-#' @field tablename Character. The name of the database table.
-#' @field engine An Engine object. Manages the database connection.
-#' @field fields List. Contains Column objects defining the table structure.
+#' @return An object of class `"Column"`, used to define fields in a TableModel.
 #'
-#' @section Methods:
-#' \describe{
-#'   \item{\code{initialize(tablename, engine, ...)}}{Constructor for creating a new TableModel instance.}
-#'   \item{\code{get_connection()}}{Returns the database connection from the engine.}
-#'   \item{\code{get_fields_for_dbi()}}{Converts Column definitions to DBI-compatible format.}
-#'   \item{\code{create_table()}}{Creates the table in the database.}
-#'   \item{\code{print()}}{Prints a formatted representation of the model.}
-#'   \item{\code{record(...)}}{Creates a new Record instance for this model.}
-#'   \item{\code{read(..., mode)}}{Reads records from the table with optional filtering.}
-#'   \item{\code{delete_where(...)}}{Deletes rows from the table based on filter conditions.}
-#' }
+#' @examples
+#' Column("TEXT", nullable = FALSE)
+#' Column("INTEGER", primary_key = TRUE)
+#' Column("INTEGER", foreign_key = "users.id", on_delete = "CASCADE")
 #'
-#' @importFrom dplyr tbl filter collect
-#' @importFrom rlang enquos sym
-#' @importFrom DBI dbCreateTable dbExecute dbQuoteIdentifier dbQuoteLiteral
-#' @importFrom dbplyr sql_build build_sql
-#' @importFrom crayon green yellow blue magenta silver
 #' @export
-TableModel <- R6::R6Class(
-  "TableModel",
+Column <- function(
+  type, 
+  default = NULL, 
+  primary_key = FALSE, 
+  nullable = TRUE, 
+  unique = FALSE, 
+  foreign_key = NULL, 
+  on_delete = NULL, 
+  on_update = NULL, 
+  ...) {
+
+  structure(
+    # Internal structure with extended FK support
+    list(
+      type = type,
+      nullable = nullable,
+      primary_key = primary_key,
+      default = default,
+      nullable = nullable,
+      unique = unique,
+      foreign_key = foreign_key,
+      on_delete = on_delete,
+      on_update = on_update,
+      extras = list(...)
+    ),
+    class = "Column"
+  )
+}
+
+BaseModel <- R6::R6Class(
+  "BaseModel",
   public = list(
     tablename = NULL,
     engine = NULL,
     fields = list(),
 
     #' @description
-    #' Constructor for a new TableModel.
+    #' Constructor for a new BaseModel.
     #' @param tablename The name of the database table.
     #' @param engine The Engine object for database connection.
     #' @param ... Column definitions.
     initialize = function(tablename, engine, ...) {
       if (missing(tablename) || missing(engine)) {
-        stop("Both 'tablename' and 'engine' must be provided to TableModel.")
+        stop("Both 'tablename' and 'engine' must be provided to BaseModel.")
       }
 
       self$tablename <- tablename
@@ -63,26 +90,100 @@ TableModel <- R6::R6Class(
     },
 
     #' @description
-    #' Generate DBI-compatible field definitions from Column objects.
-    get_fields_for_dbi = function() {
-      vapply(self$fields, function(col) col$type, FUN.VALUE = character(1))
+    #' Generate DBI-compatible field definitions from Column objects, including type,
+    #' nullable constraint, and default values.
+    generate_sql_fields = function() {
+      out <- list()
+      constraints <- list()
+      con <- self$get_connection()
+
+      for (name in names(self$fields)) {
+        col <- self$fields[[name]]
+        parts <- c(DBI::dbQuoteIdentifier(con, name), col$type)
+
+        if (!isTRUE(col$nullable)) {
+          parts <- c(parts, "NOT NULL")
+        }
+
+        if (!is.null(col$default)) {
+          parts <- c(parts, "DEFAULT", DBI::dbQuoteLiteral(con, col$default))
+        }
+
+        if (isTRUE(col$unique)) {
+          parts <- c(parts, "UNIQUE")
+        }
+
+        if (isTRUE(col$primary_key)) {
+          parts <- c(parts, "PRIMARY KEY")
+        }
+
+        if (!is.null(col$extras) && length(col$extras) > 0) {
+          parts <- c(parts, unlist(col$extras))
+        }
+
+        field_sql <- paste(parts, collapse = " ")
+        out[[name]] <- field_sql
+
+        if (!is.null(col$foreign_key)) {
+          fk_parts <- paste0(
+            "FOREIGN KEY (", DBI::dbQuoteIdentifier(con, name), ") REFERENCES ",
+            col$foreign_key
+          )
+
+          if (!is.null(col$on_delete)) {
+            fk_parts <- paste(fk_parts, "ON DELETE", toupper(col$on_delete))
+          }
+
+          if (!is.null(col$on_update)) {
+            fk_parts <- paste(fk_parts, "ON UPDATE", toupper(col$on_update))
+          }
+
+          constraints[[length(constraints) + 1]] <- fk_parts
+        }
+      }
+
+      # Append constraints as additional definitions
+      if (length(constraints)) {
+        for (i in seq_along(constraints)) {
+          out[[paste0("__constraint", i)]] <- constraints[[i]]
+        }
+      }
+
+      out
     },
 
     #' @description
     #' Create the associated table in the database.
-    create_table = function() {
-      DBI::dbCreateTable(
-        self$get_connection(),
-        name = self$tablename,
-        fields = self$get_fields_for_dbi()
+    create_table = function(verbose = FALSE) {
+      con <- self$get_connection()
+
+      fields_sql <- self$generate_sql_fields()
+      field_defs <- paste(unname(fields_sql), collapse = ",
+  ")
+
+      sql <- paste0(
+        "CREATE TABLE ", DBI::dbQuoteIdentifier(con, self$tablename), " (
+  ",
+        field_defs, "
+)"
       )
+
+      if (isTRUE(verbose)) {
+        return(sql)
+      }
+
+      if (isTRUE(verbose)) {
+        return(as.character(sql))
+      }
+
+      DBI::dbExecute(con, sql)
     },
 
     #' @description
     #' Create a new Record object with this model.
     #' @param ... Named values to initialize the record's data.
-    record = function(..., .data=list()) {
-      Record$new(self, ..., .data)
+    record = function(...) {
+      Record$new(self, data = list(...))
     },
 
     #' @description
@@ -121,9 +222,8 @@ TableModel <- R6::R6Class(
     #' @description
     #' Delete rows from the table based on filter expressions.
     #' @param ... Unquoted dplyr-style filters.
-    delete_where = function(...) {
+    delete_where = function(..., verbose = FALSE) {
       con <- self$get_connection()
-      on.exit(self.close())
 
       tbl_filtered <- dplyr::tbl(con, self$tablename) %>% dplyr::filter(...)
       sql_query <- dbplyr::sql_build(tbl_filtered)
@@ -157,7 +257,7 @@ TableModel <- R6::R6Class(
         name = names(self$fields),
         type = vapply(self$fields, function(x) x$type, character(1)),
         nullable = vapply(self$fields, function(x) x$nullable, logical(1)),
-        key = vapply(self$fields, function(x) x$key, logical(1)),
+        key = vapply(self$fields, function(x) isTRUE(x$primary_key), logical(1)),
         stringsAsFactors = FALSE
       )
 
