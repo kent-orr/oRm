@@ -2,13 +2,14 @@ test_that("TableModel initializes and defines fields correctly", {
 
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
-    dbname = ":memory:"
+    dbname = ":memory:",
+    persist = TRUE
   )
 
   model <- TableModel$new(
     tablename = "test_TableModel",
     engine = engine,
-    id = Column("INTEGER", key = TRUE, nullable = FALSE),
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
     name = Column("TEXT", nullable = FALSE),
     created_at = Column("TIMESTAMP")
   )
@@ -20,12 +21,15 @@ test_that("TableModel initializes and defines fields correctly", {
   # Check that all expected fields are present
   expect_setequal(names(model$fields), c("id", "name", "created_at"))
 
-  # Check field types
-  dbi_fields <- model$get_fields_for_dbi()
-  expect_type(dbi_fields, "character")
-  expect_equal(dbi_fields[["id"]], "INTEGER")
-  expect_equal(dbi_fields[["name"]], "TEXT")
+  # Check field SQL definitions
+  sql_fields <- model$generate_sql_fields()
+  expect_type(sql_fields, "list")
+  expect_equal(length(sql_fields), 3)
 
+  # Check individual field definitions
+  expect_true(grepl("`id` INTEGER .* PRIMARY KEY", sql_fields[[1]]))
+  expect_true(grepl("`name` TEXT NOT NULL", sql_fields[[2]]))
+  expect_true(grepl("`created_at` TIMESTAMP", sql_fields[[3]]))
   # Create the table in the DB
   con <- model$get_connection()
   expect_true(DBI::dbIsValid(con))
@@ -34,18 +38,27 @@ test_that("TableModel initializes and defines fields correctly", {
   model$create_table()
   expect_true("test_TableModel" %in% DBI::dbListTables(con))
 
+  # Verify table structure
+  table_info <- DBI::dbGetQuery(con, "PRAGMA table_info(test_TableModel)")
+  expect_equal(nrow(table_info), 3)
+  expect_equal(table_info$name, c("id", "name", "created_at"))
+  expect_equal(table_info$type, c("INTEGER", "TEXT", "TIMESTAMP"))
+  expect_equal(table_info$notnull, c(1, 1, 0))
+  expect_equal(table_info$pk, c(1, 0, 0))
   # Print shouldn't error
-  # expect_no_error(invisible(model$print()))
+  expect_no_error(print(model))
 
   # Clean up
   DBI::dbExecute(con, "DROP TABLE IF EXISTS test_TableModel")
   engine$close()
 })
 
+
 test_that("TableModel$read() works with filter expressions and mode", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
-    dbname = ":memory:"
+    dbname = ":memory:",
+    persist = TRUE
   )
 
   User <- engine$model(
@@ -92,7 +105,8 @@ test_that("TableModel$read() works with filter expressions and mode", {
 test_that("TableModel$delete_where() deletes rows using filter expressions", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
-    dbname = ":memory:"
+    dbname = ":memory:",
+    persist = TRUE
   )
 
   User <- engine$model(
