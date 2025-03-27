@@ -1,64 +1,45 @@
-
-#' Define a database column for a model
+#' Define a basic column for a database table
 #'
-#' Creates a `Column` object describing the type and constraints for a field
-#' in a table model. Intended for use within `TableModel` or `BaseModel` definitions.
+#' @param type SQL data type (e.g. "INTEGER", "TEXT", "DATE")
+#' @param default Optional default value (no SQL default if NULL)
+#' @param primary_key Logical, whether this is the primary key
+#' @param nullable Logical, whether NULLs are allowed (default TRUE)
+#' @param unique Logical, whether the column is UNIQUE
+#' @param ... Reserved for extras like CHECK, COLLATE, etc.
 #'
-#' @param type Character string representing the column's SQL data type
-#'   (e.g. `"INTEGER"`, `"TEXT"`, `"VARCHAR"`).
-#' @param default The default value to use if none is supplied when creating a record.
-#'   If `NULL`, no default will be applied at the SQL level.
-#' @param primary_key Logical. Whether this field is part of the primary key.
-#'   Defaults to `FALSE`. If set to `TRUE`, `nullable` will automatically be set to `FALSE`.
-#' @param nullable Logical. Whether the column may accept `NULL` values.
-#'   Defaults to `TRUE`. Will be set to `FALSE` if `primary_key` is `TRUE`.
-#' @param unique Logical. Whether the column should be constrained as `UNIQUE`.
-#'   Defaults to `FALSE`. Currently unused in table creation.
-#' @param foreign_key Optional character string specifying a foreign key reference
-#'   in the format `"referenced_table.referenced_column"`. Currently used for SQL generation.
-#' @param on_delete Character string indicating `ON DELETE` behavior (e.g., `"CASCADE"`, `"SET NULL"`).
-#'   Only relevant if `foreign_key` is set. Optional.
-#' @param on_update Character string indicating `ON UPDATE` behavior (e.g., `"CASCADE"`, `"RESTRICT"`).
-#'   Only relevant if `foreign_key` is set. Optional.
-#' @param ... Reserved for future extensions, such as `check`, `collate`, or custom constraints.
-#'
-#' @return An object of class `"Column"`, used to define fields in a TableModel.
-#'
-#' @examples
-#' Column("TEXT", nullable = FALSE)
-#' Column("INTEGER", primary_key = TRUE)  # This will automatically set nullable to FALSE
-#' Column("INTEGER", foreign_key = "users.id", on_delete = "CASCADE")
-#'
+#' @return A Column object
 #' @export
-Column <- function(
-  type, 
-  default = NULL, 
-  primary_key = FALSE, 
-  nullable = TRUE, 
-  unique = FALSE, 
-  foreign_key = NULL, 
-  on_delete = NULL, 
-  on_update = NULL, 
-  ...) {
-
-  # If primary_key is TRUE, set nullable to FALSE
-  if (primary_key) {
-    nullable <- FALSE
-  }
+Column <- function(type, default = NULL, primary_key = FALSE,
+                   nullable = TRUE, unique = FALSE, ...) {
   structure(
-    # Internal structure with extended FK support
     list(
       type = type,
-      nullable = nullable,
-      primary_key = primary_key,
       default = default,
+      primary_key = primary_key,
+      nullable = nullable,
       unique = unique,
-      foreign_key = foreign_key,
-      on_delete = on_delete,
-      on_update = on_update,
       extras = list(...)
     ),
     class = "Column"
   )
+}
 
+#' Define a foreign key column
+#'
+#' @param type SQL data type (e.g. "INTEGER")
+#' @param references Character. The referenced table and column (e.g. "users.id")
+#' @param on_delete Optional ON DELETE behavior (e.g. "CASCADE")
+#' @param on_update Optional ON UPDATE behavior
+#' @param ... Passed to base Column (including nullable, primary_key, etc.)
+#'
+#' @return A ForeignKey object
+#' @export
+ForeignKey <- function(type, references,
+                       on_delete = NULL, on_update = NULL, ...) {
+  col <- Column(type, ...)
+  class(col) <- c("ForeignKey", class(col))  # prepend class
+  col$references <- references
+  col$on_delete <- on_delete
+  col$on_update <- on_update
+  col
 }

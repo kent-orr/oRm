@@ -92,8 +92,8 @@ Column <- function(
       },
       
       #' @description
-      #' Generate DBI-compatible field definitions from Column objects, including type,
-      #' nullable constraint, and default values.
+      #' Generate DBI-compatible field definitions from Column and ForeignKey objects,
+      #' including constraints and SQL clause generation.
       generate_sql_fields = function() {
         out <- list()
         constraints <- list()
@@ -126,21 +126,22 @@ Column <- function(
           field_sql <- paste(parts, collapse = " ")
           out[[name]] <- field_sql
           
-          if (!is.null(col$foreign_key)) {
-            fk_parts <- paste0(
+          # If it's a ForeignKey column, add explicit FOREIGN KEY clause
+          if (inherits(col, "ForeignKey")) {
+            fk_clause <- paste0(
               "FOREIGN KEY (", DBI::dbQuoteIdentifier(con, name), ") REFERENCES ",
-              col$foreign_key
+              col$references
             )
             
             if (!is.null(col$on_delete)) {
-              fk_parts <- paste(fk_parts, "ON DELETE", toupper(col$on_delete))
+              fk_clause <- paste(fk_clause, "ON DELETE", toupper(col$on_delete))
             }
             
             if (!is.null(col$on_update)) {
-              fk_parts <- paste(fk_parts, "ON UPDATE", toupper(col$on_update))
+              fk_clause <- paste(fk_clause, "ON UPDATE", toupper(col$on_update))
             }
             
-            constraints[[length(constraints) + 1]] <- fk_parts
+            constraints[[length(constraints) + 1]] <- fk_clause
           }
         }
         
@@ -154,6 +155,7 @@ Column <- function(
         out
       },
       
+      
       #' @description
       #' Create the associated table in the database.
       #' @description
@@ -164,7 +166,7 @@ Column <- function(
       #' 
       create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
         con <- self$get_connection()
-
+        
         if (overwrite) {
           drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(con, self$tablename))
           if (verbose) {
@@ -175,18 +177,18 @@ Column <- function(
         }
         fields_sql <- self$generate_sql_fields()
         field_defs <- paste(unname(fields_sql), collapse = ",\n  ")
-
+        
         create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
         sql <- paste0(
           create_clause, " ", 
           DBI::dbQuoteIdentifier(con, self$tablename), 
           " (\n  ", field_defs, "\n)"
         )
-
+        
         if (verbose) {
           return(sql)
         }
-
+        
         DBI::dbExecute(con, sql)
       },
       
@@ -209,12 +211,12 @@ Column <- function(
         mode <- match.arg(mode)
         con <- self$get_connection()
         tbl_ref <- dplyr::tbl(con, self$tablename)
-
+        
         filters <- rlang::enquos(...)
         if (length(filters) > 0) {
           tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
         }
-
+        
         if (!is.null(limit) && is.numeric(limit) && limit != 0) {
           if (limit > 0) {
             tbl_ref <- dplyr::slice_head(tbl_ref, n = limit)
@@ -223,7 +225,7 @@ Column <- function(
           }
         }
         rows <- dplyr::collect(tbl_ref)
-
+        
         if (nrow(rows) == 0) {
           if (mode == "get") {
             stop("Expected exactly one row, got: 0")
@@ -234,22 +236,22 @@ Column <- function(
         create_record <- function(row_data) {
           Record$new(model = self, .data = as.list(row_data))
         }
-
+        
         if (mode == "get") {
           if (nrow(rows) != 1) stop("Expected exactly one row, got: ", nrow(rows))
           return(create_record(rows[1, , drop = TRUE]))
         }
-
+        
         if (mode == "one_or_none") {
           if (nrow(rows) > 1) stop("Expected zero or one row, got multiple")
           if (nrow(rows) == 1) return(create_record(rows[1, , drop = TRUE]))
           return(NULL)
         }
-
+        
         # mode == "all"
         lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
       },
-           
+      
       #' @description
       #' Print a formatted overview of the model, including its fields.
       print = function(...) {
