@@ -1,7 +1,7 @@
 #' Define a database column for a model
 #'
 #' Creates a `Column` object describing the type and constraints for a field
-#' in a table model. Intended for use within `TableModel` or `BaseModel` definitions.
+#' in a table model. Intended for use within `TableModel` or `TableModel` definitions.
 #'
 #' @param type Character string representing the column's SQL data type
 #'   (e.g. `"INTEGER"`, `"TEXT"`, `"VARCHAR"`).
@@ -27,6 +27,8 @@
 #' Column("TEXT", nullable = FALSE)
 #' Column("INTEGER", primary_key = TRUE)
 #' Column("INTEGER", foreign_key = "users.id", on_delete = "CASCADE")
+#' 
+#' @importFrom crayon silver magenta
 #'
 #' @export
 Column <- function(
@@ -58,21 +60,21 @@ Column <- function(
   )
 }
 
-BaseModel <- R6::R6Class(
-  "BaseModel",
+TableModel <- R6::R6Class(
+  "TableModel",
   public = list(
     tablename = NULL,
     engine = NULL,
     fields = list(),
 
     #' @description
-    #' Constructor for a new BaseModel.
+    #' Constructor for a new TableModel.
     #' @param tablename The name of the database table.
     #' @param engine The Engine object for database connection.
     #' @param ... Column definitions.
     initialize = function(tablename, engine, ...) {
       if (missing(tablename) || missing(engine)) {
-        stop("Both 'tablename' and 'engine' must be provided to BaseModel.")
+        stop("Both 'tablename' and 'engine' must be provided to TableModel.")
       }
 
       self$tablename <- tablename
