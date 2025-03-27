@@ -161,6 +161,7 @@ Column <- function(
       #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
       #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
       #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
+      #' 
       create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
         con <- self$get_connection()
 
@@ -187,69 +188,68 @@ Column <- function(
         }
 
         DBI::dbExecute(con, sql)
-      }
+      },
       
       #' @description
       #' Create a new Record object with this model.
       #' @param ... Named values to initialize the record's data.
-      record = function(...) {
-        Record$new(self, data = list(...))
+      #' @param .data a named list of field values.
+      #' 
+      record = function(..., .data = list()) {
+        Record$new(self, ..., .data = .data)
       },
       
       #' @description
       #' Read records using dynamic filters and return in the specified mode.
       #' @param ... Unquoted expressions for filtering.
       #' @param mode One of "all", "one_or_none", or "get".
-      read = function(..., mode = c("all", "one_or_none", "get")) {
+      #' @param limit Integer. Maximum number of records to return. NULL (default) means no limit.
+      #'   Positive values return the first N records, negative values return the last N records.
+      read = function(..., mode = c("all", "one_or_none", "get"), limit = NULL) {
         mode <- match.arg(mode)
         con <- self$get_connection()
         tbl_ref <- dplyr::tbl(con, self$tablename)
-        
+
         filters <- rlang::enquos(...)
         if (length(filters) > 0) {
           tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
         }
-        
-        rows <- dplyr::collect(tbl_ref)
-        create_record <- function(row_data) {
-          Record$new(model = self, data = as.list(row_data))
+
+        if (!is.null(limit) && is.numeric(limit) && limit != 0) {
+          if (limit > 0) {
+            tbl_ref <- dplyr::slice_head(tbl_ref, n = limit)
+          } else {
+            tbl_ref <- dplyr::slice_tail(tbl_ref, n = abs(limit))
+          }
         }
-        
+        rows <- dplyr::collect(tbl_ref)
+
+        if (nrow(rows) == 0) {
+          if (mode == "get") {
+            stop("Expected exactly one row, got: 0")
+          } else if (mode == "one_or_none" || mode == "all") {
+            return(NULL)
+          }
+        }
+        create_record <- function(row_data) {
+          Record$new(model = self, .data = as.list(row_data))
+        }
+
         if (mode == "get") {
           if (nrow(rows) != 1) stop("Expected exactly one row, got: ", nrow(rows))
           return(create_record(rows[1, , drop = TRUE]))
         }
-        
+
         if (mode == "one_or_none") {
           if (nrow(rows) > 1) stop("Expected zero or one row, got multiple")
           if (nrow(rows) == 1) return(create_record(rows[1, , drop = TRUE]))
           return(NULL)
         }
-        
+
+        # mode == "all"
         lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
       },
-      
-      #' @description
-      #' Delete rows from the table based on filter expressions.
-      #' @param ... Unquoted dplyr-style filters.
-      delete_where = function(..., verbose = FALSE) {
-        con <- self$get_connection()
-        
-        tbl_filtered <- dplyr::tbl(con, self$tablename) %>% dplyr::filter(...)
-        sql_query <- dbplyr::sql_build(tbl_filtered)
-        where_expr <- sql_query$where
-        
-        if (is.null(where_expr)) stop("No WHERE clause generated — refusing to delete everything.")
-        
-        sql <- dbplyr::build_sql(
-          "DELETE FROM ", DBI::dbQuoteIdentifier(con, self$tablename),
-          " WHERE ", where_expr,
-          con = con
-        )
-        
-        DBI::dbExecute(con, sql)
-      },
-      
+           
       #' @description
       #' Print a formatted overview of the model, including its fields.
       print = function(...) {

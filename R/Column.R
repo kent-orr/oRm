@@ -1,3 +1,4 @@
+
 #' Define a database column for a model
 #'
 #' Creates a `Column` object describing the type and constraints for a field
@@ -8,9 +9,9 @@
 #' @param default The default value to use if none is supplied when creating a record.
 #'   If `NULL`, no default will be applied at the SQL level.
 #' @param primary_key Logical. Whether this field is part of the primary key.
-#'   Defaults to `FALSE`.
+#'   Defaults to `FALSE`. If set to `TRUE`, `nullable` will automatically be set to `FALSE`.
 #' @param nullable Logical. Whether the column may accept `NULL` values.
-#'   Defaults to `TRUE`.
+#'   Defaults to `TRUE`. Will be set to `FALSE` if `primary_key` is `TRUE`.
 #' @param unique Logical. Whether the column should be constrained as `UNIQUE`.
 #'   Defaults to `FALSE`. Currently unused in table creation.
 #' @param foreign_key Optional character string specifying a foreign key reference
@@ -25,7 +26,7 @@
 #'
 #' @examples
 #' Column("TEXT", nullable = FALSE)
-#' Column("INTEGER", primary_key = TRUE)
+#' Column("INTEGER", primary_key = TRUE)  # This will automatically set nullable to FALSE
 #' Column("INTEGER", foreign_key = "users.id", on_delete = "CASCADE")
 #'
 #' @export
@@ -40,6 +41,10 @@ Column <- function(
   on_update = NULL, 
   ...) {
 
+  # If primary_key is TRUE, set nullable to FALSE
+  if (primary_key) {
+    nullable <- FALSE
+  }
   structure(
     # Internal structure with extended FK support
     list(
@@ -47,7 +52,6 @@ Column <- function(
       nullable = nullable,
       primary_key = primary_key,
       default = default,
-      nullable = nullable,
       unique = unique,
       foreign_key = foreign_key,
       on_delete = on_delete,
@@ -56,4 +60,5 @@ Column <- function(
     ),
     class = "Column"
   )
+
 }

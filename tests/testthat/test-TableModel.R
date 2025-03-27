@@ -131,18 +131,18 @@ test_that("TableModel$read() works with filter expressions and mode", {
   User$create_table()
 
   # Insert multiple users
-  Record$new(User, id = 1, name = "Alice", age = 30)$create()
-  Record$new(User, id = 2, name = "Bob", age = 25)$create()
-  Record$new(User, id = 3, name = "Charlie", age = 17)$create()
+  User$record(id=1, name = "Alice", age = 30)$create()
+  User$record(id=2, name = "Bob", age = 25)$create()
+  User$record(id=3, name = "Charlie", age = 17)$create()
 
   # one_or_none: should return one Record
-  User$read(id == 1, mode='one_or_none')
+  result = User$read(id == 1, mode='one_or_none')
 
   expect_true(inherits(result, "Record"))
   expect_equal(result$data$name, "Alice")
 
   # all: should return list of Record objects
-  teens <- rec$read(age >= 10, age < 20, mode = "all")
+  teens <- User$read(age >= 10, age < 20, mode = "all")
   expect_type(teens, "list")
   expect_true(all(vapply(teens, inherits, logical(1), "Record")))
   expect_equal(length(teens), 1)
@@ -150,57 +150,13 @@ test_that("TableModel$read() works with filter expressions and mode", {
 
   # get: fails if multiple rows match
   expect_error(
-    rec$read(age > 18, mode = "get"),
+    User$read(age > 18, mode = "get"),
     "Expected exactly one row"
   )
 
   # one_or_none: returns NULL if no match
-  none <- rec$read(name == "Nobody", mode = "one_or_none")
+  none <- User$read(name == "Nobody", mode = "one_or_none")
   expect_null(none)
-
-  engine$close()
-})
-
-test_that("TableModel$delete_where() deletes rows using filter expressions", {
-  engine <- Engine$new(
-    drv = RSQLite::SQLite(),
-    dbname = ":memory:",
-    persist = TRUE
-  )
-
-  User <- engine$model(
-    "users",
-    id = Column("INTEGER", key = TRUE, nullable = FALSE),
-    name = Column("TEXT", nullable = FALSE),
-    age = Column("INTEGER")
-  )
-
-  User$create_table()
-
-  # Create three users
-  Record$new(User, id = 1, name = "Alice", age = 30)$create()
-  Record$new(User, id = 2, name = "Bob", age = 17)$create()
-  Record$new(User, id = 3, name = "Charlie", age = 25)$create()
-
-  con <- User$get_connection()
-
-  # Confirm all rows exist
-  initial <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM users")$n
-  expect_equal(initial, 3)
-
-  # Delete users under 18
-  User$delete_where(age < 18)
-
-  after_delete <- DBI::dbGetQuery(con, "SELECT * FROM users")
-  expect_equal(nrow(after_delete), 2)
-  expect_false(any(after_delete$name == "Bob"))
-
-  # Delete remaining users
-  User$delete_where(age >= 18)
-  expect_equal(
-    DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM users")$n,
-    0
-  )
 
   engine$close()
 })

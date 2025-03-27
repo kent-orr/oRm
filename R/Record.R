@@ -77,7 +77,7 @@ Record <- R6::R6Class(
       con <- self$model$get_connection()
 
       key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$key), logical(1))
+        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
       ]
       if (length(key_fields) == 0) {
         stop("No primary key fields defined in model.")
@@ -122,7 +122,7 @@ Record <- R6::R6Class(
       con <- self$model$get_connection()
 
       key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$key), logical(1))
+        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
       ]
       if (length(key_fields) == 0) {
         stop("No primary key fields defined in model.")
@@ -147,6 +147,12 @@ Record <- R6::R6Class(
       )
 
       DBI::dbExecute(con, sql)
+    },
+
+    print = function() {
+      cat("<Record>: '", self$model$tablename, "'\n", sep='')
+      cat(paste(names(self$data), self$data, sep = ": ", collapse = "\n"), "\n")
+      invisible(self)
     }
   )
 )

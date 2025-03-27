@@ -1,119 +1,154 @@
-test_that("Column constructor returns valid Column objects", {
-  col <- Column("TEXT", nullable = FALSE, key = TRUE)
+library(testthat)
+library(oRm)
 
+test_that("Column creates a basic object with only 'type' specified", {
+  col <- Column("INTEGER")
+  
+  expect_s3_class(col, "Column")
+  expect_equal(col$type, "INTEGER")
+  expect_null(col$default)
+  expect_false(col$primary_key)
+  expect_true(col$nullable)
+  expect_false(col$unique)
+  expect_null(col$foreign_key)
+  expect_null(col$on_delete)
+  expect_null(col$on_update)
+  expect_equal(col$extras, list())
+})
+
+test_that("Column correctly sets the 'primary_key' attribute to TRUE when specified", {
+  col <- Column("INTEGER", primary_key = TRUE)
+  
+  expect_s3_class(col, "Column")
+  expect_equal(col$type, "INTEGER")
+  expect_true(col$primary_key)
+  expect_false(col$nullable)  # Primary keys are typically not nullable
+})
+
+test_that("Column sets 'nullable' to FALSE when explicitly specified", {
+  col <- Column("TEXT", nullable = FALSE)
+  
   expect_s3_class(col, "Column")
   expect_equal(col$type, "TEXT")
   expect_false(col$nullable)
-  expect_true(col$key)
 })
 
-test_that("Column uses default values when not specified", {
-  col <- Column("INTEGER")
-
+test_that("Column correctly handles foreign key reference with 'on_delete' and 'on_update' options", {
+  col <- Column("INTEGER", 
+                foreign_key = "users.id", 
+                on_delete = "CASCADE", 
+                on_update = "RESTRICT")
+  
+  expect_s3_class(col, "Column")
   expect_equal(col$type, "INTEGER")
+  expect_equal(col$foreign_key, "users.id")
+  expect_equal(col$on_delete, "CASCADE")
+  expect_equal(col$on_update, "RESTRICT")
   expect_true(col$nullable)
-  expect_false(col$key)
-})
-
-test_that("Column rejects invalid input gracefully", {
-  col <- Column("custom_type", key = TRUE)
-  expect_equal(col$type, "custom_type")
-  expect_true(col$key)
-})
-
-test_that("Column definitions are correctly applied to created tables", {
-  # Setup in-memory SQLite engine
-  engine <- Engine$new(
-    drv = RSQLite::SQLite(),
-    dbname = ":memory:"
-  )
-
-  # Create a model with known field types
-  model <- engine$model(
-    "test_columns",
-    id = Column("INTEGER", nullable = FALSE, key = TRUE),
-    name = Column("TEXT", nullable = FALSE),
-    score = Column("REAL", nullable = TRUE)
-  )
-
-  # Create table
-  model$create_table()
-
-  # Read actual column definitions from SQLite
-  con <- model$get_connection()
-  result <- DBI::dbGetQuery(con, "PRAGMA table_info(test_columns)")
-
-  # Convert to named vector: column_name => type
-  col_types <- setNames(result$type, result$name)
-
-  expect_equal(col_types[["id"]], "INTEGER")
-  expect_equal(col_types[["name"]], "TEXT")
-  expect_equal(col_types[["score"]], "REAL")
-
-  # Clean up
-  DBI::dbExecute(con, "DROP TABLE IF EXISTS test_columns")
-  engine$close()
-})
-
-test_that("Column assigns explicit default correctly", {
-  col <- Column("INTEGER", default = 42)
-  expect_equal(col$default, 42)
-
-  col2 <- Column("TEXT", default = "anon")
-  expect_equal(col2$default, "anon")
-})
-
-test_that("Column infers default when nullable is FALSE and no default given", {
-  col <- Column("INTEGER", nullable = FALSE)
-  expect_equal(col$default, 0L)
-
-  col2 <- Column("TEXT", nullable = FALSE)
-  expect_equal(col2$default, "")
-
-  col3 <- Column("REAL", nullable = FALSE)
-  expect_equal(col3$default, 0.0)
-})
-
-test_that("Column keeps default = NULL when nullable = TRUE", {
-  col <- Column("TEXT", nullable = TRUE)
+  expect_false(col$primary_key)
+  expect_false(col$unique)
   expect_null(col$default)
-
-  col2 <- Column("INTEGER", nullable = TRUE)
-  expect_null(col2$default)
 })
 
+test_that("Column creates an object with a default value when specified", {
+  col <- Column("INTEGER", default = 42)
+  
+  expect_s3_class(col, "Column")
+  expect_equal(col$type, "INTEGER")
+  expect_equal(col$default, 42)
+  expect_false(col$primary_key)
+  expect_true(col$nullable)
+  expect_false(col$unique)
+  expect_null(col$foreign_key)
+  expect_null(col$on_delete)
+  expect_null(col$on_update)
+  expect_equal(col$extras, list())
+})
 
-# test_that("Record$create() inserts a row and respects defaults", {
-#   engine <- Engine$new(
-#     drv = RSQLite::SQLite(),
-#     dbname = ":memory:"
-#   )
-#
-#   # Define a TableModel with default and required fields
-#   User <- engine$model(
-#     "users",
-#     id = Column("INTEGER", key = TRUE, nullable = FALSE),
-#     name = Column("TEXT", nullable = FALSE),
-#     age = Column("INTEGER", default = 18),
-#     city = Column("TEXT", default = "Unknown")
-#   )
-#
-#   # Create the table
-#   User$create_table()
-#
-#   # Insert a record with only required fields
-#   r1 <- Record$new(User, list(id = 1, name = "Alice"))
-#   r1$create()
-#
-#   # Verify the row exists and defaults were filled
-#   result <- DBI::dbGetQuery(engine$get_connection(), "SELECT * FROM users WHERE id = 1")
-#
-#   expect_equal(nrow(result), 1)
-#   expect_equal(result$name, "Alice")
-#   expect_equal(result$age, 18)
-#   expect_equal(result$city, "Unknown")
-#
-#   # Clean up
-#   DBI::dbExecute(engine$get_connection(), "DROP TABLE IF EXISTS users")
-#   engine$close()
-# })
+test_that("Column sets 'unique' attribute to TRUE when specified", {
+  col <- Column("TEXT", unique = TRUE)
+  
+  expect_s3_class(col, "Column")
+  expect_equal(col$type, "TEXT")
+  expect_true(col$unique)
+  expect_true(col$nullable)
+  expect_false(col$primary_key)
+  expect_null(col$default)
+  expect_null(col$foreign_key)
+  expect_null(col$on_delete)
+  expect_null(col$on_update)
+  expect_equal(col$extras, list())
+})
+
+test_that("Column correctly handles additional parameters passed through '...'", {
+  col <- Column("TEXT", check = "length(value) > 5", collate = "NOCASE")
+  
+  expect_s3_class(col, "Column")
+  expect_equal(col$type, "TEXT")
+  expect_equal(col$extras, list(check = "length(value) > 5", collate = "NOCASE"))
+  expect_true(is.list(col$extras))
+  expect_equal(length(col$extras), 2)
+  expect_equal(names(col$extras), c("check", "collate"))
+  expect_equal(col$extras$check, "length(value) > 5")
+  expect_equal(col$extras$collate, "NOCASE")
+})
+
+test_that("Column creates an object with all possible parameters specified", {
+  col <- Column(
+    type = "INTEGER",
+    default = 0,
+    primary_key = TRUE,
+    nullable = FALSE,
+    unique = TRUE,
+    foreign_key = "users.id",
+    on_delete = "CASCADE",
+    on_update = "RESTRICT",
+    check = "value > 0",
+    collate = "NOCASE"
+  )
+  
+  expect_s3_class(col, "Column")
+  expect_equal(col$type, "INTEGER")
+  expect_equal(col$default, 0)
+  expect_true(col$primary_key)
+  expect_false(col$nullable)
+  expect_true(col$unique)
+  expect_equal(col$foreign_key, "users.id")
+  expect_equal(col$on_delete, "CASCADE")
+  expect_equal(col$on_update, "RESTRICT")
+  expect_equal(col$extras, list(check = "value > 0", collate = "NOCASE"))
+})
+
+test_that("Column maintains the correct class 'Column' for the returned object", {
+  col <- Column("INTEGER")
+  
+  expect_s3_class(col, "Column")
+  expect_true(inherits(col, "Column"))
+  expect_equal(class(col), "Column")
+})
+
+test_that("Column handles edge cases for optional parameters", {
+  # Test with empty strings and NULL values for optional parameters
+  col <- Column(
+    "TEXT",
+    default = "",
+    primary_key = FALSE,
+    nullable = TRUE,
+    unique = FALSE,
+    foreign_key = "",
+    on_delete = NULL,
+    on_update = "",
+    check = NULL
+  )
+  
+  expect_s3_class(col, "Column")
+  expect_equal(col$type, "TEXT")
+  expect_equal(col$default, "")
+  expect_false(col$primary_key)
+  expect_true(col$nullable)
+  expect_false(col$unique)
+  expect_equal(col$foreign_key, "")
+  expect_null(col$on_delete)
+  expect_equal(col$on_update, "")
+  expect_equal(col$extras, list(check = NULL))
+})

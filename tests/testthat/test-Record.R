@@ -6,7 +6,7 @@ test_that("Record$create() inserts a row into the database", {
 
   User <- engine$model(
     "users",
-    id = Column("INTEGER", key = TRUE, nullable = FALSE),
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
     name = Column("TEXT", nullable = FALSE),
     age = Column("INTEGER", default = 99),
     city = Column("TEXT", default = "Unknown")
@@ -24,8 +24,7 @@ test_that("Record$create() inserts a row into the database", {
   expect_equal(nrow(result), 1)
   expect_equal(result$id, 1)
   expect_equal(result$name, "Alice")
-  skip("age = 99 since defaults are not yet implemented")
-  # expect_equal(result$age, 99)
+  expect_equal(result$age, 99)
 
   engine$close()
 })
