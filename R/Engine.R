@@ -1,26 +1,30 @@
+#' @include TableModel.R
+NULL
+
 #' Engine Class
 #'
 #' @description
 #' The Engine class manages database connections and provides methods for
 #' interacting with the database.
 #' 
-#' @include TableModel.R
-#'
-#' @import pool
+#' @importFrom pool pool poolClose
+#' 
 Engine <- R6::R6Class(
   "Engine",
   public = list(
     conn_args = NULL,
     conn = NULL,
     use_pool = FALSE,
+    persist = FALSE,
 
     #' Create an Engine object
     #'
     #' @param ... args to be passed to DBI::dbConnect
     #' @param conn_args args to be passed to DBI::dbConnect
-    #' @param use_pool whether or not to make use of the pool package for ceonncetions to this engine
+    #' @param use_pool whether or not to make use of the pool package for connections to this engine
+    #' @param persist whether to keep the connection open after operations (default: FALSE)
     #' 
-    initialize = function(..., conn_args = list(), use_pool = FALSE) {
+    initialize = function(..., conn_args = list(), use_pool = FALSE, persist = FALSE) {
       dots <- list(...)
       if (length(dots) > 0) {
         self$conn_args <- dots
@@ -28,6 +32,7 @@ Engine <- R6::R6Class(
         self$conn_args <- conn_args
       }
       self$use_pool <- use_pool
+      self$persist <- persist
     },
 
     #' Get a connection to the database
@@ -58,7 +63,7 @@ Engine <- R6::R6Class(
 
     #' list tables in the database connection
     list_tables = function() {
-      on.exit(if (!self$use_pool) self$close())
+      on.exit(if (!self$use_pool && !self$persist) self$close())
       DBI::dbListTables(self$get_connection())
     },
 
@@ -67,15 +72,16 @@ Engine <- R6::R6Class(
     #' @param sql SQL query
     #' @return A data.frame
     get_query = function(sql) {
-      on.exit(if (!self$use_pool) self$close())
+      on.exit(if (!self$use_pool && !self$persist) self$close())
       DBI::dbGetQuery(self$get_connection(), sql)
     },
 
     #' Execute a SQL query and return the number of rows affected
     execute = function(sql) {
-      on.exit(if (!self$use_pool) self$close())
+      on.exit(if (!self$use_pool && !self$persist) self$close())
       DBI::dbExecute(self$get_connection(), sql)
     },
+
 
     #' Create a new TableModel object for the specified table
     #'
