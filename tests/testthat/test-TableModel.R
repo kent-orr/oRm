@@ -53,6 +53,66 @@ test_that("TableModel initializes and defines fields correctly", {
   engine$close()
 })
 
+test_that("TableModel$create_table() respects if_not_exists and overwrite arguments", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+
+  model <- TableModel$new(
+    tablename = "test_create_options",
+    engine = engine,
+    id = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT")
+  )
+
+  # Helper function to get table info
+  get_table_info <- function() {
+    DBI::dbGetQuery(engine$get_connection(), "PRAGMA table_info(test_create_options)")
+  }
+
+  # Test 1: Default behavior (if_not_exists = TRUE, overwrite = FALSE)
+  model$create_table()
+  expect_true("test_create_options" %in% DBI::dbListTables(engine$get_connection()))
+  initial_info <- get_table_info()
+
+  # Creating again shouldn't change anything
+  model$create_table()
+  expect_identical(get_table_info(), initial_info)
+
+  # Test 2: Attempt to create without if_not_exists
+  expect_error(model$create_table(if_not_exists = FALSE), "already exists")
+
+  # Test 3: Overwrite existing table
+  model_new <- TableModel$new(
+    tablename = "test_create_options",
+    engine = engine,
+    id = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT"),
+    age = Column("INTEGER")  # New column
+  )
+
+  model_new$create_table(overwrite = TRUE)
+  new_info <- get_table_info()
+  expect_equal(nrow(new_info), 3)  # Should now have 3 columns
+  expect_true("age" %in% new_info$name)
+
+  # Test 4: Overwrite with if_not_exists
+  model$create_table(overwrite = TRUE, if_not_exists = TRUE)
+  expect_identical(get_table_info(), initial_info)  # Should be back to original structure
+
+  # Test 5: Verbose output
+  sql_output <- model$create_table(verbose = TRUE)
+  expect_type(sql_output, "character")
+  expect_true(grepl("CREATE TABLE IF NOT EXISTS", sql_output))
+
+  # Clean up
+  DBI::dbExecute(engine$get_connection(), "DROP TABLE IF EXISTS test_create_options")
+  engine$close()
+})
+
+
 
 test_that("TableModel$read() works with filter expressions and mode", {
   engine <- Engine$new(
@@ -63,7 +123,7 @@ test_that("TableModel$read() works with filter expressions and mode", {
 
   User <- engine$model(
     "users",
-    id = Column("INTEGER", key = TRUE, nullable = FALSE),
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
     name = Column("TEXT", nullable = FALSE),
     age = Column("INTEGER")
   )
@@ -76,8 +136,7 @@ test_that("TableModel$read() works with filter expressions and mode", {
   Record$new(User, id = 3, name = "Charlie", age = 17)$create()
 
   # one_or_none: should return one Record
-  rec <- Record$new(User)
-  result <- rec$read(id == 1, mode = "one_or_none")
+  User$read(id == 1, mode='one_or_none')
 
   expect_true(inherits(result, "Record"))
   expect_equal(result$data$name, "Alice")
