@@ -7,15 +7,6 @@
 The Engine class manages database connections and provides methods for
 interacting with the database.
 }
-\section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
-\describe{
-\item{\code{conn_args}}{List of connection arguments}
-
-\item{\code{conn}}{Active database connection}
-}
-\if{html}{\out{</div>}}
-}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -33,17 +24,22 @@ interacting with the database.
 \if{html}{\out{<a id="method-Engine-new"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a new Engine instance
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$new(..., conn_args = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$new(..., conn_args = list(), use_pool = FALSE, persist = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Connection arguments passed directly}
+\item{\code{...}}{args to be passed to DBI::dbConnect}
 
-\item{\code{conn_args}}{List of connection arguments}
+\item{\code{conn_args}}{args to be passed to DBI::dbConnect}
+
+\item{\code{use_pool}}{whether or not to make use of the pool package for connections to this engine}
+
+\item{\code{persist}}{whether to keep the connection open after operations (default: FALSE)
+
+Get a connection to the database}
 }
 \if{html}{\out{</div>}}
 }
@@ -52,27 +48,21 @@ Initialize a new Engine instance
 \if{html}{\out{<a id="method-Engine-get_connection"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-get_connection}{}}}
 \subsection{Method \code{get_connection()}}{
-Get or create a database connection
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$get_connection(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$get_connection()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Additional connection arguments}
-}
-\if{html}{\out{</div>}}
-}
 \subsection{Returns}{
-A DBI connection object
+A DBIConnection object or a pool object
+Close the database connection or pool
+list tables in the database connection
+Execute a SQL query and return the result as a data.frame
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-close"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-close}{}}}
 \subsection{Method \code{close()}}{
-Close the database connection
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$close()}\if{html}{\out{</div>}}
 }
@@ -82,66 +72,47 @@ Close the database connection
 \if{html}{\out{<a id="method-Engine-list_tables"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-list_tables}{}}}
 \subsection{Method \code{list_tables()}}{
-List all tables in the database
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$list_tables()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A character vector of table names
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-get_query"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-get_query}{}}}
 \subsection{Method \code{get_query()}}{
-Execute a SQL query and return results
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$get_query(sql, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$get_query(sql)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{sql}}{SQL query string}
-
-\item{\code{...}}{Additional arguments passed to get_connection}
+\item{\code{sql}}{SQL query}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A data frame containing query results
+A data.frame
+Execute a SQL query and return the number of rows affected
+Create a new TableModel object for the specified table
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-execute"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-execute}{}}}
 \subsection{Method \code{execute()}}{
-Execute a SQL statement
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$execute(sql, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$execute(sql)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{sql}}{SQL statement string}
-
-\item{\code{...}}{Additional arguments passed to get_connection}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The number of rows affected
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-model"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-model}{}}}
 \subsection{Method \code{model()}}{
-Create a new TableModel instance for a given table
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list())}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -149,12 +120,11 @@ Create a new TableModel instance for a given table
 \describe{
 \item{\code{tablename}}{Name of the table}
 
-\item{\code{...}}{Additional arguments passed to TableModel$new()}
+\item{\code{...}}{Additional arguments passed to the TableModel constructor}
+
+\item{\code{.data}}{a named list of the arguments for the TableModel constructor}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new TableModel instance
 }
 }
 \if{html}{\out{<hr>}}

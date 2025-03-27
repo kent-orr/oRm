@@ -22,6 +22,7 @@
 #' }
 #'
 #' @importFrom DBI dbQuoteLiteral dbQuoteIdentifier dbExecute dbAppendTable
+#' 
 #' @export
 Record <- R6::R6Class(
   "Record",
