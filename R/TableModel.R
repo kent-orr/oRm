@@ -128,9 +128,14 @@ Column <- function(
           
           # If it's a ForeignKey column, add explicit FOREIGN KEY clause
           if (inherits(col, "ForeignKey")) {
+          ref_parts <- strsplit(col$references, "\\.")[[1]]
+          if (length(ref_parts) != 2) {
+            stop("Invalid foreign key reference format. Expected 'table.column', got: ", col$references)
+          }
             fk_clause <- paste0(
               "FOREIGN KEY (", DBI::dbQuoteIdentifier(con, name), ") REFERENCES ",
-              col$references
+            DBI::dbQuoteIdentifier(con, ref_parts[1]), " (",
+            DBI::dbQuoteIdentifier(con, ref_parts[2]), ")"
             )
             
             if (!is.null(col$on_delete)) {
