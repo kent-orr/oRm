@@ -27,7 +27,7 @@
 Record <- R6::R6Class(
   "Record",
   public = list(
-
+    relationships = c(),
     model = NULL,
     data = list(),
 
@@ -47,6 +47,11 @@ Record <- R6::R6Class(
       }
 
       self$model <- model
+      self$relationships = model$relationships
+      for (field in model$fields) {
+        if (isTRUE(field['default']))
+          self$data[names(field)] <- field['default']
+      }
       self$data <- args
     },
 
@@ -69,6 +74,7 @@ Record <- R6::R6Class(
         name = self$model$tablename,
         value = as.data.frame(self$data, stringsAsFactors = FALSE)
       )
+      self
     },
 
     #' @description Update this record in the database.
@@ -114,6 +120,7 @@ Record <- R6::R6Class(
       )
 
       DBI::dbExecute(con, sql)
+      self
     },
 
     #' @description Delete this record from the database.
@@ -147,6 +154,18 @@ Record <- R6::R6Class(
       )
 
       DBI::dbExecute(con, sql)
+      NULL
+    },
+
+    relationship = function(rel_name, ...) {
+      relationship = self$model$relationships[[rel_name]]
+      if (is.null(relationship)) stop("No relationship defined for '", rel_name, "'.", call. = FALSE)
+      
+      key_val = self$data[[relationship$local_key]]
+      if (is.null(key_val)) return(NULL)
+      
+      filter_expr <- rlang::expr(!!rlang::sym(relationship$related_key) == !!key_val)
+      relationship$related_model$read(!!filter_expr, ...)
     },
 
     print = function() {
