@@ -12,7 +12,8 @@ TableModel <- R6::R6Class(
     #' @param tablename The name of the database table.
     #' @param engine The Engine object for database connection.
     #' @param ... Column definitions.
-    initialize = function(tablename, engine, ...) {
+    #' @param .data a list of Column defintions
+    initialize = function(tablename, engine, ..., .data = list()) {
       if (missing(tablename) || missing(engine)) {
         stop("Both 'tablename' and 'engine' must be provided to TableModel.")
       }
@@ -20,7 +21,7 @@ TableModel <- R6::R6Class(
       self$tablename <- tablename
       self$engine <- engine
       
-      dots <- list(...)
+      dots <- utils::modifyList(.data, rlang::list2(...))
       col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
       self$fields <- col_defs
     },

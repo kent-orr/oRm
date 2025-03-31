@@ -2,9 +2,10 @@
 
 # oRm
 
-**oRm** is a lightweight, pipe-friendly Object Relational Mapper (ORM) for R, designed for use with `DBI`, `dbplyr`, and `R6`.
+**oRm** is a lightweight, pipe-friendly Object Relational Mapper (ORM) for R. Inspired by [SQLAlchemy](https://www.sqlalchemy.org/) and built with R conventions in mind, `oRm` makes it easy to define table models, insert and query records, and establish relationships between models — all without writing raw SQL.
 
-Inspired by [SQLAlchemy](https://www.sqlalchemy.org/) and built with R conventions in mind, `oRm` makes it easy to define table models, insert and query records, and establish relationships between models — all without writing raw SQL.
+Under the hood, oRm uses a combination of `DBI`, `dbplyr`, and `R6` to provide compatibility with most database dialects. 
+
 
 ---
 
@@ -17,8 +18,11 @@ remotes::install_github("kent-orr/oRm")
 
 ## 🚀 Quickstart
 
-1. Set up a database `Engine`  
+If you're new to `R6`, the object-oriented programming aspects of this package (like `Engine`s and `TableModel`s) might feel unfamiliar. However, you can think of them as enhanced lists with built-in functions. when we load the `oRm` package we have some of these "enhanced lists" available to us as `Engine`, `TableModel`, and `Record`, to name a few. To make a new instance of an R6 class we use the method `$new()` function to make our own custom instance. 
 
+The general workflow is to create an `Engine` that handles connections to the database itself. A `TableModel` is a the table definitions set out by Columns and ForeignKeys. The links between TableModels are defined by `Relationship`s. Each row of a TableModel is a `Record`
+
+### 1. Set up a database `Engine`  
 
 ```{r}
 library(oRm)
@@ -33,7 +37,7 @@ engine <- Engine$new(
 
 We used the `persist` = TRUE argument here because by default `Engine` handles opening and closing connections (or pools) for you per transaction. Normally that's handy and saves you repetitive typing, but with an SQLite table in memory we want to be sure to persist the connection so we don't dump the table between calls. 
 
-2. Define Models and Create Tables
+### 2. Define Models and Create Tables
 
 If you've used SQLAlchemy before this should look pretty familiar. We're going to give the table name, then list the columns. A difference here is that we will not use ForeignKey inside a column, but as a special kind of column.
 
@@ -57,7 +61,7 @@ User$create_table()
 
 ```
 
-3. Define Relationships (bi-directional optional)
+### 3. Define Relationships (bi-directional optional)
 
 ```{r}
 User |>
@@ -71,7 +75,7 @@ User |>
   )
 ```
 
-4. Insert Records
+### 4. Insert Records
 
 ```{r}
 Organization$record(id = 1L, name = "Widgets, Inc")$create()
@@ -81,7 +85,7 @@ User$record(id = 2L, organization_id = 1L, name = "Dylan", age = 25)$create()
 
 ```
 
-5. Query Records and Relationships  
+### 5. Query Records and Relationships  
 
 ```{r}
 kent <- User$read(id == 1, mode = "get")
@@ -93,12 +97,12 @@ org$data$name
 #> [1] "Widgets, Inc"
 
 # Or access via shortcut if backref defined
-org$relationship('users)
+org$relationship('users')
 #> list of User records
 
 ```
 
-6. Create, Read, Update, Delete Records
+### 6. Create, Read, Update, Delete Records
 
 ```{r}
 # create

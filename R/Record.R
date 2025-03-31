@@ -39,7 +39,7 @@ Record <- R6::R6Class(
         stop("Record must be initialized with a TableModel.")
       }
 
-      args = c(list(...), .data)
+      args = utils::modifyList(.data, rlang::list2(...))
 
       unknown_cols <- setdiff(names(args), names(model$fields))
       if (length(unknown_cols) > 0) {

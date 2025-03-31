@@ -25,15 +25,12 @@ Engine <- R6::R6Class(
     #' @param persist whether to keep the connection open after operations (default: FALSE)
     #' 
     initialize = function(..., conn_args = list(), use_pool = FALSE, persist = FALSE) {
-      dots <- list(...)
-      if (length(dots) > 0) {
-        self$conn_args <- dots
-      } else {
-        self$conn_args <- conn_args
-      }
+      # Combine dots and conn_args, with dots taking precedence
+      self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
       self$use_pool <- use_pool
       self$persist <- persist
     },
+
 
     #' Get a connection to the database
     #'
