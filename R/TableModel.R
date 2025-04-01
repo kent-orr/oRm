@@ -1,5 +1,50 @@
- 
- TableModel <- R6::R6Class(
+#' TableModel Class
+#'
+#' @description
+#' The TableModel class represents a database table in the oRm framework. It manages
+#' table structure, fields, relationships, and provides methods for interacting
+#' with the database table.
+#'
+#' @details
+#' TableModel is a core component of the oRm framework, responsible for:
+#' \itemize{
+#'   \item Defining table structure with columns and relationships
+#'   \item Creating and managing database tables
+#'   \item Providing an interface for CRUD operations on table records
+#'   \item Managing relationships between different tables
+#' }
+#'
+#' Key features:
+#' \itemize{
+#'   \item Dynamic table creation and management
+#'   \item Support for various column types and constraints
+#'   \item Relationship definitions and querying
+#'   \item Record creation and retrieval
+#' }
+#'
+#' @section Methods:
+#' \describe{
+#'   \item{\code{initialize(tablename, engine, ..., .data = list())}}{Constructor for creating a new TableModel instance.}
+#'   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
+#'   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
+#'   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
+#'   \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
+#'   \item{\code{read(..., mode = c("all", "one_or_none", "get"), limit = NULL)}}{Read records from the table using dynamic filters.}
+#'   \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
+#'   \item{\code{print()}}{Print a formatted overview of the model, including its fields.}
+#' }
+#'
+#' @seealso \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
+#'
+#' @importFrom crayon silver
+#' @importFrom R6 R6Class
+#' @importFrom dplyr tbl filter slice_head slice_tail collect
+#' @importFrom rlang enquos
+#' @importFrom DBI dbQuoteIdentifier dbQuoteLiteral dbExecute
+#'
+#' @export
+#' 
+TableModel <- R6::R6Class(
   "TableModel",
   public = list(
     tablename = NULL,
@@ -228,14 +273,14 @@
     print = function(...) {
       cat("<", class(self)[1], ">\n", sep = "")
       cat("  Table: ", self$tablename, "\n", sep = "")
-
+      
       if (length(self$fields) == 0) {
         cat("  Fields: (none defined)\n")
         return(invisible(self))
       }
-
+      
       cat("  Fields:\n")
-
+      
       field_df <- data.frame(
         name = names(self$fields),
         type = vapply(self$fields, function(x) x$type, character(1)),
@@ -245,17 +290,17 @@
         key = vapply(self$fields, function(x) isTRUE(x$primary_key), logical(1)),
         stringsAsFactors = FALSE
       )
-
+      
       field_df <- field_df[order(-field_df$key), ]
       n_display <- min(10, nrow(field_df))
       field_df <- field_df[seq_len(n_display), ]
-
+      
       col_widths <- list(
         name = max(10, max(nchar(field_df$name))),
         type = max(8, max(nchar(field_df$type))),
         null = 9
       )
-
+      
       color_type <- function(x) {
         switch(tolower(x),
         "integer"   = green(x),
@@ -268,7 +313,7 @@
         "timestamp" = magenta(x),
         silver(x))
       }
-
+      
       for (i in seq_len(nrow(field_df))) {
         row <- field_df[i, ]
         key_icon <- if (row$key) "🔑" else "  "
@@ -276,17 +321,17 @@
         type_raw <- format(row$type, width = col_widths$type)
         type_str <- color_type(type_raw)
         null_str <- if (is.na(row$nullable)) "UNSPECIFIED" else if (row$nullable) "NULL" else "NOT NULL"
-
+        
         cat(sprintf("  %s %s  %s  %s\n", key_icon, name_str, type_str, null_str))
       }
-
+      
       if (length(self$fields) > n_display) {
         cat(silver(sprintf("  ... %d more columns not shown\n",
         length(self$fields) - n_display)))
       }
-
+      
       invisible(self)
     }
-
+    
   )
 )

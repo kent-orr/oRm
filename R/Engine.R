@@ -17,11 +17,13 @@ NULL
 #'   \item Supports persistent connections for improved performance
 #' }
 #'
-#' @importFrom pool pool poolClose
+#' @importFrom pool dbPool poolClose
 #' @importFrom DBI dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery dbExecute
 #' @importFrom utils modifyList
 #' @importFrom rlang list2
 #'
+#' @export
+#' 
 Engine <- R6::R6Class(
   "Engine",
   public = list(

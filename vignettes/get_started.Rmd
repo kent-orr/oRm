@@ -29,7 +29,9 @@ We’ll walk through each concept, starting with the `Engine`.
 
 ```{r}
 library(oRm)
+```
 
+```{r}
 engine <- Engine$new(
   drv = RSQLite::SQLite(),
   dbname = ":memory:",
@@ -51,4 +53,133 @@ engine$list_tables()
 engine$execute("SELECT * FROM users")
 ```
 
-By default, connections are closed automatically after each operation—unless persist = TRUE or use_pool = TRUE.
+By default, connections are closed automatically after each operation unless persist = TRUE or use_pool = TRUE.
+
+## Define a TableModel
+
+TableModels can be created in two ways. The first is by calling the `TableModel` constructor directly:
+
+```{r}
+Users <- TableModel$new(
+  "users", 
+  engine, 
+  id = Column("INTEGER", primary_key = TRUE),
+  organization_id = ForeignKey("INTEGER", references = 'organizations.id'),
+  name = Column("TEXT"),
+  age = Column('INTEGER', default = 18)
+)
+```
+
+Or, more commonly, you define a model through the engine itself:
+
+```{r}
+Organization <- engine$model(
+  "organizations",
+  id = Column("INTEGER", primary_key = TRUE),
+  name = Column("TEXT")
+)
+```
+
+This second approach automatically registers the model with the engine for use in relationships and queries.
+
+## What TableModels Do
+
+A `TableModel` instance gives you access to common operations on your table: 
+
+### Create the table in your database
+
+```{r}
+Users$create_table()
+Users$record(id = 1, name='John')$create()
+Users$record(id = 2, name='Jane', age = 35)$create()
+```
+
+This creates the table based on your column definitions if it doesn’t already exist.
+
+### Read rows from the table
+
+```{r}
+all_users <- Users$read()
+young_users <- Users$read(age < 30)
+```
+
+The `read()` method accepts `dbplyr`-style filter conditions through `...`, allowing flexible querying using R expressions. It returns a list of `Record` objects, or a single record if `mode = "get"` is specified.
+
+```{r}
+specific_user <- Users$read(id == 1, mode = "get")
+```
+
+## What Records Do
+
+Each row in a table is represented by a `Record`. Records provide methods for creating, updating, deleting, and accessing individual rows.
+
+### Create a new record
+
+```{r}
+Users$record(id = 3, organization_id = 1, name = "Alice")$create()
+```
+
+### Update a record
+
+```{r}
+alice <- Users$read(id == 3, mode = "get")
+alice$data$name <- "Alicia"
+alice$update()
+```
+
+### Delete a record
+
+```{r}
+alice$delete()
+```
+
+### Access record data
+
+```{r}
+print(alice$data$name)
+```
+
+## Defining and Using Relationships
+
+You can define relationships between tables to enable seamless navigation between related records.
+
+### Define a relationship
+
+```{r}
+Users |> define_relationship(
+  local_key = "organization_id",
+  type = "many_to_one",
+  related_model = Organization,
+  related_key = "id",
+  ref = "organization",
+  backref = "users"
+)
+```
+
+This allows records in `Users` to access their related `Organization`, and records in `Organization` to access all related `Users`.
+
+### Accessing relationships through a Record
+
+We defined the Organization earlier, but the table itself was nevver created. Let's create our table and give it an Organization to work with. 
+
+```{r}
+Organization$create_table()
+Organization$record(id = 1, name = "Widgets, Inc")$create()
+```
+
+```{r}
+
+Users$record(id = 3, name = 'Alice', organization_id = 1)$create()
+alice = Users$read(id == 3)[[1]]
+alice_org <- alice$relationship('organization')
+print(alice_org$data$name)
+```
+
+### Accessing relationships through a TableModel
+
+```{r}
+young_orgs <- Organization$relationship("users", age < 30)
+young_orgs
+```
+
+This returns a list of user records with `age < 30` that belong to each organization.
