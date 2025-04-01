@@ -1,5 +1,5 @@
  
-TableModel <- R6::R6Class(
+ TableModel <- R6::R6Class(
   "TableModel",
   public = list(
     tablename = NULL,
@@ -44,19 +44,23 @@ TableModel <- R6::R6Class(
         col <- self$fields[[name]]
         parts <- c(DBI::dbQuoteIdentifier(con, name), col$type)
         
-        if (!isTRUE(col$nullable)) {
-          parts <- c(parts, "NOT NULL")
+        if (!is.null(col$nullable)) {
+          if (!col$nullable) {
+            parts <- c(parts, "NOT NULL")
+          } else {
+            parts <- c(parts, "NULL")
+          }
         }
         
         if (!is.null(col$default)) {
           parts <- c(parts, "DEFAULT", DBI::dbQuoteLiteral(con, col$default))
         }
         
-        if (isTRUE(col$unique)) {
+        if (!is.null(col$unique) && col$unique) {
           parts <- c(parts, "UNIQUE")
         }
         
-        if (isTRUE(col$primary_key)) {
+        if (!is.null(col$primary_key) && col$primary_key) {
           parts <- c(parts, "PRIMARY KEY")
         }
         
@@ -198,10 +202,10 @@ TableModel <- R6::R6Class(
       # mode == "all"
       lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
     },
-
+    
     relationship = function(rel_name, ...) {
       if (!rel_name %in% names(self$relationships)) stop("Invalid relationship name: ", rel_name)
-            
+      
       rel <- self$relationships[[rel_name]]
       if (!inherits(rel, "Relationship")) stop("Invalid relationship: ", rel_name)
       
@@ -214,9 +218,9 @@ TableModel <- R6::R6Class(
         "many_to_one" = "one_or_none",
         stop("Unknown relationship type: ", rel$type)
       )
-
+      
       rel$related_model$read(..., mode=mode)
-
+      
     },
     
     #' @description
@@ -224,32 +228,34 @@ TableModel <- R6::R6Class(
     print = function(...) {
       cat("<", class(self)[1], ">\n", sep = "")
       cat("  Table: ", self$tablename, "\n", sep = "")
-      
+
       if (length(self$fields) == 0) {
         cat("  Fields: (none defined)\n")
         return(invisible(self))
       }
-      
+
       cat("  Fields:\n")
-      
+
       field_df <- data.frame(
         name = names(self$fields),
         type = vapply(self$fields, function(x) x$type, character(1)),
-        nullable = vapply(self$fields, function(x) x$nullable, logical(1)),
+        nullable = vapply(self$fields, function(x) {
+          if (is.null(x$nullable)) NA else x$nullable
+        }, logical(1)),
         key = vapply(self$fields, function(x) isTRUE(x$primary_key), logical(1)),
         stringsAsFactors = FALSE
       )
-      
+
       field_df <- field_df[order(-field_df$key), ]
       n_display <- min(10, nrow(field_df))
       field_df <- field_df[seq_len(n_display), ]
-      
+
       col_widths <- list(
         name = max(10, max(nchar(field_df$name))),
         type = max(8, max(nchar(field_df$type))),
         null = 9
       )
-      
+
       color_type <- function(x) {
         switch(tolower(x),
         "integer"   = green(x),
@@ -262,24 +268,25 @@ TableModel <- R6::R6Class(
         "timestamp" = magenta(x),
         silver(x))
       }
-      
+
       for (i in seq_len(nrow(field_df))) {
         row <- field_df[i, ]
         key_icon <- if (row$key) "🔑" else "  "
         name_str <- format(row$name, width = col_widths$name)
         type_raw <- format(row$type, width = col_widths$type)
         type_str <- color_type(type_raw)
-        null_str <- if (row$nullable) "NULL" else "NOT NULL"
-        
+        null_str <- if (is.na(row$nullable)) "UNSPECIFIED" else if (row$nullable) "NULL" else "NOT NULL"
+
         cat(sprintf("  %s %s  %s  %s\n", key_icon, name_str, type_str, null_str))
       }
-      
+
       if (length(self$fields) > n_display) {
         cat(silver(sprintf("  ... %d more columns not shown\n",
         length(self$fields) - n_display)))
       }
-      
+
       invisible(self)
     }
+
   )
 )
