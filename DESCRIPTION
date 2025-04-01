@@ -19,6 +19,8 @@ Imports:
     pool,
     R6
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
@@ -29,3 +31,4 @@ Collate:
     'Record.R'
     'Relationship.R'
 URL: https://kent-orr.github.io/oRm/
+VignetteBuilder: knitr

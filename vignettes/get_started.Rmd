@@ -1,0 +1,54 @@
+---
+title: "Get Started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+oRm is an object-relational mapping (ORM) framework designed to feel native to R users while abstracting away boilerplate SQL. Its core building blocks follow a simple chain of responsibility:
+
+- `Engine`: Manages the database connection and model registry.
+- `TableModel`: Represents a database table with column definitions and relationships.
+- `Record`: Represents a row in a table. Supports CRUD operations.
+- `Relationship`: Defines how models are linked, supporting joins and nested querying.
+
+We’ll walk through each concept, starting with the `Engine`.
+
+---
+
+## Set up the Engine
+
+```{r}
+library(oRm)
+
+engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE  # Optional for in-memory databases
+)
+```
+
+### What the Engine Does
+
+- Creates and manages the DBI connection.  
+- Registers models so you can reference them by name or relationship.  
+- Optionally uses pool for connection pooling (set use_pool = TRUE).  
+
+You’ll rarely need to interact with the connection directly, but you can:
+
+```{r, eval=FALSE}
+engine$get_connection()
+engine$list_tables()
+engine$execute("SELECT * FROM users")
+```
+
+By default, connections are closed automatically after each operation—unless persist = TRUE or use_pool = TRUE.

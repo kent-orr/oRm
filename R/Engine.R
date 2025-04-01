@@ -4,11 +4,24 @@ NULL
 #' Engine Class
 #'
 #' @description
-#' The Engine class manages database connections and provides methods for
-#' interacting with the database.
-#' 
+#' The Engine class is a core component of the oRm framework, responsible for managing
+#' database connections and providing methods for interacting with the database.
+#' It supports both direct connections and connection pooling, offering flexibility
+#' in how database resources are managed.
+#'
+#' Key features:
+#' \itemize{
+#'   \item Manages database connections (single or pooled)
+#'   \item Provides methods for executing SQL queries and commands
+#'   \item Allows creation of TableModel objects for ORM operations
+#'   \item Supports persistent connections for improved performance
+#' }
+#'
 #' @importFrom pool pool poolClose
-#' 
+#' @importFrom DBI dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery dbExecute
+#' @importFrom utils modifyList
+#' @importFrom rlang list2
+#'
 Engine <- R6::R6Class(
   "Engine",
   public = list(
