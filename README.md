@@ -92,13 +92,3 @@ u$delete()
 ---
 
 Early-stage project. Feedback welcome!
-
-# oRm: An Object-Relational Mapping (ORM) Framework for R
-
-oRm is a lightweight ORM for R. Define models, insert data, and query relationships without writing raw SQL.
-
-## Installation
-
-```{r}
-remotes::install_github("kent-orr/oRm")
-```

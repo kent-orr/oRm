@@ -1,4 +1,15 @@
 url: https://kent-orr.github.io/oRm/
 template:
-  bootstrap: 5
+  # bootstrap: 5
+  # light-switch: true
+  bslib:
+    version: 5
+    bg: "#ffffff"       # Background: white for light mode
+    fg: "#393E41"       # Foreground text color (Charcoal Gray)
+    primary: "#32B0CD"  # Primary accent color (Sky Blue)
+
+    # Optional: extend styling
+    navbar-bg: "#32B0CD"
+    navbar-fg: "#ffffff"
+    navbar-hover-color: "#F8E16C"
 
