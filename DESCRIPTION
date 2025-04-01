@@ -1,11 +1,14 @@
 Package: oRm
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Lightweight Object-Relational Mapper for R
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: Kent Orr
+Maintainer: Kent Orr <orr.kent@pawpawanalytics.com>
+Description: oRm is a lightweight, pipe-friendly Object-Relational Mapper (ORM) for R. 
+    It simplifies database interactions by allowing users to define table models, 
+    insert and query records, and establish relationships between models without 
+    writing raw SQL. oRm uses a combination of DBI, dbplyr, and R6 to provide 
+    compatibility with most database dialects.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -24,3 +27,5 @@ Collate:
     'TableModel.R'
     'Engine.R'
     'Record.R'
+    'Relationship.R'
+URL: https://kent-orr.github.io/oRm/
