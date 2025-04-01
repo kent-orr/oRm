@@ -19,7 +19,7 @@
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Lightweight Object-Relational Mapper for R">
 <meta name="description" content="oRm is a lightweight, pipe-friendly Object-Relational Mapper (ORM) for R. It simplifies database interactions by allowing users to define table models, insert and query records, and establish relationships between models without writing raw SQL. oRm uses a combination of DBI, dbplyr, and R6 to provide compatibility with most database dialects.">
 <meta property="og:description" content="oRm is a lightweight, pipe-friendly Object-Relational Mapper (ORM) for R. It simplifies database interactions by allowing users to define table models, insert and query records, and establish relationships between models without writing raw SQL. oRm uses a combination of DBI, dbplyr, and R6 to provide compatibility with most database dialects.">
-<meta property="og:image" content="/logo.svg">
+<meta property="og:image" content="https://kent-orr.github.io/oRm/logo.svg">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -56,12 +56,8 @@
 <img src="logo.svg" class="logo" alt=""><h1 id="orm-an-object-relational-mapping-orm-framework-for-r">oRm: An Object-Relational Mapping (ORM) Framework for R<a class="anchor" aria-label="anchor" href="#orm-an-object-relational-mapping-orm-framework-for-r"></a>
 </h1>
 </div>
-<div class="section level2">
-<h2 id="orm">oRm<a class="anchor" aria-label="anchor" href="#orm"></a>
-</h2>
 <p><strong>oRm</strong> is a lightweight ORM for R. Define models, insert data, and query relationships without writing raw SQL.</p>
 <hr>
-</div>
 <div class="section level2">
 <h2 id="id_-installation">🔧 Installation<a class="anchor" aria-label="anchor" href="#id_-installation"></a>
 </h2>
@@ -75,7 +71,7 @@
 <h3 id="id_1-create-engine">1. Create Engine<a class="anchor" aria-label="anchor" href="#id_1-create-engine"></a>
 </h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kent-orr.github.io/oRm/" class="external-link">oRm</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kent-orr.github.io/oRm/">oRm</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">engine</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
 <span>  drv <span class="op">=</span> <span class="fu">RSQLite</span><span class="fu">::</span><span class="fu">SQLite</span><span class="op">(</span><span class="op">)</span>,</span>
