@@ -1,7 +1,5 @@
 # oRm: An Object-Relational Mapping (ORM) Framework for R
 
-## oRm
-
 **oRm** is a lightweight ORM for R. Define models, insert data, and query relationships without writing raw SQL.
 
 ---
