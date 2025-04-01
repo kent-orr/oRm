@@ -36,3 +36,13 @@ Define a basic column for a database table
 When `primary_key`, `nullable`, or `unique` are set to NULL, the behavior is left to the database system's defaults
 or determined by higher-level functions. This allows for flexible column definitions and supports composite primary keys.
 }
+\examples{
+# Define a simple integer column
+id_col <- Column("INTEGER", primary_key = TRUE, nullable = FALSE)
+
+# Define a text column with a default value
+name_col <- Column("TEXT", default = "Unnamed", nullable = FALSE)
+
+# Define a unique email column
+email_col <- Column("TEXT", unique = TRUE, nullable = FALSE)
+}

@@ -1,3 +1,15 @@
+#' Relationship Class
+#'
+#' @description
+#' The Relationship class represents a relationship between two models in the ORM system.
+#'
+#' @field local_model The model that owns the relationship.
+#' @field local_key The key in the local model that relates to the foreign key in the related model.
+#' @field related_model The model that is being related to.
+#' @field related_key The key in the related model that the local_key relates to.
+#' @field type The type of relationship (one_to_one, one_to_many, many_to_many, or many_to_one).
+#'
+#' @export
 Relationship = R6::R6Class(
   'Relationship',
   public = list(
@@ -7,12 +19,19 @@ Relationship = R6::R6Class(
     related_key = NULL,
     type = NULL,
 
-    initialize = function(
-      local_model, 
-      local_key,
-      type = c('one_to_one', 'one_to_many', 'many_to_many', 'many_to_one'),
-      related_model,
-      related_key
+  #' @description
+  #' Create a new Relationship object.
+  #' @param local_model The model that owns the relationship.
+  #' @param local_key The key in the local model that relates to the foreign key in the related model.
+  #' @param type The type of relationship.
+  #' @param related_model The model that is being related to.
+  #' @param related_key The key in the related model that the local_key relates to.
+  initialize = function(
+    local_model, 
+    local_key,
+    type = c('one_to_one', 'one_to_many', 'many_to_many', 'many_to_one'),
+    related_model,
+    related_key
   ) {
       self$local_model <- local_model
       self$local_key <- local_key
@@ -21,6 +40,8 @@ Relationship = R6::R6Class(
       self$related_key <- related_key
     },
 
+    #' @description
+    #' Print a human-readable representation of the relationship.
     print = function() {
       lhs = strsplit(self$type, '_to_')[[1]][1]
       rhs = strsplit(self$type, '_to_')[[1]][2]

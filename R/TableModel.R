@@ -153,8 +153,6 @@ TableModel <- R6::R6Class(
     
     #' @description
     #' Create the associated table in the database.
-    #' @description
-    #' Create the associated table in the database.
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
@@ -248,6 +246,11 @@ TableModel <- R6::R6Class(
       lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
     },
     
+    #' @description
+    #' Query related records based on defined relationships.
+    #' @param rel_name The name of the relationship to query.
+    #' @param ... Additional arguments passed to the related model's read method.
+    #' @return A list of related records or a single record, depending on the relationship type.
     relationship = function(rel_name, ...) {
       if (!rel_name %in% names(self$relationships)) stop("Invalid relationship name: ", rel_name)
       

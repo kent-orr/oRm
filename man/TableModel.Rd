@@ -105,9 +105,6 @@ including constraints and SQL clause generation.
 \if{latex}{\out{\hypertarget{method-TableModel-create_table}{}}}
 \subsection{Method \code{create_table()}}{
 Create the associated table in the database.
-
-
-Create the associated table in the database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$create_table(
   if_not_exists = TRUE,
@@ -173,10 +170,23 @@ Positive values return the first N records, negative values return the last N re
 \if{html}{\out{<a id="method-TableModel-relationship"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-relationship}{}}}
 \subsection{Method \code{relationship()}}{
+Query related records based on defined relationships.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$relationship(rel_name, ...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{rel_name}}{The name of the relationship to query.}
+
+\item{\code{...}}{Additional arguments passed to the related model's read method.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list of related records or a single record, depending on the relationship type.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-print"></a>}}

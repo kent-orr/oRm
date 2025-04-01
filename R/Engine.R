@@ -32,19 +32,19 @@ Engine <- R6::R6Class(
     use_pool = FALSE,
     persist = FALSE,
 
+    #' @description
     #' Create an Engine object
-    #'
-    #' @param ... args to be passed to DBI::dbConnect
-    #' @param conn_args args to be passed to DBI::dbConnect
-    #' @param use_pool whether or not to make use of the pool package for connections to this engine
-    #' @param persist whether to keep the connection open after operations (default: FALSE)
-    #' 
+    #' @param ... Additional arguments to be passed to DBI::dbConnect
+    #' @param conn_args A list of arguments to be passed to DBI::dbConnect
+    #' @param use_pool Logical. Whether or not to make use of the pool package for connections to this engine
+    #' @param persist Logical. Whether to keep the connection open after operations (default: FALSE)
     initialize = function(..., conn_args = list(), use_pool = FALSE, persist = FALSE) {
       # Combine dots and conn_args, with dots taking precedence
       self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
       self$use_pool <- use_pool
       self$persist <- persist
     },
+
 
 
     #' Get a connection to the database
@@ -61,7 +61,9 @@ Engine <- R6::R6Class(
       self$conn
     },
 
+    #' @description
     #' Close the database connection or pool
+    #' @return NULL
     close = function() {
       if (!is.null(self$conn)) {
         if (self$use_pool) {
@@ -73,11 +75,14 @@ Engine <- R6::R6Class(
       }
     },
 
-    #' list tables in the database connection
+    #' @description
+    #' List tables in the database connection
+    #' @return A character vector of table names
     list_tables = function() {
       on.exit(if (!self$use_pool && !self$persist) self$close())
       DBI::dbListTables(self$get_connection())
     },
+
 
     #' Execute a SQL query and return the result as a data.frame
     #'
@@ -95,14 +100,16 @@ Engine <- R6::R6Class(
     },
 
 
+    #' @description
     #' Create a new TableModel object for the specified table
-    #'
     #' @param tablename Name of the table
     #' @param ... Additional arguments passed to the TableModel constructor
-    #' @param .data a named list of the arguments for the TableModel constructor
+    #' @param .data A named list of the arguments for the TableModel constructor
+    #' @return A new TableModel object
     model = function(tablename, ..., .data=list()) {
       TableModel$new(tablename = tablename, engine = self, ..., .data=.data)
     }
+
   )
 )
 

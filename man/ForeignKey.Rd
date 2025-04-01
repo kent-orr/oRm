@@ -23,3 +23,15 @@ A ForeignKey object
 \description{
 Define a foreign key column
 }
+\details{
+This function creates a ForeignKey object, which is a special type of Column.
+It inherits all properties of a Column and adds foreign key specific attributes.
+}
+\examples{
+# Define a foreign key referencing the 'id' column in the 'users' table
+user_id_fk <- ForeignKey("INTEGER", references = "users.id", on_delete = "CASCADE")
+
+# Define a nullable foreign key with custom update behavior
+category_id_fk <- ForeignKey("INTEGER", references = "categories.id", 
+                             nullable = TRUE, on_update = "SET NULL")
+}
