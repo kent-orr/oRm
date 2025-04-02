@@ -97,7 +97,7 @@ TableModel <- R6::R6Class(
           }
         }
         
-        if (!is.null(col$default)) {
+        if (!is.null(col$default) && !is.function(col$default)) {
           parts <- c(parts, "DEFAULT", DBI::dbQuoteLiteral(con, col$default))
         }
         
