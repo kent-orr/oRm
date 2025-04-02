@@ -1,7 +1,7 @@
 #' Define a basic column for a database table
 #'
 #' @param type SQL data type (e.g. "INTEGER", "TEXT", "DATE")
-#' @param default Optional default value (no SQL default if NULL)
+#' @param default Optional default value. No SQL default if NULL, def set by string, if given a function that fun will be called by the Record on generation
 #' @param primary_key Logical, whether this is part of the primary key. NULL (default) means unspecified.
 #' @param nullable Logical, whether NULLs are allowed. NULL (default) means unspecified.
 #' @param unique Logical, whether the column has a UNIQUE constraint. NULL (default) means unspecified.
@@ -41,18 +41,21 @@ Column <- function(type, default = NULL, primary_key = NULL,
 
 #' Define a foreign key column
 #'
+#' @inheritParams Column
 #' @param type SQL data type (e.g. "INTEGER")
 #' @param references Character. The referenced table and column (e.g. "users.id")
 #' @param on_delete Optional ON DELETE behavior (e.g. "CASCADE")
 #' @param on_update Optional ON UPDATE behavior
-#' @param ... Passed to base Column (including nullable, primary_key, etc.)
 #'
 #' @details
 #' This function creates a ForeignKey object, which is a special type of Column.
 #' It inherits all properties of a Column and adds foreign key specific attributes.
+#' See \code{\link{Column}} for details on additional parameters that can be passed via \code{...}.
 #'
 #' @return A ForeignKey object
 #' @export
+#'
+#' @seealso \code{\link{Column}}
 #'
 #' @examples
 #' # Define a foreign key referencing the 'id' column in the 'users' table
@@ -61,6 +64,7 @@ Column <- function(type, default = NULL, primary_key = NULL,
 #' # Define a nullable foreign key with custom update behavior
 #' category_id_fk <- ForeignKey("INTEGER", references = "categories.id", 
 #'                              nullable = TRUE, on_update = "SET NULL")
+
 ForeignKey <- function(type, references,
                        on_delete = NULL, on_update = NULL, ...) {
   col <- Column(type, ...)
