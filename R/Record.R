@@ -55,15 +55,19 @@ Record <- R6::R6Class(
       
       self$model <- model
       self$relationships = model$relationships
-      for (field in model$fields) {
-        if (isTRUE(field['default']))
-          if (is.function(field['default'])) {
-            self$data[names(field)] <- field['default']()
+      field_names <- names(model$fields)
+      for (i in seq_along(model$fields)) {
+        field <- model$fields[[i]]
+        field_name <- field_names[i]
+        if (!is.null(field[['default']])) {
+          if (is.function(field[['default']])) {
+            self$data[[field_name]] <- field[['default']]()
           } else {
-            self$data[names(field)] <- field['default']
+            self$data[[field_name]] <- field[['default']]
           }
+        }
       }
-      self$data <- args
+      self$data <- utils::modifyList(self$data, args)
     },
     
     
@@ -180,7 +184,7 @@ Record <- R6::R6Class(
       DBI::dbExecute(con, sql)
       NULL
     },
-
+    
     #' @description
     #' Refresh this record from the database.
     #' @return The Record instance (invisibly).
@@ -189,22 +193,22 @@ Record <- R6::R6Class(
       key_fields <- names(self$model$fields)[
         vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
       ]
-
+      
       if (length(key_fields) == 0) {
         stop("No primary key fields defined in model.")
       }
-
+      
       # Create key_args as a list of expressions
       key_args <- lapply(key_fields, function(field) {
         rlang::expr(!!rlang::sym(field) == !!self$data[[field]])
       })
-
+      
       # Use do.call to construct the read call with multiple arguments
       refreshed_record <- do.call(
         self$model$read,
         c(key_args, list(mode = 'get'))
       )
-
+      
       if (is.null(refreshed_record)) {
         stop("Record not found in database.")
       }
@@ -212,7 +216,7 @@ Record <- R6::R6Class(
       self$relationships <- refreshed_record$relationships
       invisible(self)
     },
-
+    
     
     #' @description
     #' Retrieve related records based on a defined relationship.
