@@ -31,7 +31,8 @@ Engine <- R6::R6Class(
     conn = NULL,
     use_pool = FALSE,
     persist = FALSE,
-
+    dialect = NULL,
+    
     #' @description
     #' Create an Engine object
     #' @param ... Additional arguments to be passed to DBI::dbConnect
@@ -41,12 +42,13 @@ Engine <- R6::R6Class(
     initialize = function(..., conn_args = list(), use_pool = FALSE, persist = FALSE) {
       # Combine dots and conn_args, with dots taking precedence
       self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
+      private$detect_dialect()
       self$use_pool <- use_pool
       self$persist <- persist
     },
-
-
-
+    
+    
+    
     #' Get a connection to the database
     #'
     #' @return A DBIConnection object or a pool object
@@ -60,7 +62,7 @@ Engine <- R6::R6Class(
       }
       self$conn
     },
-
+    
     #' @description
     #' Close the database connection or pool
     #' @return NULL
@@ -74,7 +76,7 @@ Engine <- R6::R6Class(
         self$conn <- NULL
       }
     },
-
+    
     #' @description
     #' List tables in the database connection
     #' @return A character vector of table names
@@ -82,8 +84,8 @@ Engine <- R6::R6Class(
       on.exit(if (!self$use_pool && !self$persist) self$close())
       DBI::dbListTables(self$get_connection())
     },
-
-
+    
+    
     #' Execute a SQL query and return the result as a data.frame
     #'
     #' @param sql SQL query
@@ -92,14 +94,14 @@ Engine <- R6::R6Class(
       on.exit(if (!self$use_pool && !self$persist) self$close())
       DBI::dbGetQuery(self$get_connection(), sql)
     },
-
+    
     #' Execute a SQL query and return the number of rows affected
     execute = function(sql) {
       on.exit(if (!self$use_pool && !self$persist) self$close())
       DBI::dbExecute(self$get_connection(), sql)
     },
-
-
+    
+    
     #' @description
     #' Create a new TableModel object for the specified table
     #' @param tablename Name of the table
@@ -109,7 +111,26 @@ Engine <- R6::R6Class(
     model = function(tablename, ..., .data=list()) {
       TableModel$new(tablename = tablename, engine = self, ..., .data=.data)
     }
-
+    
+  ),
+  private = list(
+    detect_dialect = function() {
+      drv_name <- class(self$conn_args[['drv']])[1]
+      if (grepl("Postgres", drv_name, ignore.case = TRUE)) {
+        self$dialect <- "postgres"
+        self$supports_returning <- TRUE
+      } else if (grepl("MariaDB|MySQL", drv_name, ignore.case = TRUE)) {
+        self$dialect <- "mysql"
+        self$supports_returning <- FALSE
+        self$last_insert_sql <- "SELECT LAST_INSERT_ID();"
+      } else if (grepl("SQLite", drv_name, ignore.case = TRUE)) {
+        self$dialect <- "sqlite"
+        self$supports_returning <- FALSE
+        self$last_insert_sql <- "SELECT last_insert_rowid();"
+      } else {
+        self$dialect <- "default"
+      }
+    }
   )
 )
 
