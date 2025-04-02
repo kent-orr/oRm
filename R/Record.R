@@ -57,7 +57,11 @@ Record <- R6::R6Class(
       self$relationships = model$relationships
       for (field in model$fields) {
         if (isTRUE(field['default']))
-        self$data[names(field)] <- field['default']
+          if (is.function(field['default'])) {
+            self$data[names(field)] <- field['default']()
+          } else {
+            self$data[names(field)] <- field['default']
+          }
       }
       self$data <- args
     },
