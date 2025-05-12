@@ -1,4 +1,5 @@
 #' @include TableModel.R
+#' @include Dialect.R
 NULL
 
 #' Engine Class
@@ -32,6 +33,8 @@ Engine <- R6::R6Class(
     use_pool = FALSE,
     persist = FALSE,
     dialect = NULL,
+
+    
     
     #' @description
     #' Create an Engine object
@@ -81,7 +84,7 @@ Engine <- R6::R6Class(
     #' List tables in the database connection
     #' @return A character vector of table names
     list_tables = function() {
-      on.exit(if (!self$use_pool && !self$persist) self$close())
+      on.exit(if (private$exit_check()) self$close())
       DBI::dbListTables(self$get_connection())
     },
     
@@ -91,13 +94,13 @@ Engine <- R6::R6Class(
     #' @param sql SQL query
     #' @return A data.frame
     get_query = function(sql) {
-      on.exit(if (!self$use_pool && !self$persist) self$close())
+      on.exit(if (private$exit_check()) self$close())
       DBI::dbGetQuery(self$get_connection(), sql)
     },
     
     #' Execute a SQL query and return the number of rows affected
     execute = function(sql) {
-      on.exit(if (!self$use_pool && !self$persist) self$close())
+      on.exit(if (private$exit_check()) self$close())
       DBI::dbExecute(self$get_connection(), sql)
     },
     
@@ -110,23 +113,32 @@ Engine <- R6::R6Class(
     #' @return A new TableModel object
     model = function(tablename, ..., .data=list()) {
       TableModel$new(tablename = tablename, engine = self, ..., .data=.data)
+    },
+
+    set_transaction_state = function(state) {
+      private$in_transaction <- state
+    },
+
+    get_transaction_state = function() {
+      private$in_transaction
     }
     
   ),
   private = list(
+    in_transaction = FALSE,
+
+    exit_check = function() {
+      !private$in_transaction && !self$persist && !self$use_pool
+    },
+
     detect_dialect = function() {
       drv_name <- class(self$conn_args[['drv']])[1]
       if (grepl("Postgres", drv_name, ignore.case = TRUE)) {
         self$dialect <- "postgres"
-        self$supports_returning <- TRUE
       } else if (grepl("MariaDB|MySQL", drv_name, ignore.case = TRUE)) {
         self$dialect <- "mysql"
-        self$supports_returning <- FALSE
-        self$last_insert_sql <- "SELECT LAST_INSERT_ID();"
       } else if (grepl("SQLite", drv_name, ignore.case = TRUE)) {
         self$dialect <- "sqlite"
-        self$supports_returning <- FALSE
-        self$last_insert_sql <- "SELECT last_insert_rowid();"
       } else {
         self$dialect <- "default"
       }
@@ -134,3 +146,31 @@ Engine <- R6::R6Class(
   )
 )
 
+#' Transaction Function
+#'
+#' @description
+#' This function allows you to execute a block of code within a transaction. If the code fails, the transaction will roll back 
+#' @export
+with.Engine <- function(engine, expr) {
+  con <- engine$get_connection()
+  engine$set_transaction_state(TRUE)
+  DBI::dbBegin(con)
+
+  on.exit({
+    engine$set_transaction_state(FALSE)
+  })
+
+  result <- tryCatch(
+    {
+      x = eval(substitute(expr), envir = list2env(list(con = con), parent.frame()))
+      DBI::dbCommit(con)
+      x
+    },
+    error = function(e) {
+      DBI::dbRollback(con)
+      stop("Transaction failed: ", e$message, call. = FALSE)
+    }
+  )
+
+  invisible(result)
+}

@@ -27,6 +27,7 @@ Key features:
 \item \href{#method-Engine-get_query}{\code{Engine$get_query()}}
 \item \href{#method-Engine-execute}{\code{Engine$execute()}}
 \item \href{#method-Engine-model}{\code{Engine$model()}}
+\item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-clone}{\code{Engine$clone()}}
 }
 }
@@ -145,6 +146,15 @@ Create a new TableModel object for the specified table
 \subsection{Returns}{
 A new TableModel object
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-set_transaction_state"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-set_transaction_state}{}}}
+\subsection{Method \code{set_transaction_state()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$set_transaction_state(state)}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-clone"></a>}}
