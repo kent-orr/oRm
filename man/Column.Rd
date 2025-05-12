@@ -16,7 +16,7 @@ Column(
 \arguments{
 \item{type}{SQL data type (e.g. "INTEGER", "TEXT", "DATE")}
 
-\item{default}{Optional default value (no SQL default if NULL)}
+\item{default}{Optional default value. No SQL default if NULL, def set by string, if given a function that fun will be called by the Record on generation}
 
 \item{primary_key}{Logical, whether this is part of the primary key. NULL (default) means unspecified.}
 
