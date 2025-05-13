@@ -23,8 +23,8 @@
 #'
 #' # Define a unique email column
 #' email_col <- Column("TEXT", unique = TRUE, nullable = FALSE)
-Column <- function(type, default = NULL, primary_key = NULL, 
-                   nullable = NULL, unique = NULL, ...) {
+Column <- function(type, ..., default = NULL, primary_key = NULL,
+                   nullable = NULL, unique = NULL) {
   structure(
     list(
       type = type,
@@ -62,7 +62,7 @@ Column <- function(type, default = NULL, primary_key = NULL,
 #' user_id_fk <- ForeignKey("INTEGER", references = "users.id", on_delete = "CASCADE")
 #'
 #' # Define a nullable foreign key with custom update behavior
-#' category_id_fk <- ForeignKey("INTEGER", references = "categories.id", 
+#' category_id_fk <- ForeignKey("INTEGER", references = "categories.id",
 #'                              nullable = TRUE, on_update = "SET NULL")
 
 ForeignKey <- function(type, references,
