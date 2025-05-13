@@ -43,7 +43,7 @@
 #' @importFrom DBI dbQuoteIdentifier dbQuoteLiteral dbExecute
 #'
 #' @export
-#' 
+#'
 TableModel <- R6::R6Class(
   "TableModel",
   public = list(
@@ -51,7 +51,7 @@ TableModel <- R6::R6Class(
     engine = NULL,
     fields = list(),
     relationships = list(),
-    
+
     #' @description
     #' Constructor for a new TableModel.
     #' @param tablename The name of the database table.
@@ -62,21 +62,21 @@ TableModel <- R6::R6Class(
       if (missing(tablename) || missing(engine)) {
         stop("Both 'tablename' and 'engine' must be provided to TableModel.")
       }
-      
+
       self$tablename <- tablename
       self$engine <- engine
-      
+
       dots <- utils::modifyList(.data, rlang::list2(...))
       col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
       self$fields <- col_defs
     },
-    
+
     #' @description
     #' Retrieve the active database connection from the engine.
     get_connection = function(...) {
       self$engine$get_connection(...)
     },
-    
+
     #' @description
     #' Generate DBI-compatible field definitions from Column and ForeignKey objects,
     #' including constraints and SQL clause generation.
@@ -84,11 +84,11 @@ TableModel <- R6::R6Class(
       out <- list()
       constraints <- list()
       con <- self$get_connection()
-      
+
       for (name in names(self$fields)) {
         col <- self$fields[[name]]
         parts <- c(DBI::dbQuoteIdentifier(con, name), col$type)
-        
+
         if (!is.null(col$nullable)) {
           if (!col$nullable) {
             parts <- c(parts, "NOT NULL")
@@ -96,26 +96,32 @@ TableModel <- R6::R6Class(
             parts <- c(parts, "NULL")
           }
         }
-        
+
         if (!is.null(col$default) && !is.function(col$default)) {
           parts <- c(parts, "DEFAULT", DBI::dbQuoteLiteral(con, col$default))
         }
-        
+
         if (!is.null(col$unique) && col$unique) {
           parts <- c(parts, "UNIQUE")
         }
-        
+
         if (!is.null(col$primary_key) && col$primary_key) {
           parts <- c(parts, "PRIMARY KEY")
         }
-        
+
         if (!is.null(col$extras) && length(col$extras) > 0) {
-          parts <- c(parts, unlist(col$extras))
+          for (extra in col$extras) {
+            if (is.character(extra)) {
+              parts <- c(parts, extra)
+            } else if (is.list(extra)) {
+              warning(names(extra), 'is not a recognized column argument. Try a string.')
+            }
+          }
         }
-        
+
         field_sql <- paste(parts, collapse = " ")
         out[[name]] <- field_sql
-        
+
         # If it's a ForeignKey column, add explicit FOREIGN KEY clause
         if (inherits(col, "ForeignKey")) {
           ref_parts <- strsplit(col$references, "\\.")[[1]]
@@ -127,39 +133,39 @@ TableModel <- R6::R6Class(
             DBI::dbQuoteIdentifier(con, ref_parts[1]), " (",
             DBI::dbQuoteIdentifier(con, ref_parts[2]), ")"
           )
-          
+
           if (!is.null(col$on_delete)) {
             fk_clause <- paste(fk_clause, "ON DELETE", toupper(col$on_delete))
           }
-          
+
           if (!is.null(col$on_update)) {
             fk_clause <- paste(fk_clause, "ON UPDATE", toupper(col$on_update))
           }
-          
+
           constraints[[length(constraints) + 1]] <- fk_clause
         }
       }
-      
+
       # Append constraints as additional definitions
       if (length(constraints)) {
         for (i in seq_along(constraints)) {
           out[[paste0("__constraint", i)]] <- constraints[[i]]
         }
       }
-      
+
       out
     },
-    
-    
+
+
     #' @description
     #' Create the associated table in the database.
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
-    #' 
+    #'
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
       con <- self$get_connection()
-      
+
       if (overwrite) {
         drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(con, self$tablename))
         if (verbose) {
@@ -170,31 +176,67 @@ TableModel <- R6::R6Class(
       }
       fields_sql <- self$generate_sql_fields()
       field_defs <- paste(unname(fields_sql), collapse = ",\n  ")
-      
+
       create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
       sql <- paste0(
-        create_clause, " ", 
-        DBI::dbQuoteIdentifier(con, self$tablename), 
+        create_clause, " ",
+        DBI::dbQuoteIdentifier(con, self$tablename),
         " (\n  ", field_defs, "\n)"
       )
-      
+
       if (verbose) {
         return(sql)
       }
-      
+
       DBI::dbExecute(con, sql)
       return(self)
     },
-    
+
+    #' @description
+    #' Drop the associated table from the database. Prompts for confirmation
+    #' by default if running interactively.
+    #'
+    #' @param ask Logical. If TRUE (default in interactive sessions), prompts
+    #' the user for confirmation before dropping the table.
+    #'
+    #' @return Invisibly returns the result of `DBI::dbExecute()` if the table is dropped,
+    #' or `NULL` if the operation is canceled or skipped.
+    #'
+    #' @examples
+    #' \dontrun{
+    #' # Drop the "users" table after confirmation
+    #' User$drop_table()
+    #'
+    #' # Force drop without confirmation
+    #' User$drop_table(ask = FALSE)
+    #' }
+    drop_table = function(ask = interactive()) {
+      con <- self$get_connection()
+      drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(con, self$tablename))
+
+      resp <- 'n'
+      if (ask) {
+        resp <- readline(paste0("Are you sure you want to drop ", self$tablename, "? [y/N] "))
+      }
+
+      if (grepl('y', resp, ignore.case = TRUE)) {
+        DBI::dbExecute(con, drop_sql)
+      } else {
+        message("Table not dropped.")
+        return(invisible(NULL))
+      }
+    },
+
+
     #' @description
     #' Create a new Record object with this model.
     #' @param ... Named values to initialize the record's data.
     #' @param .data a named list of field values.
-    #' 
+    #'
     record = function(..., .data = list()) {
       Record$new(self, ..., .data = .data)
     },
-    
+
     #' @description
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
@@ -205,12 +247,12 @@ TableModel <- R6::R6Class(
       mode <- match.arg(mode)
       con <- self$get_connection()
       tbl_ref <- dplyr::tbl(con, self$tablename)
-      
+
       filters <- rlang::enquos(...)
       if (length(filters) > 0) {
         tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
       }
-      
+
       if (!is.null(limit) && is.numeric(limit) && limit != 0) {
         if (limit > 0) {
           tbl_ref <- dplyr::slice_head(tbl_ref, n = limit)
@@ -219,7 +261,7 @@ TableModel <- R6::R6Class(
         }
       }
       rows <- dplyr::collect(tbl_ref)
-      
+
       if (nrow(rows) == 0) {
         if (mode == "get") {
           stop("Expected exactly one row, got: 0")
@@ -230,22 +272,22 @@ TableModel <- R6::R6Class(
       create_record <- function(row_data) {
         Record$new(model = self, .data = as.list(row_data))
       }
-      
+
       if (mode == "get") {
         if (nrow(rows) != 1) stop("Expected exactly one row, got: ", nrow(rows))
         return(create_record(rows[1, , drop = TRUE]))
       }
-      
+
       if (mode == "one_or_none") {
         if (nrow(rows) > 1) stop("Expected zero or one row, got multiple")
         if (nrow(rows) == 1) return(create_record(rows[1, , drop = TRUE]))
         return(NULL)
       }
-      
+
       # mode == "all"
       lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
     },
-    
+
     #' @description
     #' Query related records based on defined relationships.
     #' @param rel_name The name of the relationship to query.
@@ -253,10 +295,10 @@ TableModel <- R6::R6Class(
     #' @return A list of related records or a single record, depending on the relationship type.
     relationship = function(rel_name, ...) {
       if (!rel_name %in% names(self$relationships)) stop("Invalid relationship name: ", rel_name)
-      
+
       rel <- self$relationships[[rel_name]]
       if (!inherits(rel, "Relationship")) stop("Invalid relationship: ", rel_name)
-      
+
       mode <- switch(rel$type,
         "belongs_to" = "one_or_none",
         "owns" = "one_or_none",
@@ -266,24 +308,24 @@ TableModel <- R6::R6Class(
         "many_to_one" = "one_or_none",
         stop("Unknown relationship type: ", rel$type)
       )
-      
+
       rel$related_model$read(..., mode=mode)
-      
+
     },
-    
+
     #' @description
     #' Print a formatted overview of the model, including its fields.
     print = function(...) {
       cat("<", class(self)[1], ">\n", sep = "")
       cat("  Table: ", self$tablename, "\n", sep = "")
-      
+
       if (length(self$fields) == 0) {
         cat("  Fields: (none defined)\n")
         return(invisible(self))
       }
-      
+
       cat("  Fields:\n")
-      
+
       field_df <- data.frame(
         name = names(self$fields),
         type = vapply(self$fields, function(x) x$type, character(1)),
@@ -293,17 +335,17 @@ TableModel <- R6::R6Class(
         key = vapply(self$fields, function(x) isTRUE(x$primary_key), logical(1)),
         stringsAsFactors = FALSE
       )
-      
+
       field_df <- field_df[order(-field_df$key), ]
       n_display <- min(10, nrow(field_df))
       field_df <- field_df[seq_len(n_display), ]
-      
+
       col_widths <- list(
         name = max(10, max(nchar(field_df$name))),
         type = max(8, max(nchar(field_df$type))),
         null = 9
       )
-      
+
       color_type <- function(x) {
         switch(tolower(x),
         "integer"   = green(x),
@@ -316,7 +358,7 @@ TableModel <- R6::R6Class(
         "timestamp" = magenta(x),
         silver(x))
       }
-      
+
       for (i in seq_len(nrow(field_df))) {
         row <- field_df[i, ]
         key_icon <- if (row$key) "🔑" else "  "
@@ -324,17 +366,17 @@ TableModel <- R6::R6Class(
         type_raw <- format(row$type, width = col_widths$type)
         type_str <- color_type(type_raw)
         null_str <- if (is.na(row$nullable)) "UNSPECIFIED" else if (row$nullable) "NULL" else "NOT NULL"
-        
+
         cat(sprintf("  %s %s  %s  %s\n", key_icon, name_str, type_str, null_str))
       }
-      
+
       if (length(self$fields) > n_display) {
         cat(silver(sprintf("  ... %d more columns not shown\n",
         length(self$fields) - n_display)))
       }
-      
+
       invisible(self)
     }
-    
+
   )
 )
