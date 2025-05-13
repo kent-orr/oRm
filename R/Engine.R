@@ -24,7 +24,7 @@ NULL
 #' @importFrom rlang list2
 #'
 #' @export
-#' 
+#'
 Engine <- R6::R6Class(
   "Engine",
   public = list(
@@ -34,8 +34,8 @@ Engine <- R6::R6Class(
     persist = FALSE,
     dialect = NULL,
 
-    
-    
+
+
     #' @description
     #' Create an Engine object
     #' @param ... Additional arguments to be passed to DBI::dbConnect
@@ -49,9 +49,9 @@ Engine <- R6::R6Class(
       self$use_pool <- use_pool
       self$persist <- persist
     },
-    
-    
-    
+
+
+
     #' Get a connection to the database
     #'
     #' @return A DBIConnection object or a pool object
@@ -65,7 +65,7 @@ Engine <- R6::R6Class(
       }
       self$conn
     },
-    
+
     #' @description
     #' Close the database connection or pool
     #' @return NULL
@@ -79,7 +79,7 @@ Engine <- R6::R6Class(
         self$conn <- NULL
       }
     },
-    
+
     #' @description
     #' List tables in the database connection
     #' @return A character vector of table names
@@ -87,8 +87,8 @@ Engine <- R6::R6Class(
       on.exit(if (private$exit_check()) self$close())
       DBI::dbListTables(self$get_connection())
     },
-    
-    
+
+
     #' Execute a SQL query and return the result as a data.frame
     #'
     #' @param sql SQL query
@@ -97,14 +97,14 @@ Engine <- R6::R6Class(
       on.exit(if (private$exit_check()) self$close())
       DBI::dbGetQuery(self$get_connection(), sql)
     },
-    
+
     #' Execute a SQL query and return the number of rows affected
     execute = function(sql) {
       on.exit(if (private$exit_check()) self$close())
       DBI::dbExecute(self$get_connection(), sql)
     },
-    
-    
+
+
     #' @description
     #' Create a new TableModel object for the specified table
     #' @param tablename Name of the table
@@ -122,7 +122,7 @@ Engine <- R6::R6Class(
     get_transaction_state = function() {
       private$in_transaction
     }
-    
+
   ),
   private = list(
     in_transaction = FALSE,
@@ -133,12 +133,12 @@ Engine <- R6::R6Class(
 
     detect_dialect = function() {
       drv_name <- class(self$conn_args[['drv']])[1]
-      if (grepl("Postgres", drv_name, ignore.case = TRUE)) {
-        self$dialect <- "postgres"
+      if (grepl("Postgres|PqDriver", drv_name, ignore.case = TRUE)) {
+        self$dialect <- strcture("postgres", class="postgres")
       } else if (grepl("MariaDB|MySQL", drv_name, ignore.case = TRUE)) {
-        self$dialect <- "mysql"
+        self$dialect <- structure("mysql", class="mysql")
       } else if (grepl("SQLite", drv_name, ignore.case = TRUE)) {
-        self$dialect <- "sqlite"
+        self$dialect <- structure("sqlite", class="sqlite")
       } else {
         self$dialect <- "default"
       }
@@ -149,7 +149,7 @@ Engine <- R6::R6Class(
 #' Transaction Function
 #'
 #' @description
-#' This function allows you to execute a block of code within a transaction. If the code fails, the transaction will roll back 
+#' This function allows you to execute a block of code within a transaction. If the code fails, the transaction will roll back
 #' @export
 with.Engine <- function(engine, expr) {
   con <- engine$get_connection()
