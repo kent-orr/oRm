@@ -134,11 +134,11 @@ Engine <- R6::R6Class(
     detect_dialect = function() {
       drv_name <- class(self$conn_args[['drv']])[1]
       if (grepl("Postgres|PqDriver", drv_name, ignore.case = TRUE)) {
-        self$dialect <- strcture("postgres", class="postgres")
+        self$dialect <- "postgres"
       } else if (grepl("MariaDB|MySQL", drv_name, ignore.case = TRUE)) {
-        self$dialect <- structure("mysql", class="mysql")
+        self$dialect <- "mysql"
       } else if (grepl("SQLite", drv_name, ignore.case = TRUE)) {
-        self$dialect <- structure("sqlite", class="sqlite")
+        self$dialect <- "sqlite"
       } else {
         self$dialect <- "default"
       }
