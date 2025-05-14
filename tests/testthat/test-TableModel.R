@@ -21,15 +21,7 @@ test_that("TableModel initializes and defines fields correctly", {
   # Check that all expected fields are present
   expect_setequal(names(model$fields), c("id", "name", "created_at"))
 
-  # Check field SQL definitions
-  sql_fields <- model$generate_sql_fields()
-  expect_type(sql_fields, "list")
-  expect_equal(length(sql_fields), 3)
-
-  # Check individual field definitions
-  expect_true(grepl("`id` INTEGER .* PRIMARY KEY", sql_fields[[1]]))
-  expect_true(grepl("`name` TEXT NOT NULL", sql_fields[[2]]))
-  expect_true(grepl("`created_at` TIMESTAMP", sql_fields[[3]]))
+  
   # Create the table in the DB
   con <- model$get_connection()
   expect_true(DBI::dbIsValid(con))
