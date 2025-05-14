@@ -61,7 +61,6 @@ User$drop_table(ask = FALSE)
 \itemize{
 \item \href{#method-TableModel-new}{\code{TableModel$new()}}
 \item \href{#method-TableModel-get_connection}{\code{TableModel$get_connection()}}
-\item \href{#method-TableModel-generate_sql_fields}{\code{TableModel$generate_sql_fields()}}
 \item \href{#method-TableModel-create_table}{\code{TableModel$create_table()}}
 \item \href{#method-TableModel-drop_table}{\code{TableModel$drop_table()}}
 \item \href{#method-TableModel-record}{\code{TableModel$record()}}
@@ -101,17 +100,6 @@ Constructor for a new TableModel.
 Retrieve the active database connection from the engine.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$get_connection(...)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-TableModel-generate_sql_fields"></a>}}
-\if{latex}{\out{\hypertarget{method-TableModel-generate_sql_fields}{}}}
-\subsection{Method \code{generate_sql_fields()}}{
-Generate DBI-compatible field definitions from Column and ForeignKey objects,
-including constraints and SQL clause generation.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$generate_sql_fields()}\if{html}{\out{</div>}}
 }
 
 }

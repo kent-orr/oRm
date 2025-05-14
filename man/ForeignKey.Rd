@@ -33,7 +33,7 @@ See \code{\link{Column}} for details on additional parameters that can be passed
 user_id_fk <- ForeignKey("INTEGER", references = "users.id", on_delete = "CASCADE")
 
 # Define a nullable foreign key with custom update behavior
-category_id_fk <- ForeignKey("INTEGER", references = "categories.id", 
+category_id_fk <- ForeignKey("INTEGER", references = "categories.id",
                              nullable = TRUE, on_update = "SET NULL")
 }
 \seealso{

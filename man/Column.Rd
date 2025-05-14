@@ -6,15 +6,17 @@
 \usage{
 Column(
   type,
+  ...,
   default = NULL,
   primary_key = NULL,
   nullable = NULL,
-  unique = NULL,
-  ...
+  unique = NULL
 )
 }
 \arguments{
 \item{type}{SQL data type (e.g. "INTEGER", "TEXT", "DATE")}
+
+\item{...}{Reserved for extras like CHECK, COLLATE, etc.}
 
 \item{default}{Optional default value. No SQL default if NULL, def set by string, if given a function that fun will be called by the Record on generation}
 
@@ -23,8 +25,6 @@ Column(
 \item{nullable}{Logical, whether NULLs are allowed. NULL (default) means unspecified.}
 
 \item{unique}{Logical, whether the column has a UNIQUE constraint. NULL (default) means unspecified.}
-
-\item{...}{Reserved for extras like CHECK, COLLATE, etc.}
 }
 \value{
 A Column object
