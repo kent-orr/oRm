@@ -68,8 +68,10 @@ TableModel <- R6::R6Class(
 
       dots <- utils::modifyList(.data, rlang::list2(...))
       col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
-      for (column in col_defs) {
-        class(column) <- append(class(column), engine$dialect)
+      col_names <- names(dots[vapply(dots, inherits, logical(1), "Column")])
+      for (i in seq_along(col_defs)) {
+        col_defs[[i]][['name']] <- col_names[i]
+        class(col_defs[[i]]) <- append(class(col_defs[[i]]), engine$dialect)
       }
       self$fields <- col_defs
     },
