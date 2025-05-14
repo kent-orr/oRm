@@ -1,3 +1,6 @@
+#' include Dialect.R
+NULL
+
 #' TableModel Class
 #'
 #' @description
@@ -82,85 +85,6 @@ TableModel <- R6::R6Class(
       self$engine$get_connection(...)
     },
 
-    #' @description
-    #' Generate DBI-compatible field definitions from Column and ForeignKey objects,
-    #' including constraints and SQL clause generation.
-    generate_sql_fields = function() {
-      out <- list()
-      constraints <- list()
-      con <- self$get_connection()
-
-      for (name in names(self$fields)) {
-        col <- self$fields[[name]]
-        parts <- c(DBI::dbQuoteIdentifier(con, name), col$type)
-
-        if (!is.null(col$nullable)) {
-          if (!col$nullable) {
-            parts <- c(parts, "NOT NULL")
-          } else {
-            parts <- c(parts, "NULL")
-          }
-        }
-
-        if (!is.null(col$default) && !is.function(col$default)) {
-          parts <- c(parts, "DEFAULT", DBI::dbQuoteLiteral(con, col$default))
-        }
-
-        if (!is.null(col$unique) && col$unique) {
-          parts <- c(parts, "UNIQUE")
-        }
-
-        if (!is.null(col$primary_key) && col$primary_key) {
-          parts <- c(parts, "PRIMARY KEY")
-        }
-
-        if (!is.null(col$extras) && length(col$extras) > 0) {
-          for (extra in col$extras) {
-            if (is.character(extra)) {
-              parts <- c(parts, extra)
-            } else if (is.list(extra)) {
-              warning(names(extra), 'is not a recognized column argument. Try a string.')
-            }
-          }
-        }
-
-        field_sql <- paste(parts, collapse = " ")
-        out[[name]] <- field_sql
-
-        # If it's a ForeignKey column, add explicit FOREIGN KEY clause
-        if (inherits(col, "ForeignKey")) {
-          ref_parts <- strsplit(col$references, "\\.")[[1]]
-          if (length(ref_parts) != 2) {
-            stop("Invalid foreign key reference format. Expected 'table.column', got: ", col$references)
-          }
-          fk_clause <- paste0(
-            "FOREIGN KEY (", DBI::dbQuoteIdentifier(con, name), ") REFERENCES ",
-            DBI::dbQuoteIdentifier(con, ref_parts[1]), " (",
-            DBI::dbQuoteIdentifier(con, ref_parts[2]), ")"
-          )
-
-          if (!is.null(col$on_delete)) {
-            fk_clause <- paste(fk_clause, "ON DELETE", toupper(col$on_delete))
-          }
-
-          if (!is.null(col$on_update)) {
-            fk_clause <- paste(fk_clause, "ON UPDATE", toupper(col$on_update))
-          }
-
-          constraints[[length(constraints) + 1]] <- fk_clause
-        }
-      }
-
-      # Append constraints as additional definitions
-      if (length(constraints)) {
-        for (i in seq_along(constraints)) {
-          out[[paste0("__constraint", i)]] <- constraints[[i]]
-        }
-      }
-
-      out
-    },
-
 
     #' @description
     #' Create the associated table in the database.
@@ -169,31 +93,43 @@ TableModel <- R6::R6Class(
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
     #'
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
-      con <- self$get_connection()
+      conn <- self$get_connection()
 
       if (overwrite) {
-        drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(con, self$tablename))
+        drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(conn, self$tablename))
         if (verbose) {
           cat(drop_sql, "\n")
         } else {
-          DBI::dbExecute(con, drop_sql)
+          DBI::dbExecute(conn, drop_sql)
         }
       }
-      fields_sql <- self$generate_sql_fields()
-      field_defs <- paste(unname(fields_sql), collapse = ",\n  ")
+      fields_sql = c()
+      constraints_sql = c()
+      for (i in seq_along(self$fields)) {
+        field_name = names(self$fields)[i]
+        field = self$fields[[i]]
+        fields_sql = c(fields_sql, render_field(field, conn))
+        constraints_sql = c(constraints_sql, render_constraint(field, conn))
+      }
 
       create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
       sql <- paste0(
         create_clause, " ",
-        DBI::dbQuoteIdentifier(con, self$tablename),
-        " (\n  ", field_defs, "\n)"
+        DBI::dbQuoteIdentifier(conn, self$tablename),
+        " (\n  ", paste(fields_sql, collapse = ',\n'), 
+        if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
+          paste0(",\n  ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n  "))
+        } else {
+          ""
+        },
+        "\n);\n"
       )
 
       if (verbose) {
         return(sql)
       }
 
-      DBI::dbExecute(con, sql)
+      DBI::dbExecute(conn, sql)
       return(self)
     },
 
@@ -359,10 +295,13 @@ TableModel <- R6::R6Class(
         "real"      = yellow(x),
         "text"      = blue(x),
         "varchar"   = blue(x),
-        "date"      = magenta(x),
+        "date"      = magenta:70
+        (x),
         "timestamp" = magenta(x),
         silver(x))
       }
+
+      browser()
 
       for (i in seq_len(nrow(field_df))) {
         row <- field_df[i, ]
@@ -370,7 +309,7 @@ TableModel <- R6::R6Class(
         name_str <- format(row$name, width = col_widths$name)
         type_raw <- format(row$type, width = col_widths$type)
         type_str <- color_type(type_raw)
-        null_str <- if (is.na(row$nullable)) "UNSPECIFIED" else if (row$nullable) "NULL" else "NOT NULL"
+        null_str <- if (is.na(row$nullable)) "" else if (row$nullable) "NULL" else "NOT NULL"
 
         cat(sprintf("  %s %s  %s  %s\n", key_icon, name_str, type_str, null_str))
       }
