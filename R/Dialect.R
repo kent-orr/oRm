@@ -11,11 +11,15 @@ NULL
 #' @param ... Ignored
 #' @return A character SQL fragment
 #' @export
-render_field <- function(field, field_name, conn, ...) {
-  UseMethod("render_field")
+render_field <- function(field, conn, ...) {
+  UseMethod("render_field", field)
 }
 
-render_field.default <- function(field, field_name, conn, ...) {
+#' Write the sql for creating a sql column
+#'
+#' @inheritParams render_field
+#' @export
+render_field.default <- function(field, conn, ...) {
   parts = c(field$type)
 
   if (!is.null(field$nullable))
@@ -34,14 +38,19 @@ render_field.default <- function(field, field_name, conn, ...) {
     parts <- c(parts, unlist(field$extras))
 
   parts_string = paste(parts, collapse = ' ')
-  paste(DBI::dbQuoteIdentifier(conn, field_name), parts_string)
+  paste(DBI::dbQuoteIdentifier(conn, field$name), parts_string)
 }
 
+#' Write teh sql for a foreign key column
+#' @inheritParams render_field
+#' @export
 render_constraint <- function(field, ...) {
-  UseMethod("render_field", field_name, conn, ...)
+  UseMethod("render_constraint", field)
 }
 
-render_constraint.default <- function(field, field_name, conn, ...) {
+#' @inheritParams render_field
+#' @export
+render_constraint.default <- function(field, conn, ...) {
   fk_parts = c()
   if (inherits(field, 'ForeignKey')) {
     reference_parts = strsplit(field$references, '\\.')[[1]]
@@ -50,7 +59,7 @@ render_constraint.default <- function(field, field_name, conn, ...) {
         length(reference_parts) == 2
     )
     fk_parts = c(fk_parts, paste0(
-      "FOREIGN KEY (", DBI::dbQuoteIdentifier(conn, field_name), ") REFERENCES ",
+      "FOREIGN KEY (", DBI::dbQuoteIdentifier(conn, field$name), ") REFERENCES ",
       DBI::dbQuoteIdentifier(conn, reference_parts[1]), " (",
       DBI::dbQuoteIdentifier(conn, reference_parts[2]), ")"
     ))
