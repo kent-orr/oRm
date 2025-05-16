@@ -301,8 +301,6 @@ TableModel <- R6::R6Class(
         silver(x))
       }
 
-      browser()
-
       for (i in seq_len(nrow(field_df))) {
         row <- field_df[i, ]
         key_icon <- if (row$key) "🔑" else "  "
