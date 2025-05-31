@@ -36,8 +36,8 @@ add_extras <- function(parts, fields) {
 render_field.default <- function(field, conn, ...) {
     parts = c(field$type)
     
-    parts |>
-        add_part(field$nullable, "NULL", "NOT NULL") |>
+    parts = parts |>
+        add_part(field$nullable, NULL, "NOT NULL") |>
         add_part(field$unique, "UNIQUE") |>
         add_part(field$primary_key, "PRIMARY KEY") |>
         add_extras(field$extras)

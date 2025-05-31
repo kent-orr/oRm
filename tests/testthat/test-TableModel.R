@@ -27,6 +27,7 @@ test_that("TableModel initializes and defines fields correctly", {
   expect_true(DBI::dbIsValid(con))
 
   DBI::dbExecute(con, "DROP TABLE IF EXISTS test_TableModel")
+  model$create_table(verbose = TRUE)
   model$create_table()
   expect_true("test_TableModel" %in% DBI::dbListTables(con))
 

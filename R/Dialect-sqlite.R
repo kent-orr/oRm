@@ -1,3 +1,7 @@
+#' include Dialect.R
+NULL
+
+
 flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
   tbl_expr <- dbplyr::ident_q(table)
   fields <- names(data)

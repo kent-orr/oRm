@@ -149,28 +149,93 @@ Engine <- R6::R6Class(
 #' Transaction Function
 #'
 #' @description
-#' This function allows you to execute a block of code within a transaction. If the code fails, the transaction will roll back
+#' This function allows you to execute a block of code within a transaction.
+#' If auto_commit is TRUE (default), the transaction will be committed automatically upon successful execution.
+#' If auto_commit is FALSE, you must explicitly commit or rollback within the transaction block.
+#'
+#' @param engine An Engine object that manages the database connection
+#' @param expr An expression to be evaluated within the transaction
+#' @param auto_commit Logical. Whether to automatically commit if no errors occur (default: TRUE)
+#'
+#' @return The result of evaluating the expression
+#'
+#' @examples
+#' \dontrun{
+#' # With auto-commit (default)
+#' with.Engine(engine, {
+#'   User$record(name = "Alice")$create()
+#'   User$record(name = "Bob")$create()
+#' })
+#'
+#' # With manual commit
+#' with.Engine(engine, {
+#'   User$record(name = "Alice")$create()
+#'   User$record(name = "Bob")$create()
+#'   
+#'   # Explicitly commit the transaction
+#'   commit()
+#' }, auto_commit = FALSE)
+#' }
+#'
 #' @export
-with.Engine <- function(engine, expr) {
-  con <- engine$get_connection()
+with.Engine <- function(engine, expr, auto_commit = TRUE) {
+  # Open a connection
   engine$set_transaction_state(TRUE)
-  DBI::dbBegin(con)
-
-  on.exit({
-    engine$set_transaction_state(FALSE)
+  conn <- engine$get_connection()
+  
+  # Begin transaction
+  DBI::dbBegin(conn)
+  
+  # Create a transaction environment with commit/rollback functions
+  tx_env <- new.env(parent = parent.frame())
+  tx_env$committed <- FALSE
+  tx_env$rolled_back <- FALSE
+  
+  # Add transaction functions to the environment
+  tx_env$commit <- function() {
+      DBI::dbCommit(conn)
+      tx_env$committed <- TRUE
+      invisible(NULL)
+  }
+  
+  tx_env$rollback <- function() {
+      DBI::dbRollback(conn)
+      tx_env$rolled_back <- TRUE
+      invisible(NULL)
+  }
+  
+  result <- NULL
+  # Execute the expression within the transaction
+  tryCatch({
+      # Evaluate the expression in the transaction environment
+      result <- eval(substitute(expr), tx_env)
+      
+      # Auto-commit if requested and not already committed/rolled back
+      if (auto_commit && !tx_env$committed && !tx_env$rolled_back) {
+          DBI::dbCommit(conn)
+      } else if (!auto_commit && !tx_env$committed && !tx_env$rolled_back) {
+          warning("Transaction was neither committed nor rolled back. Rolling back by default.")
+          DBI::dbRollback(conn)
+      }
+      
+      # Return the result
+      return(result)
+      
+  }, error = function(e) {
+      # Roll back if not already committed/rolled back
+      if (!tx_env$committed && !tx_env$rolled_back) {
+          DBI::dbRollback(conn)
+          warning("Transaction failed, rolling back: ", e$message)
+      }
+      
+      # Re-throw the error
+      stop(e)
+      
+  }, finally = {
+      # Clean up
+      if (!engine$persist) {
+          engine$close()
+      }
+      engine$set_transaction_state(FALSE)
   })
-
-  result <- tryCatch(
-    {
-      x = eval(substitute(expr), envir = list2env(list(con = con), parent.frame()))
-      DBI::dbCommit(con)
-      x
-    },
-    error = function(e) {
-      DBI::dbRollback(con)
-      stop("Transaction failed: ", e$message, call. = FALSE)
-    }
-  )
-
-  invisible(result)
 }
