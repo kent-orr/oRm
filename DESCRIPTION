@@ -26,6 +26,10 @@ Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Collate: 
     'Column.R'
+    'Dialect-mysql.R'
+    'Dialect-postgres.R'
+    'Dialect-sqlite.R'
+    'Dialect.R'
     'TableModel.R'
     'Engine.R'
     'Record.R'

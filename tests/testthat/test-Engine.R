@@ -317,3 +317,93 @@ test_that("Engine can generate a TableModel using model() method", {
   engine$close()
   expect_false(DBI::dbIsValid(con))
 })
+
+
+test_that("with.Engine executes successful transactions", {
+  # Setup
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  
+  model <- engine$model(
+    "test_table",
+    id = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT")
+  )
+  
+  model$create_table()
+  
+  # Test
+  result <- with.Engine(engine, {
+    record <- model$record(id = 1, name = "Alice")$create()
+    record$data
+  })
+  
+  # Assertions
+  expect_type(result, "list")
+  expect_equal(result$id, 1)
+  expect_equal(result$name, "Alice")
+  
+  # Verify the record was actually inserted
+  saved_record <- model$read(id == 1)
+  expect_equal(saved_record[[1]]$data$name, "Alice")
+})
+
+test_that("with.Engine rolls back failed transactions", {
+  # Setup
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  
+  model <- engine$model(
+    "test_table",
+    id = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT", nullable = FALSE)
+  )
+  
+  model$create_table()
+  
+  # Test
+  expect_error(
+    with.Engine(engine, {
+      model$record(id = 1, name = "Alice")$create()
+      model$record(id = 2, name = NULL)$create()  # This should fail
+    }),
+    "Transaction failed:"
+  )
+  
+  # Verify that no records were inserted due to rollback
+  all_records <- model$read()
+  expect_equal(length(all_records), 0)
+})
+
+test_that("with.Engine maintains transaction state correctly", {
+  # Setup
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  
+  # Test
+  tryCatch(
+    with.Engine(engine, {
+      expect_true(engine$get_transaction_state())
+      stop("Forced error")
+    }),
+    error = function(e) {}
+  )
+  
+  expect_false(engine$get_transaction_state())
+  
+  with.Engine(engine, {
+    expect_true(engine$get_transaction_state())
+  })
+  
+  expect_false(engine$get_transaction_state())
+})
+
