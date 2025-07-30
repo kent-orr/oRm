@@ -78,21 +78,24 @@
 
     
     
-<p>You work with tabular data day in and day out. Most of the time,
-you’re filtering, aggregating, and analyzing entire datasets — working
-with a single row just isn’t where R shines. The R ecosystem is built
-for data frames, not records.</p>
-<p>But every once in a while, you need to build a quick data governance
-or lookup tool — something operational, not analytical.</p>
 <p><code>oRm</code> is not designed for analysis. It is made to
-facilitate creation, deletion, and modification of data in a database.
-It doesn’t provide data analysis tools, but it can be quite useful in a
-pinch.</p>
+facilitate creation, deletion, and modification of data in a
+database.</p>
+<p>Most R workflows invlove filtering, aggregating, and analyzing entire
+datasets. Working with a single row just isn’t where R shines. Another
+way to look at it is that the R ecosystem is built for data frames, not
+records.</p>
+<p>But every once in a while you need to build a quick data governance
+or lookup tool that’s operational, not analytical. Or maybe you’re
+validating a series of relational database tables and you are tired of
+writing a left_join, inner_join, etc. when you need to investigate how
+the pieces fit together. In those cases, <code>oRm</code> could be a
+useful tool.</p>
 <p>Let’s use a pretty basic example of where <code>oRm</code> would be
-suitable. Your team is recoridng measurements of pea plant growth. You
-don’t want an excel sheet on a hard drive to be your source fo truth,
-no, you’re thinking a database would be more appropriate. But how to
-ensure that observations are recorded accurately and consistently?</p>
+suitable. Your team is recording measurements of plant growth. You don’t
+want an excel sheet on a hard drive to be your source fo truth, no,
+you’re thinking a database would be more appropriate. But how to ensure
+that observations are recorded accurately and consistently?</p>
 <div class="section level2">
 <h2 id="using-dbplyr-and-dbi-to-manage-your-database">Using <code>dbplyr</code> and <code>DBI</code> to manage your
 database<a class="anchor" aria-label="anchor" href="#using-dbplyr-and-dbi-to-manage-your-database"></a>
@@ -100,20 +103,7 @@ database<a class="anchor" aria-label="anchor" href="#using-dbplyr-and-dbi-to-man
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dbi.r-dbi.org" class="external-link">DBI</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     filter, lag</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dbplyr.tidyverse.org/" class="external-link">dbplyr</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'dbplyr'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:dplyr':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     ident, sql</span></span>
 <span></span>
 <span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RSQLite</span><span class="fu">::</span><span class="fu"><a href="https://rsqlite.r-dbi.org/reference/SQLite.html" class="external-link">SQLite</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">":memory:"</span><span class="op">)</span></span>
 <span></span>
@@ -167,11 +157,11 @@ record in the database?</p>
 <span><span class="co">#&gt;   observer_id plant_id measurement_date measurement_value</span></span>
 <span><span class="co">#&gt; 1           2      102            20300              8.15</span></span></code></pre></div>
 <p>You need to:</p>
-<pre><code>Remember the correct column names
-
-Re-type the WHERE clause conditions
-
-Hope no one accidentally updates multiple rows</code></pre>
+<ul>
+<li>Remember the correct column names</li>
+<li>Re-type the WHERE clause conditions</li>
+<li>Hope no one accidentally updates multiple rows</li>
+</ul>
 <p>There’s no row-level object to work with, you’re always
 re-identifying rows with raw conditions.</p>
 </div>
@@ -180,7 +170,7 @@ re-identifying rows with raw conditions.</p>
 </h2>
 <p>So now let’s use <code>oRm</code> to manage our database. We’re going
 to define our table schema and enter our first observation.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kent-orr.github.io/oRm/">oRm</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">engine</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
@@ -212,29 +202,37 @@ to define our table schema and enter our first observation.</p>
 <span><span class="co"># ===== table setup complete =====</span></span>
 <span></span>
 <span><span class="co"># Add a few observations</span></span>
-<span><span class="va">Measurement</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span></span>
+<span><span class="va">m1</span> <span class="op">=</span> <span class="va">Measurement</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span></span>
 <span>  observer_id <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  plant_id <span class="op">=</span> <span class="fl">101</span>,</span>
 <span>  measurement_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-07-30"</span><span class="op">)</span>,</span>
 <span>  measurement_value <span class="op">=</span> <span class="fl">14.2</span></span>
 <span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">Measurement</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span></span>
+<span><span class="va">m2</span> <span class="op">=</span> <span class="va">Measurement</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span></span>
 <span>  observer_id <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  plant_id <span class="op">=</span> <span class="fl">101</span>,</span>
 <span>  measurement_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-08-15"</span><span class="op">)</span>,</span>
 <span>  measurement_value <span class="op">=</span> <span class="fl">16.0</span></span>
 <span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">Measurement</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span></span>
+<span><span class="va">m3</span> <span class="op">=</span> <span class="va">Measurement</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span></span>
 <span>  observer_id <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  plant_id <span class="op">=</span> <span class="fl">102</span>,</span>
 <span>  measurement_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2025-07-31"</span><span class="op">)</span>,</span>
 <span>  measurement_value <span class="op">=</span> <span class="fl">15.8</span></span>
-<span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">m1</span></span>
+<span><span class="co">#&gt; &lt;Record&gt;: 'measurements'</span></span>
+<span><span class="co">#&gt; id: 1</span></span>
+<span><span class="co">#&gt; observer_id: 1</span></span>
+<span><span class="co">#&gt; plant_id: 101</span></span>
+<span><span class="co">#&gt; measurement_date: 20299</span></span>
+<span><span class="co">#&gt; measurement_value: 14.2</span></span></code></pre></div>
 <p>And oh, yikes. Person 2 put in the measurement wrong. let’s correct
 it.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p2</span> <span class="op">=</span> <span class="va">Measurement</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">observer_id</span> <span class="op">==</span> <span class="fl">2</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">p2</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span>measurement_value <span class="op">=</span> <span class="fl">8.15</span><span class="op">)</span></span>
 <span><span class="va">p2</span></span>
@@ -254,7 +252,7 @@ great for managing a single record, or records in loops. But what about
 lookup table for our plants. If you were looking closely at the
 Measurements table, you might have noticed we designated a foreign key
 to the Plants table. We’ll make use of that relationship now.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Plants</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>    <span class="st">"plants"</span>,</span>
 <span>    id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -275,7 +273,7 @@ to the Plants table. We’ll make use of that relationship now.</p>
 Plants and Measurements. But oRm is not. We’ll now
 <strong>model</strong> a <strong>relationship</strong> between the two
 tables (<strong>objects</strong>) which oRm will use.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/define_relationship.html">define_relationship</a></span><span class="op">(</span></span>
 <span>    local_model <span class="op">=</span> <span class="va">Plants</span>,</span>
 <span>    local_key <span class="op">=</span> <span class="st">"id"</span>,</span>
@@ -292,7 +290,7 @@ tables (<strong>objects</strong>) which oRm will use.</p>
 <span><span class="co">#&gt;      plant_type  <span style="color: #555555;">TEXT    </span></span></span></code></pre></div>
 <p>And after we’ve made that mapping, we can find all the measurements
 for a specific plant.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p101</span> <span class="op">=</span> <span class="va">Plants</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">101</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">p101</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'measurements'</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
@@ -311,7 +309,7 @@ for a specific plant.</p>
 <span><span class="co">#&gt; measurement_date: 20315</span></span>
 <span><span class="co">#&gt; measurement_value: 16</span></span></code></pre></div>
 <p>Or we can look for a specific relationship by filtering</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p101</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'measurements'</span>, <span class="va">measurement_value</span> <span class="op">&lt;</span> <span class="fl">15.0</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'measurements'</span></span>
@@ -320,6 +318,24 @@ for a specific plant.</p>
 <span><span class="co">#&gt; plant_id: 101</span></span>
 <span><span class="co">#&gt; measurement_date: 20299</span></span>
 <span><span class="co">#&gt; measurement_value: 14.2</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
+</h2>
+<p>In this vignette, you’ve seen how oRm can simplify the process of
+inserting, updating, and querying data with structured models instead of
+scattered SQL or repeated joins. You’ve also seen how relationships
+between records can be declared once and reused throughout your code,
+making it easier to write clean, maintainable tools.</p>
+<p>But this is just the beginning.</p>
+<p>You don’t have to create the tables with oRm to use it — you can map
+models onto existing databases, including those already in use at your
+workplace. That means you can layer oRm on top of production databases
+to build admin dashboards, internal Shiny tools, or one-off data fixers
+with confidence.</p>
+<p>And once relationships are defined, you can traverse complex data
+structures just as easily. Users to logs, organizations to memberships,
+or plants to mesaurements.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
