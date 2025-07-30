@@ -153,3 +153,76 @@ test_that("TableModel$read() works with filter expressions and mode", {
 
   engine$close()
 })
+
+test_that("TableModel$read() supports pagination with limit and offset", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+
+  # Create a model for testing pagination
+  Item <- engine$model(
+    "items",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    name = Column("TEXT", nullable = FALSE),
+    position = Column("INTEGER", nullable = FALSE)
+  )
+
+  Item$create_table()
+
+  # Insert 20 items to test pagination
+  for (i in 1:20) {
+    Item$record(id = i, name = paste0("Item ", i), position = i)$create()
+  }
+
+  # Test case 1: Basic pagination - first page (items 1-5)
+  page1 <- Item$read(mode = "all", .limit = 5, .offset = 0)
+  expect_equal(length(page1), 5)
+  expect_equal(page1[[1]]$data$id, 1)
+  expect_equal(page1[[5]]$data$id, 5)
+
+  # Test case 2: Second page (items 6-10)
+  page2 <- Item$read(mode = "all", .limit = 5, .offset = 5)
+  expect_equal(length(page2), 5)
+  expect_equal(page2[[1]]$data$id, 6)
+  expect_equal(page2[[5]]$data$id, 10)
+
+  # Test case 3: Last page with fewer items
+  page4 <- Item$read(mode = "all", .limit = 5, .offset = 15)
+  expect_equal(length(page4), 5)
+  expect_equal(page4[[1]]$data$id, 16)
+  expect_equal(page4[[5]]$data$id, 20)
+
+  # Test case 4: Offset beyond available data
+  empty_page <- Item$read(mode = "all", limit = 5, offset = 20)
+  expect_null(empty_page)
+
+  # Test case 5: Pagination with filtering
+  filtered_page <- Item$read(position > 10, mode = "all", .limit = 5, .offset = 0)
+  expect_equal(length(filtered_page), 5)
+  expect_equal(filtered_page[[1]]$data$id, 11)
+  expect_equal(filtered_page[[5]]$data$id, 15)
+
+  # Test case 6: Pagination with filtering and offset
+  filtered_page2 <- Item$read(position > 10, mode = "all", .limit = 5, .offset = 5)
+  expect_equal(length(filtered_page2), 5)
+  expect_equal(filtered_page2[[1]]$data$id, 16)
+  expect_equal(filtered_page2[[5]]$data$id, 20)
+
+  # Test case 7: Negative limit (last N items)
+  last_items <- Item$read(mode = "all", .limit = -5)
+  expect_equal(length(last_items), 5)
+  expect_equal(last_items[[1]]$data$id, 16)
+  expect_equal(last_items[[5]]$data$id, 20)
+
+  # Test case 8: Combining offset with ordering
+  # Note: We need to explicitly order since SQL doesn't guarantee order without ORDER BY
+  ordered_page <- Item$read(mode = "all", .limit = 5, o/ffset = 5, dplyr::arrange(dplyr::desc(position)))
+  expect_equal(length(ordered_page), 5)
+  expect_equal(ordered_page[[1]]$data$position, 15)
+  expect_equal(ordered_page[[5]]$data$position, 11)
+
+  # Clean up
+  engine$close()
+})
