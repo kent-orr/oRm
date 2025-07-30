@@ -4,15 +4,21 @@
 <url><loc>https://kent-orr.github.io/oRm/LICENSE.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/get_started.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/index.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/articles/with_shiny.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/authors.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/index.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Column.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Engine.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/ForeignKey.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Record.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/Relationship.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/TableModel.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/define_relationship.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/hello.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/index.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/render_constraint.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/render_field.default.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/render_field.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/with.Engine.html</loc></url>
 </urlset>
 

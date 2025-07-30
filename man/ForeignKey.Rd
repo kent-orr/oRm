@@ -15,7 +15,7 @@ ForeignKey(type, references, on_delete = NULL, on_update = NULL, ...)
 
 \item{on_update}{Optional ON UPDATE behavior}
 
-\item{...}{Passed to base Column (including nullable, primary_key, etc.)}
+\item{...}{Reserved for extras like CHECK, COLLATE, etc.}
 }
 \value{
 A ForeignKey object
@@ -26,12 +26,16 @@ Define a foreign key column
 \details{
 This function creates a ForeignKey object, which is a special type of Column.
 It inherits all properties of a Column and adds foreign key specific attributes.
+See \code{\link{Column}} for details on additional parameters that can be passed via \code{...}.
 }
 \examples{
 # Define a foreign key referencing the 'id' column in the 'users' table
 user_id_fk <- ForeignKey("INTEGER", references = "users.id", on_delete = "CASCADE")
 
 # Define a nullable foreign key with custom update behavior
-category_id_fk <- ForeignKey("INTEGER", references = "categories.id", 
+category_id_fk <- ForeignKey("INTEGER", references = "categories.id",
                              nullable = TRUE, on_update = "SET NULL")
+}
+\seealso{
+\code{\link{Column}}
 }

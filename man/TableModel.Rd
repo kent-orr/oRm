@@ -39,6 +39,20 @@ Key features:
 }
 }
 
+\examples{
+
+## ------------------------------------------------
+## Method `TableModel$drop_table`
+## ------------------------------------------------
+
+\dontrun{
+# Drop the "users" table after confirmation
+User$drop_table()
+
+# Force drop without confirmation
+User$drop_table(ask = FALSE)
+}
+}
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
 }
@@ -47,8 +61,8 @@ Key features:
 \itemize{
 \item \href{#method-TableModel-new}{\code{TableModel$new()}}
 \item \href{#method-TableModel-get_connection}{\code{TableModel$get_connection()}}
-\item \href{#method-TableModel-generate_sql_fields}{\code{TableModel$generate_sql_fields()}}
 \item \href{#method-TableModel-create_table}{\code{TableModel$create_table()}}
+\item \href{#method-TableModel-drop_table}{\code{TableModel$drop_table()}}
 \item \href{#method-TableModel-record}{\code{TableModel$record()}}
 \item \href{#method-TableModel-read}{\code{TableModel$read()}}
 \item \href{#method-TableModel-relationship}{\code{TableModel$relationship()}}
@@ -90,17 +104,6 @@ Retrieve the active database connection from the engine.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-TableModel-generate_sql_fields"></a>}}
-\if{latex}{\out{\hypertarget{method-TableModel-generate_sql_fields}{}}}
-\subsection{Method \code{generate_sql_fields()}}{
-Generate DBI-compatible field definitions from Column and ForeignKey objects,
-including constraints and SQL clause generation.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$generate_sql_fields()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-create_table"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-create_table}{}}}
 \subsection{Method \code{create_table()}}{
@@ -124,6 +127,43 @@ Create the associated table in the database.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-drop_table"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-drop_table}{}}}
+\subsection{Method \code{drop_table()}}{
+Drop the associated table from the database. Prompts for confirmation
+by default if running interactively.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$drop_table(ask = interactive())}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{ask}}{Logical. If TRUE (default in interactive sessions), prompts
+the user for confirmation before dropping the table.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Invisibly returns the result of `DBI::dbExecute()` if the table is dropped,
+or `NULL` if the operation is canceled or skipped.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+# Drop the "users" table after confirmation
+User$drop_table()
+
+# Force drop without confirmation
+User$drop_table(ask = FALSE)
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-record"></a>}}

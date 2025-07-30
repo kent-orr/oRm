@@ -6,16 +6,15 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Get Started • oRm</title>
-<!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
-<link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
-<link rel="apple-touch-icon" type="image/png" sizes="120x120" href="../apple-touch-icon-120x120.png">
-<link rel="apple-touch-icon" type="image/png" sizes="76x76" href="../apple-touch-icon-76x76.png">
-<link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
-<link href="../deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Get Started">
 </head>
 <body>
@@ -40,6 +39,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
+    <li><a class="dropdown-item" href="../articles/with_shiny.html">Using oRm with Shiny</a></li>
   </ul>
 </li>
       </ul>
@@ -47,6 +47,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/kent-orr/oRm/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
@@ -70,15 +71,15 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Get Started</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/kent-orr/oRm/blob/HEAD/vignettes/get_started.Rmd" class="external-link"><code>vignettes/get_started.Rmd</code></a></small>
       <div class="d-none name"><code>get_started.Rmd</code></div>
     </div>
 
     
     
-<p>oRm is an object-relational mapping (ORM) framework designed to feel
-native to R users while abstracting away boilerplate SQL. Its core
-building blocks follow a simple chain of responsibility:</p>
+<p>oRm is an object-relational mapping (ORM) framework designed for R
+users to work with SQL. Its core building blocks follow a chain of
+responsibility:</p>
 <ul>
 <li>
 <code>Engine</code>: Manages the database connection and model
@@ -166,19 +167,12 @@ operations on your table:</p>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt;   Table: users</span></span>
 <span><span class="co">#&gt;   Fields:</span></span>
-<span><span class="co">#&gt;   🔑 id               <span style="color: #555555;">INTEGER </span>  UNSPECIFIED</span></span>
-<span><span class="co">#&gt;      organization_id  <span style="color: #555555;">INTEGER </span>  UNSPECIFIED</span></span>
-<span><span class="co">#&gt;      name             <span style="color: #555555;">TEXT    </span>  UNSPECIFIED</span></span>
-<span><span class="co">#&gt;      age              <span style="color: #555555;">INTEGER </span>  UNSPECIFIED</span></span>
+<span><span class="co">#&gt;   🔑 id               <span style="color: #555555;">INTEGER </span>  </span></span>
+<span><span class="co">#&gt;      organization_id  <span style="color: #555555;">INTEGER </span>  </span></span>
+<span><span class="co">#&gt;      name             <span style="color: #555555;">TEXT    </span>  </span></span>
+<span><span class="co">#&gt;      age              <span style="color: #555555;">INTEGER </span></span></span>
 <span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name<span class="op">=</span><span class="st">'John'</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
-<span><span class="co">#&gt; id: 1</span></span>
-<span><span class="co">#&gt; name: John</span></span>
-<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">2</span>, name<span class="op">=</span><span class="st">'Jane'</span>, age <span class="op">=</span> <span class="fl">35</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
-<span><span class="co">#&gt; id: 2</span></span>
-<span><span class="co">#&gt; name: Jane</span></span>
-<span><span class="co">#&gt; age: 35</span></span></code></pre></div>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">2</span>, name<span class="op">=</span><span class="st">'Jane'</span>, age <span class="op">=</span> <span class="fl">35</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This creates the table based on your column definitions if it doesn’t
 already exist.</p>
 </div>
@@ -206,11 +200,7 @@ individual rows.</p>
 <h3 id="create-a-new-record">Create a new record<a class="anchor" aria-label="anchor" href="#create-a-new-record"></a>
 </h3>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3</span>, organization_id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Alice"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
-<span><span class="co">#&gt; id: 3</span></span>
-<span><span class="co">#&gt; organization_id: 1</span></span>
-<span><span class="co">#&gt; name: Alice</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3</span>, organization_id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Alice"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="update-a-record">Update a record<a class="anchor" aria-label="anchor" href="#update-a-record"></a>
@@ -244,7 +234,8 @@ navigation between related records.</p>
 <h3 id="define-a-relationship">Define a relationship<a class="anchor" aria-label="anchor" href="#define-a-relationship"></a>
 </h3>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/define_relationship.html">define_relationship</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/define_relationship.html">define_relationship</a></span><span class="op">(</span></span>
+<span>  <span class="va">Users</span>,</span>
 <span>  local_key <span class="op">=</span> <span class="st">"organization_id"</span>,</span>
 <span>  type <span class="op">=</span> <span class="st">"many_to_one"</span>,</span>
 <span>  related_model <span class="op">=</span> <span class="va">Organization</span>,</span>
@@ -255,10 +246,10 @@ navigation between related records.</p>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt;   Table: users</span></span>
 <span><span class="co">#&gt;   Fields:</span></span>
-<span><span class="co">#&gt;   🔑 id               <span style="color: #555555;">INTEGER </span>  UNSPECIFIED</span></span>
-<span><span class="co">#&gt;      organization_id  <span style="color: #555555;">INTEGER </span>  UNSPECIFIED</span></span>
-<span><span class="co">#&gt;      name             <span style="color: #555555;">TEXT    </span>  UNSPECIFIED</span></span>
-<span><span class="co">#&gt;      age              <span style="color: #555555;">INTEGER </span>  UNSPECIFIED</span></span></code></pre></div>
+<span><span class="co">#&gt;   🔑 id               <span style="color: #555555;">INTEGER </span>  </span></span>
+<span><span class="co">#&gt;      organization_id  <span style="color: #555555;">INTEGER </span>  </span></span>
+<span><span class="co">#&gt;      name             <span style="color: #555555;">TEXT    </span>  </span></span>
+<span><span class="co">#&gt;      age              <span style="color: #555555;">INTEGER </span></span></span></code></pre></div>
 <p>This allows records in <code>Users</code> to access their related
 <code>Organization</code>, and records in <code>Organization</code> to
 access all related <code>Users</code>.</p>
@@ -274,20 +265,13 @@ with.</p>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt;   Table: organizations</span></span>
 <span><span class="co">#&gt;   Fields:</span></span>
-<span><span class="co">#&gt;   🔑 id          <span style="color: #555555;">INTEGER </span>  UNSPECIFIED</span></span>
-<span><span class="co">#&gt;      name        <span style="color: #555555;">TEXT    </span>  UNSPECIFIED</span></span>
-<span><span class="va">Organization</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Widgets, Inc"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'organizations'</span></span>
-<span><span class="co">#&gt; id: 1</span></span>
-<span><span class="co">#&gt; name: Widgets, Inc</span></span></code></pre></div>
+<span><span class="co">#&gt;   🔑 id          <span style="color: #555555;">INTEGER </span>  </span></span>
+<span><span class="co">#&gt;      name        <span style="color: #555555;">TEXT    </span></span></span>
+<span><span class="va">Organization</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Widgets, Inc"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3</span>, name <span class="op">=</span> <span class="st">'Alice'</span>, organization_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
-<span><span class="co">#&gt; id: 3</span></span>
-<span><span class="co">#&gt; name: Alice</span></span>
-<span><span class="co">#&gt; organization_id: 1</span></span>
-<span><span class="va">alice</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">alice</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">alice_org</span> <span class="op">&lt;-</span> <span class="va">alice</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'organization'</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">alice_org</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Widgets, Inc"</span></span></code></pre></div>
@@ -300,17 +284,17 @@ with.</p>
 <span><span class="va">young_orgs</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
+<span><span class="co">#&gt; age: 18</span></span>
 <span><span class="co">#&gt; id: 1</span></span>
 <span><span class="co">#&gt; organization_id: NA</span></span>
-<span><span class="co">#&gt; name: John</span></span>
-<span><span class="co">#&gt; age: 18 </span></span>
+<span><span class="co">#&gt; name: John </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[2]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
+<span><span class="co">#&gt; age: 18</span></span>
 <span><span class="co">#&gt; id: 3</span></span>
 <span><span class="co">#&gt; organization_id: 1</span></span>
-<span><span class="co">#&gt; name: Alice</span></span>
-<span><span class="co">#&gt; age: 18</span></span></code></pre></div>
+<span><span class="co">#&gt; name: Alice</span></span></code></pre></div>
 <p>This returns a list of user records with <code>age &lt; 30</code>
 that belong to each organization.</p>
 </div>
@@ -326,7 +310,7 @@ that belong to each organization.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>
