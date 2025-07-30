@@ -73,9 +73,10 @@ Record <- R6::R6Class(
     
     #' @description Insert this record into the database.
     #' @return Invisible NULL
-    create = function() {
+    create = function(flush_record = NULL) {
       con <- self$model$get_connection()
       
+      # Validate required fields
       required_fields <- names(self$model$fields)[
         vapply(self$model$fields, function(x) isFALSE(x$nullable), logical(1))
       ]
@@ -83,13 +84,87 @@ Record <- R6::R6Class(
       if (length(missing_fields) > 0) {
         stop("Missing required fields: ", paste(missing_fields, collapse = ", "))
       }
+    
+      # Determine whether to flush based on user input or transaction state
+      if (is.null(flush_record)) {
+        # Default behavior: flush if not in transaction
+        flush_record <- !self$model$engine$get_transaction_state()
+      }
       
-      DBI::dbAppendTable(
-        conn = con,
-        name = self$model$tablename,
-        value = as.data.frame(self$data, stringsAsFactors = FALSE)
-      )
-      self
+      if (flush_record) {
+        # Use flush to get returning values
+        return(self$flush(commit = NULL))  # Let flush determine commit behavior
+      } else {
+        # Use standard insert without returning values
+        DBI::dbAppendTable(
+          conn = con,
+          name = self$model$tablename,
+          value = as.data.frame(self$data, stringsAsFactors = FALSE)
+        )
+        return(self)
+      }
+    },
+
+    flush = function(commit = NULL) {
+      con <- self$model$get_connection()
+      
+      # Determine commit behavior based on transaction state if not specified
+      if (is.null(commit)) {
+        commit <- !self$model$engine$get_transaction_state()
+      }
+      
+      # Check if we need to manage our own transaction
+      in_transaction <- self$model$engine$get_transaction_state()
+      need_transaction <- commit && !in_transaction
+      
+      # Start a transaction if needed
+      if (need_transaction) {
+        tryCatch({
+          DBI::dbBegin(con)
+        }, error = function(e) {
+          warning("Could not begin transaction: ", e$message)
+          need_transaction <- FALSE
+        })
+      }
+      
+      # Call the generic flush function
+      result <- tryCatch({
+        flush(
+          self$model$engine,
+          self$model$tablename,
+          self$data,
+          con,
+          FALSE  # Never commit in the dialect function
+        )
+      }, error = function(e) {
+        # Rollback if we started a transaction
+        if (need_transaction) {
+          tryCatch(DBI::dbRollback(con), error = function(e2) {
+            warning("Failed to rollback transaction: ", e2$message)
+          })
+        }
+        stop(e)
+      })
+      
+      # Commit if we started a transaction
+      if (need_transaction) {
+        tryCatch({
+          DBI::dbCommit(con)
+        }, error = function(e) {
+          warning("Failed to commit transaction: ", e$message)
+          # Try to rollback if commit fails
+          tryCatch(DBI::dbRollback(con), error = function(e2) {
+            warning("Failed to rollback transaction: ", e2$message)
+          })
+        })
+      }
+      
+      # Update record data with returned values
+      if (!is.null(result) && nrow(result) > 0) {
+        self$data <- as.list(result[1, ])
+      }
+      
+      invisible(self)
     },
     
     #' @description Update this record in the database.

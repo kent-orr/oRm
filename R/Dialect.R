@@ -90,8 +90,24 @@ render_constraint.default <- function(field, conn, ...) {
 }
 
 
-flush <- function(x, ...) {
-    UseMethod("flush")
+flush <- function(x, table, data, con, commit = TRUE, ...) {
+  # Get the dialect
+  dialect <- if (inherits(x, "Engine")) {
+    x$dialect
+  } else if (inherits(x, "TableModel")) {
+    x$engine$dialect
+  } else if (inherits(x, "Record")) {
+    x$model$engine$dialect
+  } else {
+    "default"
+  }
+  
+  # Find the appropriate method
+  method_name <- paste0("flush.", dialect)
+  method <- get0(method_name, mode = "function", ifnotfound = flush.default)
+  
+  # Call the method
+  method(x, table, data, con, commit, ...)
 }
 
 flush.default <- local({

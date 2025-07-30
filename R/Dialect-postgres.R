@@ -1,9 +1,10 @@
 flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   # Build the insert SQL
+  data <- data[!vapply(data, is.null, logical(1))]
   tbl_expr <- dbplyr::ident_q(table)
   fields <- names(data)
 
-  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, unname(data)), collapse = ", "), ")")
+  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, sapply(data, `[`)), collapse = ", "), ")")
   field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
 
   sql <- paste0(
@@ -11,12 +12,10 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
     " RETURNING *"
   )
 
+  # Just execute the query and return the result
+  # Let the caller handle transaction management
   result <- DBI::dbGetQuery(con, sql)
-
-  # Optionally commit or return results
-  if (commit) {
-    DBI::dbCommit(con)
-  }
-
+  
   return(result)
 }
+
