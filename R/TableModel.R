@@ -201,7 +201,7 @@ TableModel <- R6::R6Class(
     #' @param mode One of "all", "one_or_none", or "get".
     #' @param limit Integer. Maximum number of records to return. NULL (default) means no limit.
     #'   Positive values return the first N records, negative values return the last N records.
-    read = function(..., mode = c("all", "one_or_none", "get"), limit = NULL) {
+    read = function(..., mode = c("all", "one_or_none", "get"), limit = NULL, offset=NULL) {
       mode <- match.arg(mode)
       con <- self$get_connection()
       tbl_ref <- dplyr::tbl(con, self$tablename)
@@ -213,11 +213,21 @@ TableModel <- R6::R6Class(
       
       if (!is.null(limit) && is.numeric(limit) && limit != 0) {
         if (limit > 0) {
-          tbl_ref <- dplyr::slice_head(tbl_ref, n = limit)
+          if (!is.null(offset) && is.numeric(offset) && offset > 0) {
+            # Handle both limit and offset in one operation
+            tbl_ref <- dplyr::slice(tbl_ref, (offset + 1L):(offset + limit))
+          } else {
+            tbl_ref <- dplyr::slice_head(tbl_ref, n = limit)
+          }
         } else {
+          # For negative limits (last N rows), offset doesn't make sense
           tbl_ref <- dplyr::slice_tail(tbl_ref, n = abs(limit))
         }
+      } else if (!is.null(offset) && is.numeric(offset) && offset > 0) {
+        # Handle offset without limit
+        tbl_ref <- dplyr::slice(tbl_ref, (offset + 1L):n())
       }
+      
       rows <- dplyr::collect(tbl_ref)
       
       if (nrow(rows) == 0) {
