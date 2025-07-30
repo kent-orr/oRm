@@ -153,6 +153,24 @@ Engine <- R6::R6Class(
 #' If auto_commit is TRUE (default), the transaction will be committed automatically upon successful execution.
 #' If auto_commit is FALSE, you must explicitly commit or rollback within the transaction block.
 #'
+#' @details
+#' Within the transaction block, the following special functions are available:
+#' 
+#' \itemize{
+#'   \item \code{commit()}: Explicitly commits the current transaction. After calling this function,
+#'         no further changes will be made to the database within the current transaction block.
+#'         
+#'   \item \code{rollback()}: Explicitly rolls back (cancels) the current transaction. This undoes
+#'         all changes made within the transaction block up to this point.
+#' }
+#'
+#' If \code{auto_commit = TRUE} (the default), the transaction will be automatically committed when
+#' the block completes without errors. If an error occurs, the transaction is automatically rolled back.
+#'
+#' If \code{auto_commit = FALSE}, you must explicitly call \code{commit()} within the block to save
+#' your changes. If neither \code{commit()} nor \code{rollback()} is called, the transaction will be
+#' rolled back by default and a warning will be issued.
+#'
 #' @param engine An Engine object that manages the database connection
 #' @param expr An expression to be evaluated within the transaction
 #' @param auto_commit Logical. Whether to automatically commit if no errors occur (default: TRUE)
@@ -165,6 +183,7 @@ Engine <- R6::R6Class(
 #' with.Engine(engine, {
 #'   User$record(name = "Alice")$create()
 #'   User$record(name = "Bob")$create()
+#'   # Transaction automatically committed if no errors
 #' })
 #'
 #' # With manual commit
@@ -174,6 +193,34 @@ Engine <- R6::R6Class(
 #'   
 #'   # Explicitly commit the transaction
 #'   commit()
+#' }, auto_commit = FALSE)
+#'
+#' # With conditional commit/rollback
+#' with.Engine(engine, {
+#'   User$record(name = "Alice")$create()
+#'   
+#'   # Check a condition
+#'   if (some_validation_check()) {
+#'     User$record(name = "Bob")$create()
+#'     commit()
+#'   } else {
+#'     # Discard all changes if validation fails
+#'     rollback()
+#'   }
+#' }, auto_commit = FALSE)
+#'
+#' # Error handling with explicit rollback
+#' with.Engine(engine, {
+#'   tryCatch({
+#'     User$record(name = "Alice")$create()
+#'     # Some operation that might fail
+#'     problematic_operation()
+#'     commit()
+#'   }, error = function(e) {
+#'     # Custom error handling
+#'     message("Operation failed: ", e$message)
+#'     rollback()
+#'   })
 #' }, auto_commit = FALSE)
 #' }
 #'

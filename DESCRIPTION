@@ -4,7 +4,7 @@ Title: Lightweight Object-Relational Mapper for R
 Version: 0.1.0
 Author: Kent Orr
 Maintainer: Kent Orr <orr.kent@pawpawanalytics.com>
-Description: oRm is a lightweight, pipe-friendly Object-Relational Mapper (ORM) for R. 
+Description: oRm is a lightweight Object-Relational Mapper (ORM) for R. 
     It simplifies database interactions by allowing users to define table models, 
     insert and query records, and establish relationships between models without 
     writing raw SQL. oRm uses a combination of DBI, dbplyr, and R6 to provide 
@@ -17,11 +17,12 @@ Imports:
     dbplyr,
     dplyr,
     pool,
-    R6
+    R6,
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    stevedore (>= 0.9.6)
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Collate: 
@@ -34,5 +35,8 @@ Collate:
     'Engine.R'
     'Record.R'
     'Relationship.R'
-URL: https://kent-orr.github.io/oRm/
+URL: https://kent-orr.github.io/oRm/, https://github.com/kent-orr/oRm
 VignetteBuilder: knitr
+BugReports: https://github.com/kent-orr/oRm/issues
+Remotes:  
+    richfitz/stevedore
