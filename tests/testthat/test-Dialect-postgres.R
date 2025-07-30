@@ -1,4 +1,3 @@
-library(stevedore)
 
 # Setup PostgreSQL container for testing
 setup_postgres_test_db <- function() {
@@ -8,7 +7,9 @@ setup_postgres_test_db <- function() {
         if (!requireNamespace("stevedore", quietly = TRUE)) {
             testthat::skip("stevedore package not available, skipping PostgreSQL tests")
         }
-    }
+    } 
+  
+    library(stevedore)
     
     # Check if Docker is available
     if (!stevedore::docker_available()) {
@@ -136,7 +137,7 @@ test_that('The Postgres dialect works as expected', {
         age = Column("INTEGER")
     )
   
-    TempUser$create_table(overwrite=TRUE, verbose=TRUE)
+    TempUser$create_table(overwrite=TRUE)
     p1 = TempUser$record(name='John', age = 18)
     p1$create()
     
@@ -149,5 +150,5 @@ test_that('The Postgres dialect works as expected', {
     expect_equal(length(all_users), 2)
     
     # Clean up
-    TempUser$drop_table(ask = FALSE)
+    TempUser$drop_table()
 })

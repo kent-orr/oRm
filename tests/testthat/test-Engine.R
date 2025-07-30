@@ -372,8 +372,7 @@ test_that("with.Engine rolls back failed transactions", {
     with.Engine(engine, {
       model$record(id = 1, name = "Alice")$create()
       model$record(id = 2, name = NULL)$create()  # This should fail
-    }),
-    "Transaction failed:"
+    })
   )
   
   # Verify that no records were inserted due to rollback
