@@ -182,8 +182,9 @@ TableModel <- R6::R6Class(
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
     #' @param mode One of "all", "one_or_none", or "get".
-    #' @param limit Integer. Maximum number of records to return. NULL (default) means no limit.
+    #' @param .limit Integer. Maximum number of records to return. NULL (default) means no limit.
     #'   Positive values return the first N records, negative values return the last N records.
+    #' @param .offset Integer. Offset for pagination. Default is 0.
     read = function(..., mode = c("all", "one_or_none", "get"), .limit = NULL, .offset=0) {
       mode <- match.arg(mode)
       con <- self$get_connection()
