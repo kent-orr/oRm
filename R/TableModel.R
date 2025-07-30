@@ -184,7 +184,7 @@ TableModel <- R6::R6Class(
     #' @param mode One of "all", "one_or_none", or "get".
     #' @param limit Integer. Maximum number of records to return. NULL (default) means no limit.
     #'   Positive values return the first N records, negative values return the last N records.
-    read = function(..., mode = c("all", "one_or_none", "get"), limit = NULL, offset=NULL) {
+    read = function(..., mode = c("all", "one_or_none", "get"), .limit = NULL, .offset=0) {
       mode <- match.arg(mode)
       con <- self$get_connection()
       tbl_ref <- dplyr::tbl(con, self$tablename)
@@ -194,21 +194,36 @@ TableModel <- R6::R6Class(
         tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
       }
 
-      if (!is.null(limit) && is.numeric(limit) && limit != 0) {
-        if (limit > 0) {
-          if (!is.null(offset) && is.numeric(offset) && offset > 0) {
-            # Handle both limit and offset in one operation
-            tbl_ref <- dplyr::slice(tbl_ref, (offset + 1L):(offset + limit))
+      # Apply pagination using SQL-compatible operations
+      if (!is.null(.limit) && is.numeric(.limit) && .limit != 0) {
+        if (.limit > 0) {
+          # For positive limits with offset
+          if (.offset > 0) {
+            # SQL databases support LIMIT and OFFSET directly
+            tbl_ref <- tbl_ref %>% 
+              dplyr::mutate(.row_id = dplyr::row_number()) %>%
+              dplyr::filter(.row_id > .offset & .row_id <= .offset + .limit) %>%
+              dplyr::select(-.row_id)
           } else {
-            tbl_ref <- dplyr::slice_head(tbl_ref, n = limit)
+            # Just limit without offset
+            tbl_ref <- tbl_ref %>%
+              dplyr::mutate(.row_id = dplyr::row_number()) %>%
+              dplyr::filter(.row_id <= .limit) %>%
+              dplyr::select(-.row_id)
           }
         } else {
-          # For negative limits (last N rows), offset doesn't make sense
-          tbl_ref <- dplyr::slice_tail(tbl_ref, n = abs(limit))
+          # For negative limits (last N rows)
+          tbl_ref <- tbl_ref %>%
+            dplyr::mutate(.row_id = dplyr::row_number()) %>%
+            dplyr::filter(.row_id > dplyr::n() - abs(.limit)) %>%
+            dplyr::select(-.row_id)
         }
-      } else if (!is.null(offset) && is.numeric(offset) && offset > 0) {
-        # Handle offset without limit
-        tbl_ref <- dplyr::slice(tbl_ref, (offset + 1L):n())
+      } else if (.offset > 0) {
+        # Just offset without limit
+        tbl_ref <- tbl_ref %>%
+          dplyr::mutate(.row_id = dplyr::row_number()) %>%
+          dplyr::filter(.row_id > .offset) %>%
+          dplyr::select(-.row_id)
       }
       
       rows <- dplyr::collect(tbl_ref)
