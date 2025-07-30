@@ -39,6 +39,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
+    <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
     <li><a class="dropdown-item" href="../articles/with_shiny.html">Using oRm with Shiny</a></li>
   </ul>
 </li>
@@ -80,10 +81,9 @@
 <p><code>oRm</code> was conceived as a means of handling database
 interactions in R shiny, much like <code>sqlalchemy</code> in python
 flask applications. It can be a useful tool for handling CRUD operations
-such as interactive tables, forms, and UI elements. Since this vignette
-is aimed at getting started, we’ll focus on the basics of
-<code>oRm</code> and how it can be used to build a simple CRUD
-application.</p>
+such as interactive tables, forms, and UI elements. In this vignette
+we’ll focus on the basics of <code>oRm</code> and how it can be used to
+build a simple CRUD application.</p>
 <div class="section level2">
 <h2 id="form-inputs">Form Inputs<a class="anchor" aria-label="anchor" href="#form-inputs"></a>
 </h2>
@@ -93,7 +93,8 @@ handler that creates a new observation in the database when a button is
 clicked. For demonstration purposes, we’ll consdier that the data is
 plant heights and the team members are represented by IDs.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">engine</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># in global.R =====</span></span>
+<span><span class="va">engine</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
 <span>  drv <span class="op">=</span> <span class="fu">RSQLite</span><span class="fu">::</span><span class="fu"><a href="https://rsqlite.r-dbi.org/reference/SQLite.html" class="external-link">SQLite</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  dbname <span class="op">=</span> <span class="st">":memory:"</span>,</span>
 <span>  persist <span class="op">=</span> <span class="cn">TRUE</span>  <span class="co"># Optional for in-memory databases</span></span>
@@ -105,7 +106,9 @@ plant heights and the team members are represented by IDs.</p>
 <span>    plant_subject_id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'Integer'</span><span class="op">)</span>,</span>
 <span>    plant_height <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'Numeric'</span>, nullable <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co"># =====</span></span>
 <span></span>
+<span><span class="co"># in server.R =====</span></span>
 <span><span class="fu">observeEvent</span><span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">add_observation</span>, <span class="op">{</span></span>
 <span>    <span class="co"># observer_id and plant_height are the values from the form inputs</span></span>
 <span>    <span class="va">observation</span> <span class="op">=</span> <span class="va">Observations</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
@@ -120,7 +123,75 @@ plant heights and the team members are represented by IDs.</p>
 However, for a full-featured application, more sophisticated features
 like validation and error handling would be necessary. To allow for that
 logic to be implemented we might want to take advantage of a database
-transaction state.</p>
+transaction state. For that, take a look at the <code>with.Engine</code>
+section in this document.</p>
+</div>
+<div class="section level2">
+<h2 id="paging-results">Paging Results<a class="anchor" aria-label="anchor" href="#paging-results"></a>
+</h2>
+<p>Large tables need broken up or your browser may tank. Paging is a
+good way to handle this. Popular table packages like <code>DT</code> or
+<code>reactable</code> provide built-in support for pagination, but what
+if you want to implement something like a carousel of card elements, or
+sets of plots?</p>
+<p>To enable pagination in your application, you’ll need to modify your
+query to limit the number of results returned and also include a
+<code>LIMIT</code> and <code>OFFSET</code> clause. Let’s say we want to
+display the observations as cards in a uiOutput, but we only want to
+show the last 5 cards.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">displayed_observations</span> <span class="op">&lt;-</span> <span class="fu">reactive</span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">page_no</span> <span class="op">=</span> <span class="va">input</span><span class="op">$</span><span class="va">page_no</span></span>
+<span>    <span class="va">offset</span> <span class="op">=</span> <span class="op">(</span><span class="va">page_no</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span> <span class="op">*</span> <span class="fl">5</span>  <span class="co"># Assuming 5 observations per page</span></span>
+<span></span>
+<span>    <span class="va">observations</span> <span class="op">=</span> <span class="va">Observations</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span></span>
+<span>        .order_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">observer_id</span><span class="op">)</span><span class="op">)</span>, </span>
+<span>        .limit <span class="op">=</span> <span class="fl">5</span>, </span>
+<span>        .offset <span class="op">=</span> <span class="va">offset</span></span>
+<span>        <span class="op">)</span></span>
+<span>    </span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">observations</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">output</span><span class="op">$</span><span class="va">observation_cards</span> <span class="op">&lt;-</span> <span class="fu">renderUI</span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">observations</span> <span class="op">=</span> <span class="fu">displayed_observations</span><span class="op">(</span><span class="op">)</span></span>
+<span>    <span class="fu">tagList</span><span class="op">(</span></span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">observations</span>, <span class="kw">function</span><span class="op">(</span><span class="va">observation</span><span class="op">)</span> <span class="op">{</span></span>
+<span>            <span class="fu">card</span><span class="op">(</span></span>
+<span>                <span class="fu">card_title</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Plant ID:"</span>, <span class="va">observation</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">plant_subject_id</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                <span class="fu">card_body</span><span class="op">(</span></span>
+<span>                    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Observer ID:"</span>, <span class="va">observation</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">observer_id</span><span class="op">)</span>,</span>
+<span>                    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Plant Height:"</span>, <span class="va">observation</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">plant_height</span><span class="op">)</span></span>
+<span>                    <span class="op">)</span></span>
+<span>            <span class="op">)</span></span>
+<span>        <span class="op">}</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="dropdowns-and-filters">Dropdowns and Filters<a class="anchor" aria-label="anchor" href="#dropdowns-and-filters"></a>
+</h2>
+<p>Inevitably shiny applications need a dynamically created dropdown
+that users can select from. <code>oRm</code> can help manage lookup
+tables in an oop manner instead of using SQL queries directly.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
+<span>    <span class="st">"users"</span>,</span>
+<span>    user_id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'Integer'</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    user_name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'String'</span>, nullable <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">observeEvent</span><span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">check_options</span>, <span class="op">{</span></span>
+<span></span>
+<span>    <span class="va">users</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="op">)</span></span>
+<span>    <span class="va">choices</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span></span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">users</span>, <span class="kw">function</span><span class="op">(</span><span class="va">user</span><span class="op">)</span> <span class="va">user</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">user_id</span><span class="op">)</span>,</span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">users</span>, <span class="kw">function</span><span class="op">(</span><span class="va">user</span><span class="op">)</span> <span class="va">user</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">user_name</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span></span>
+<span>    <span class="fu">updateSelectInput</span><span class="op">(</span><span class="va">session</span>, <span class="st">"user_id"</span>, choices <span class="op">=</span> <span class="va">choices</span><span class="op">)</span></span>
+<span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="with-engine-for-transaction-management">With.Engine() for Transaction Management<a class="anchor" aria-label="anchor" href="#with-engine-for-transaction-management"></a>
@@ -153,7 +224,7 @@ do</li>
 <div class="section level3">
 <h3 id="basic-usage-in-shiny">Basic Usage in Shiny:<a class="anchor" aria-label="anchor" href="#basic-usage-in-shiny"></a>
 </h3>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">observeEvent</span><span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">add_observation</span>, <span class="op">{</span></span>
 <span>    <span class="co"># observer_id and plant_height are the values from the form inputs</span></span>
 <span></span>
@@ -196,7 +267,7 @@ abstracts these differences</li>
 <div class="section level3">
 <h3 id="example-with-auto-incrementing-ids">Example with Auto-incrementing IDs:<a class="anchor" aria-label="anchor" href="#example-with-auto-incrementing-ids"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Setup a model with an auto-incrementing column</span></span>
 <span><span class="va">Observations</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>    <span class="st">"observations"</span>,</span>
