@@ -1,0 +1,187 @@
+---
+title: "Why oRm"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Why oRm}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+You work with tabular data day in and day out. Most of the time, you're filtering, aggregating, and analyzing entire datasets — working with a single row just isn’t where R shines. The R ecosystem is built for data frames, not records.
+
+But every once in a while, you need to build a quick data governance or lookup tool — something operational, not analytical. 
+
+`oRm` is not designed for analysis. It is made to facilitate creation, deletion, and modification of data in a database. It doesn't provide data analysis tools, but it can be quite useful in a pinch.
+
+Let's use a pretty basic example of where `oRm` would be suitable. Your team is recoridng measurements of pea plant growth. You don't want an excel sheet on a hard drive to be your source fo truth, no, you're thinking a database would be more appropriate. But how to ensure that observations are recorded accurately and consistently?
+
+## Using `dbplyr` and `DBI` to manage your database
+
+```{r}
+library(DBI)
+library(dplyr)
+library(dbplyr)
+
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+
+# Create the table using a data.frame and dbWriteTable
+initial_data <- tibble::tibble(
+  observer_id = 1L,
+  plant_id = 101L,
+  measurement_date = as.Date("2025-07-30"),
+  measurement_value = 14.2
+)
+
+dbWriteTable(con, "measurements", initial_data)
+
+# ===== table setup complete =====
+
+# Add another row later
+new_row <- tibble::tibble(
+  observer_id = 2L,
+  plant_id = 102L,
+  measurement_date = as.Date("2025-07-31"),
+  measurement_value = 15.8
+)
+
+DBI::dbAppendTable(con, "measurements", new_row)
+
+# View the table
+tbl(con, "measurements") |>
+  filter(observer_id == 2) |>
+  collect()
+
+```
+
+At this point, you're mixing `DBI` calls, and `dplyr`. That’s fine until you need to build an interface, reuse logic across functions, or update a record based on user input. Suddenly you're juggling SQL strings, dplyr pipelines, and column names by hand. 
+So let's see that in action: One of your team members actually put in the measurement wrong, it's 8.15, not 15.8. How would we fix this record in the database?
+
+```{r}
+# You have to find the row and update it manually using SQL
+dbExecute(con, "
+  UPDATE measurements
+  SET measurement_value = 8.15
+  WHERE observer_id = 2
+")
+dbGetQuery(con, 'SELECT * FROM measurements WHERE observer_id = 2')
+```
+
+You need to:
+
+    Remember the correct column names
+
+    Re-type the WHERE clause conditions
+
+    Hope no one accidentally updates multiple rows
+
+There’s no row-level object to work with, you’re always re-identifying rows with raw conditions.
+
+## Using `oRm` to Manage Your Database
+
+So now let's use `oRm` to manage our database. We're going to define our table schema and enter our first observation. 
+
+```{r}
+library(oRm)
+
+engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE
+)
+
+Measurement <- engine$model(
+  "measurements",
+  id = Column("INTEGER", primary_key = TRUE),
+  observer_id = Column("INTEGER"),
+  plant_id = ForeignKey("INTEGER", 'plants.id'),  # we'll define this table shortly
+
+  measurement_date = Column("DATE"),
+  measurement_value = Column("REAL")
+)
+
+Measurement$create_table()
+
+# ===== table setup complete =====
+
+# Add a few observations
+Measurement$record(
+  observer_id = 1,
+  plant_id = 101,
+  measurement_date = as.Date("2025-07-30"),
+  measurement_value = 14.2
+)$create()
+
+Measurement$record(
+  observer_id = 1,
+  plant_id = 101,
+  measurement_date = as.Date("2025-08-15"),
+  measurement_value = 16.0
+)$create()
+
+Measurement$record(
+  observer_id = 2,
+  plant_id = 102,
+  measurement_date = as.Date("2025-07-31"),
+  measurement_value = 15.8
+)$create()
+
+```
+
+And oh, yikes. Person 2 put in the measurement wrong. let's correct it.
+
+```{r}
+p2 = Measurement$read(observer_id == 2, mode='get')
+p2$update(measurement_value = 8.15)
+p2
+```
+
+## Relationships
+
+So far we've looked at **object** models, which are great for managing a single record, or records in loops. But what about **relationships** between records? Let's say we have a lookup table for our plants. If you were looking closely at the Measurements table, you might have noticed we designated a foreign key to the Plants table. We'll make use of that relationship now.
+
+```{r}
+Plants <- engine$model(
+    "plants",
+    id = Column("INTEGER", primary_key = TRUE),
+    plant_type = Column("TEXT")
+)
+Plants$create_table()
+
+# and we'll make a handful of plant records
+Plants$record(id = 101, plant_type = "pea")$create()
+Plants$record(id = 102, plant_type = "potato")$create()
+Plants$record(id = 103, plant_type = "pea")$create()
+```
+
+At this point, our database is aware of the relationship between Plants and Measurements. But oRm is not. We'll now **model** a **relationship** between the two tables (**objects**) which oRm will use.
+
+```{r}
+define_relationship(
+    local_model = Plants,
+    local_key = "id",
+    type = "one_to_many",
+    related_model = Measurement,
+    related_key = "plant_id",
+    ref = "measurements",
+    backref = "plant"
+)
+```
+
+And after we've made that mapping, we can find all the measurements for a specific plant.
+
+```{r}
+p101 = Plants$read(id == 101, mode='get')
+p101$relationship('measurements')
+```
+
+Or we can look for a specific relationship by filtering
+```{r}
+p101$relationship('measurements', measurement_value < 15.0)
+```

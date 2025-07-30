@@ -218,29 +218,29 @@ TableModel <- R6::R6Class(
           # For positive limits with offset
           if (.offset > 0) {
             # SQL databases support LIMIT and OFFSET directly
-            tbl_ref <- tbl_ref %>% 
-              dplyr::mutate(.row_id = dplyr::row_number()) %>%
-              dplyr::filter(.row_id > .offset & .row_id <= .offset + .limit) %>%
+            tbl_ref <- tbl_ref |> 
+              dplyr::mutate(.row_id = dplyr::row_number()) |>
+              dplyr::filter(.row_id > .offset & .row_id <= .offset + .limit) |>
               dplyr::select(-.row_id)
           } else {
             # Just limit without offset
-            tbl_ref <- tbl_ref %>%
-              dplyr::mutate(.row_id = dplyr::row_number()) %>%
-              dplyr::filter(.row_id <= .limit) %>%
+            tbl_ref <- tbl_ref |>
+              dplyr::mutate(.row_id = dplyr::row_number()) |>
+              dplyr::filter(.row_id <= .limit) |>
               dplyr::select(-.row_id)
           }
         } else {
           # For negative limits (last N rows)
-          tbl_ref <- tbl_ref %>%
-            dplyr::mutate(.row_id = dplyr::row_number()) %>%
-            dplyr::filter(.row_id > dplyr::n() - abs(.limit)) %>%
+          tbl_ref <- tbl_ref |>
+            dplyr::mutate(.row_id = dplyr::row_number()) |>
+            dplyr::filter(.row_id > dplyr::n() - abs(.limit)) |>
             dplyr::select(-.row_id)
         }
       } else if (.offset > 0) {
         # Just offset without limit
-        tbl_ref <- tbl_ref %>%
-          dplyr::mutate(.row_id = dplyr::row_number()) %>%
-          dplyr::filter(.row_id > .offset) %>%
+        tbl_ref <- tbl_ref |>
+          dplyr::mutate(.row_id = dplyr::row_number()) |>
+          dplyr::filter(.row_id > .offset) |>
           dplyr::select(-.row_id)
       }
       

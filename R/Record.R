@@ -353,3 +353,7 @@ Record <- R6::R6Class(
     }
   )
 )
+
+with.Record <- function(record, expr) {
+    eval(substitute(expr), record$data, enclos = parent.frame())  
+}
