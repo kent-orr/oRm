@@ -178,6 +178,11 @@ TableModel <- R6::R6Class(
       Record$new(self, ..., .data = .data)
     },
 
+    tbl = function() {
+      con = self$get_connection()
+      dplyr::tbl(con, self$tablename)
+    },
+
     #' @description
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
@@ -185,14 +190,26 @@ TableModel <- R6::R6Class(
     #' @param .limit Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
     #'   Positive values return the first N records, negative values return the last N records.
     #' @param .offset Integer. Offset for pagination. Default is 0.
-    read = function(..., mode = c("all", "one_or_none", "get"), .limit = 100, .offset=0) {
+    #' @param .order_by Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
+    read = function(
+      ..., 
+      mode = c("all", "one_or_none", "get"), 
+      .limit = 100, 
+      .offset=0,
+      .order_by = list()
+    ) {
+      
       mode <- match.arg(mode)
-      con <- self$get_connection()
-      tbl_ref <- dplyr::tbl(con, self$tablename)
+      tbl_ref <- self$tbl()
 
       filters <- rlang::enquos(...)
       if (length(filters) > 0) {
         tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
+      }
+
+      if (length(.order_by) > 0) {
+        tbl_ref <- tbl_ref |>
+          dplyr::arrange(!!!.order_by)
       }
 
       # Apply pagination using SQL-compatible operations
