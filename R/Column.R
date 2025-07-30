@@ -26,6 +26,9 @@
 Column <- function(
     type, ..., default = NULL, primary_key = NULL,
     nullable = NULL, unique = NULL) {
+  if (is.logical(primary_key)) {
+    nullable <- NULL
+  }
   structure(
     list(
       name = NULL,
