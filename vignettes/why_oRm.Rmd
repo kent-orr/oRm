@@ -14,17 +14,17 @@ knitr::opts_chunk$set(
 )
 ```
 
-You work with tabular data day in and day out. Most of the time, you're filtering, aggregating, and analyzing entire datasets — working with a single row just isn’t where R shines. The R ecosystem is built for data frames, not records.
+`oRm` is not designed for analysis. It is made to facilitate creation, deletion, and modification of data in a database.
 
-But every once in a while, you need to build a quick data governance or lookup tool — something operational, not analytical. 
+Most R workflows invlove filtering, aggregating, and analyzing entire datasets. Working with a single row just isn’t where R shines. Another way to look at it is that the R ecosystem is built for data frames, not records.
 
-`oRm` is not designed for analysis. It is made to facilitate creation, deletion, and modification of data in a database. It doesn't provide data analysis tools, but it can be quite useful in a pinch.
+But every once in a while you need to build a quick data governance or lookup tool that's operational, not analytical. Or maybe you're validating a series of relational database tables and you are tired of writing a left_join, inner_join, etc. when you need to investigate how the pieces fit together. In those cases, `oRm` could be a useful tool.
 
-Let's use a pretty basic example of where `oRm` would be suitable. Your team is recoridng measurements of pea plant growth. You don't want an excel sheet on a hard drive to be your source fo truth, no, you're thinking a database would be more appropriate. But how to ensure that observations are recorded accurately and consistently?
+Let's use a pretty basic example of where `oRm` would be suitable. Your team is recording measurements of plant growth. You don't want an excel sheet on a hard drive to be your source fo truth, no, you're thinking a database would be more appropriate. But how to ensure that observations are recorded accurately and consistently?
 
 ## Using `dbplyr` and `DBI` to manage your database
 
-```{r}
+```{r, message = FALSE}
 library(DBI)
 library(dplyr)
 library(dbplyr)
@@ -75,11 +75,9 @@ dbGetQuery(con, 'SELECT * FROM measurements WHERE observer_id = 2')
 
 You need to:
 
-    Remember the correct column names
-
-    Re-type the WHERE clause conditions
-
-    Hope no one accidentally updates multiple rows
+- Remember the correct column names
+- Re-type the WHERE clause conditions
+- Hope no one accidentally updates multiple rows
 
 There’s no row-level object to work with, you’re always re-identifying rows with raw conditions.
 
@@ -111,27 +109,28 @@ Measurement$create_table()
 # ===== table setup complete =====
 
 # Add a few observations
-Measurement$record(
+m1 = Measurement$record(
   observer_id = 1,
   plant_id = 101,
   measurement_date = as.Date("2025-07-30"),
   measurement_value = 14.2
 )$create()
 
-Measurement$record(
+m2 = Measurement$record(
   observer_id = 1,
   plant_id = 101,
   measurement_date = as.Date("2025-08-15"),
   measurement_value = 16.0
 )$create()
 
-Measurement$record(
+m3 = Measurement$record(
   observer_id = 2,
   plant_id = 102,
   measurement_date = as.Date("2025-07-31"),
   measurement_value = 15.8
 )$create()
 
+m1
 ```
 
 And oh, yikes. Person 2 put in the measurement wrong. let's correct it.
@@ -185,3 +184,13 @@ Or we can look for a specific relationship by filtering
 ```{r}
 p101$relationship('measurements', measurement_value < 15.0)
 ```
+
+## Conclusion
+
+In this vignette, you’ve seen how oRm can simplify the process of inserting, updating, and querying data with structured models instead of scattered SQL or repeated joins. You’ve also seen how relationships between records can be declared once and reused throughout your code, making it easier to write clean, maintainable tools.
+
+But this is just the beginning.
+
+You don’t have to create the tables with oRm to use it — you can map models onto existing databases, including those already in use at your workplace. That means you can layer oRm on top of production databases to build admin dashboards, internal Shiny tools, or one-off data fixers with confidence.
+
+And once relationships are defined, you can traverse complex data structures just as easily. Users to logs, organizations to memberships, or plants to mesaurements.
