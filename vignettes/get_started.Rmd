@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-oRm is an object-relational mapping (ORM) framework designed to feel native to R users while abstracting away boilerplate SQL. Its core building blocks follow a simple chain of responsibility:
+oRm is an object-relational mapping (ORM) framework designed for R users to work with SQL. Its core building blocks follow a chain of responsibility:
 
 - `Engine`: Manages the database connection and model registry.
 - `TableModel`: Represents a database table with column definitions and relationships.
@@ -146,7 +146,8 @@ You can define relationships between tables to enable seamless navigation betwee
 ### Define a relationship
 
 ```{r}
-Users |> define_relationship(
+define_relationship(
+  Users,
   local_key = "organization_id",
   type = "many_to_one",
   related_model = Organization,
@@ -170,7 +171,7 @@ Organization$record(id = 1, name = "Widgets, Inc")$create()
 ```{r}
 
 Users$record(id = 3, name = 'Alice', organization_id = 1)$create()
-alice = Users$read(id == 3)[[1]]
+alice = Users$read(id == 3, mode='get')
 alice_org <- alice$relationship('organization')
 print(alice_org$data$name)
 ```
