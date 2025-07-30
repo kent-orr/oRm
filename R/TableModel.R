@@ -155,7 +155,7 @@ TableModel <- R6::R6Class(
       con <- self$get_connection()
       drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(con, self$tablename))
 
-      resp <- 'n'
+      resp <- 'y'
       if (ask) {
         resp <- readline(paste0("Are you sure you want to drop ", self$tablename, "? [y/N] "))
       }
