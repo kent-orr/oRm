@@ -82,7 +82,8 @@ test_that("Column creates an object with all possible parameters specified", {
   expect_equal(col$type, "INTEGER")
   expect_equal(col$default, 0)
   expect_true(col$primary_key)
-  expect_false(col$nullable)
+  # when primary key is true, nullable gets set to null
+  expect_null(col$nullable)
   expect_true(col$unique)
   expect_equal(col$extras, list(check = "value > 0", collate = "NOCASE"))
 })
