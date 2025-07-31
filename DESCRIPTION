@@ -1,7 +1,7 @@
 Package: oRm
 Type: Package
 Title: Lightweight Object-Relational Mapper for R
-Version: 0.1.0
+Version: 0.2.0
 Author: Kent Orr
 Maintainer: Kent Orr <orr.kent@pawpawanalytics.com>
 Description: oRm is a lightweight Object-Relational Mapper (ORM) for R. 
@@ -38,5 +38,5 @@ Collate:
 URL: https://kent-orr.github.io/oRm/, https://github.com/kent-orr/oRm
 VignetteBuilder: knitr
 BugReports: https://github.com/kent-orr/oRm/issues
-Remotes:  
+Remotes: 
     richfitz/stevedore
