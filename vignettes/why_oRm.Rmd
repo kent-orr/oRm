@@ -71,19 +71,30 @@ dbExecute(con, "
   WHERE observer_id = 2
 ")
 dbGetQuery(con, 'SELECT * FROM measurements WHERE observer_id = 2')
+
+# Or if we stay are strinct about staying in dbplyr, we might do something like this:
+
+new_tab = tbl(con, "measurements") |>
+    mutate(
+        measurement_value  = case_when(
+            observer_id == 2 ~ 8.15,
+            TRUE ~ measurement_value
+        )
+    ) |>
+    collect()
+
+dbWriteTable(con, "measurements", new_tab, overwrite = TRUE)
 ```
 
-You need to:
+You're either hardcoding or pasting together SQL, or you're overwriting the wntire table. At best it's not very DRY, and it can make your code harder to understand and maintain. At worst, you can delete your whole database in a single operation with no recourse.
 
-- Remember the correct column names
-- Re-type the WHERE clause conditions
-- Hope no one accidentally updates multiple rows
+![oh noes!](https://media0.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3emZwaXh2cXhkbm85MjR2ZnI2OTkzMDhtYXMwem9ncGdiaTk3emp3dSZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/dJEMs13SrsiuA/200.webp)
 
 There’s no row-level object to work with, you’re always re-identifying rows with raw conditions.
 
 ## Using `oRm` to Manage Your Database
 
-So now let's use `oRm` to manage our database. We're going to define our table schema and enter our first observation. 
+So now let's use `oRm` to manage our database. We're going to define our table schema and enter our first few observations. 
 
 ```{r}
 library(oRm)
@@ -141,6 +152,10 @@ p2$update(measurement_value = 8.15)
 p2
 ```
 
+This time around we're working with one single record, which is safer and more precise than using raw SQL. We're also performing an update instead of re-writing the whole table.
+
+![snuggle fest](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnVlYm13dmJybDdvZGJnczdtajJ1aHNiZTJ1dDF4enB6Y3E3dmY5ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TyPKuTkBXmBPO/giphy.gif)
+
 ## Relationships
 
 So far we've looked at **object** models, which are great for managing a single record, or records in loops. But what about **relationships** between records? Let's say we have a lookup table for our plants. If you were looking closely at the Measurements table, you might have noticed we designated a foreign key to the Plants table. We'll make use of that relationship now.
@@ -159,7 +174,7 @@ Plants$record(id = 102, plant_type = "potato")$create()
 Plants$record(id = 103, plant_type = "pea")$create()
 ```
 
-At this point, our database is aware of the relationship between Plants and Measurements. But oRm is not. We'll now **model** a **relationship** between the two tables (**objects**) which oRm will use.
+At this point, our database is aware of the relationship between Plants and Measurements. But oRm is not. We'll now **model** a **relationship** between the two tables which oRm **objects** will use.
 
 ```{r}
 define_relationship(
@@ -173,7 +188,7 @@ define_relationship(
 )
 ```
 
-And after we've made that mapping, we can find all the measurements for a specific plant.
+And after we've made that mapping, we can find all the related measurements for a specific plant.
 
 ```{r}
 p101 = Plants$read(id == 101, mode='get')

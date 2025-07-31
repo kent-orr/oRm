@@ -155,13 +155,27 @@ record in the database?</p>
 <span><span class="co">#&gt; [1] 1</span></span>
 <span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">'SELECT * FROM measurements WHERE observer_id = 2'</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   observer_id plant_id measurement_date measurement_value</span></span>
-<span><span class="co">#&gt; 1           2      102            20300              8.15</span></span></code></pre></div>
-<p>You need to:</p>
-<ul>
-<li>Remember the correct column names</li>
-<li>Re-type the WHERE clause conditions</li>
-<li>Hope no one accidentally updates multiple rows</li>
-</ul>
+<span><span class="co">#&gt; 1           2      102            20300              8.15</span></span>
+<span></span>
+<span><span class="co"># Or if we stay are strinct about staying in dbplyr, we might do something like this:</span></span>
+<span></span>
+<span><span class="va">new_tab</span> <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/tbl.html" class="external-link">tbl</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"measurements"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>        measurement_value  <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
+<span>            <span class="va">observer_id</span> <span class="op">==</span> <span class="fl">2</span> <span class="op">~</span> <span class="fl">8.15</span>,</span>
+<span>            <span class="cn">TRUE</span> <span class="op">~</span> <span class="va">measurement_value</span></span>
+<span>        <span class="op">)</span></span>
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbWriteTable.html" class="external-link">dbWriteTable</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"measurements"</span>, <span class="va">new_tab</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>You’re either hardcoding or pasting together SQL, or you’re
+overwriting the wntire table. At best it’s not very DRY, and it can make
+your code harder to understand and maintain. At worst, you can delete
+your whole database in a single operation with no recourse.</p>
+<div class="float">
+<img src="https://media0.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3emZwaXh2cXhkbm85MjR2ZnI2OTkzMDhtYXMwem9ncGdiaTk3emp3dSZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/dJEMs13SrsiuA/200.webp" alt="oh noes!"><div class="figcaption">oh noes!</div>
+</div>
 <p>There’s no row-level object to work with, you’re always
 re-identifying rows with raw conditions.</p>
 </div>
@@ -169,7 +183,7 @@ re-identifying rows with raw conditions.</p>
 <h2 id="using-orm-to-manage-your-database">Using <code>oRm</code> to Manage Your Database<a class="anchor" aria-label="anchor" href="#using-orm-to-manage-your-database"></a>
 </h2>
 <p>So now let’s use <code>oRm</code> to manage our database. We’re going
-to define our table schema and enter our first observation.</p>
+to define our table schema and enter our first few observations.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kent-orr.github.io/oRm/">oRm</a></span><span class="op">)</span></span>
 <span></span>
@@ -242,6 +256,12 @@ it.</p>
 <span><span class="co">#&gt; plant_id: 102</span></span>
 <span><span class="co">#&gt; measurement_date: 20300</span></span>
 <span><span class="co">#&gt; measurement_value: 8.15</span></span></code></pre></div>
+<p>This time around we’re working with one single record, which is safer
+and more precise than using raw SQL. We’re also performing an update
+instead of re-writing the whole table.</p>
+<div class="float">
+<img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnVlYm13dmJybDdvZGJnczdtajJ1aHNiZTJ1dDF4enB6Y3E3dmY5ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TyPKuTkBXmBPO/giphy.gif" alt="snuggle fest"><div class="figcaption">snuggle fest</div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="relationships">Relationships<a class="anchor" aria-label="anchor" href="#relationships"></a>
@@ -272,7 +292,7 @@ to the Plants table. We’ll make use of that relationship now.</p>
 <p>At this point, our database is aware of the relationship between
 Plants and Measurements. But oRm is not. We’ll now
 <strong>model</strong> a <strong>relationship</strong> between the two
-tables (<strong>objects</strong>) which oRm will use.</p>
+tables which oRm <strong>objects</strong> will use.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/define_relationship.html">define_relationship</a></span><span class="op">(</span></span>
 <span>    local_model <span class="op">=</span> <span class="va">Plants</span>,</span>
@@ -288,8 +308,8 @@ tables (<strong>objects</strong>) which oRm will use.</p>
 <span><span class="co">#&gt;   Fields:</span></span>
 <span><span class="co">#&gt;   🔑 id          <span style="color: #555555;">INTEGER </span>  </span></span>
 <span><span class="co">#&gt;      plant_type  <span style="color: #555555;">TEXT    </span></span></span></code></pre></div>
-<p>And after we’ve made that mapping, we can find all the measurements
-for a specific plant.</p>
+<p>And after we’ve made that mapping, we can find all the related
+measurements for a specific plant.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p101</span> <span class="op">=</span> <span class="va">Plants</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">101</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">p101</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'measurements'</span><span class="op">)</span></span>
