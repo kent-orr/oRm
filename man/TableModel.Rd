@@ -64,6 +64,7 @@ User$drop_table(ask = FALSE)
 \item \href{#method-TableModel-create_table}{\code{TableModel$create_table()}}
 \item \href{#method-TableModel-drop_table}{\code{TableModel$drop_table()}}
 \item \href{#method-TableModel-record}{\code{TableModel$record()}}
+\item \href{#method-TableModel-tbl}{\code{TableModel$tbl()}}
 \item \href{#method-TableModel-read}{\code{TableModel$read()}}
 \item \href{#method-TableModel-relationship}{\code{TableModel$relationship()}}
 \item \href{#method-TableModel-print}{\code{TableModel$print()}}
@@ -185,12 +186,27 @@ Create a new Record object with this model.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-tbl"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-tbl}{}}}
+\subsection{Method \code{tbl()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$tbl()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-read"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-read}{}}}
 \subsection{Method \code{read()}}{
 Read records using dynamic filters and return in the specified mode.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$read(..., mode = c("all", "one_or_none", "get"), limit = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$read(
+  ...,
+  mode = c("all", "one_or_none", "get"),
+  .limit = 100,
+  .offset = 0,
+  .order_by = list()
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -200,8 +216,12 @@ Read records using dynamic filters and return in the specified mode.
 
 \item{\code{mode}}{One of "all", "one_or_none", or "get".}
 
-\item{\code{limit}}{Integer. Maximum number of records to return. NULL (default) means no limit.
+\item{\code{.limit}}{Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
 Positive values return the first N records, negative values return the last N records.}
+
+\item{\code{.offset}}{Integer. Offset for pagination. Default is 0.}
+
+\item{\code{.order_by}}{Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()}
 }
 \if{html}{\out{</div>}}
 }

@@ -39,6 +39,7 @@ on individual records.
 \itemize{
 \item \href{#method-Record-new}{\code{Record$new()}}
 \item \href{#method-Record-create}{\code{Record$create()}}
+\item \href{#method-Record-flush}{\code{Record$flush()}}
 \item \href{#method-Record-update}{\code{Record$update()}}
 \item \href{#method-Record-delete}{\code{Record$delete()}}
 \item \href{#method-Record-refresh}{\code{Record$refresh()}}
@@ -77,12 +78,21 @@ A new Record instance.
 \subsection{Method \code{create()}}{
 Insert this record into the database.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Record$create()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Record$create(flush_record = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
 Invisible NULL
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Record-flush"></a>}}
+\if{latex}{\out{\hypertarget{method-Record-flush}{}}}
+\subsection{Method \code{flush()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Record$flush(commit = NULL)}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Record-update"></a>}}
