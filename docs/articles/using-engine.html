@@ -40,9 +40,11 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
-    <li><a class="dropdown-item" href="../articles/using-tablemodel.html">Using TableModels</a></li>
+    <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
+    <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
-    <li><a class="dropdown-item" href="../articles/with_shiny.html">Using oRm with Shiny</a></li>
+    <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
   </ul>
 </li>
       </ul>
@@ -144,17 +146,16 @@ like Shiny by reusing open connections across sessions.</p></li>
 <p>The full API is documented in the Engine reference page, but here are
 the most commonly used methods:</p>
 <ul>
-<li><p><code>model()</code><br>
-Creates a <code>TableModel</code> object from the Engine. <a href="./using-tablemodels.html">See the TableModel vignette</a></p></li>
-<li><p><code>get_connection()</code><br>
-Returns the underlying DBI connection. You can use this directly for raw
-SQL or with <code><a href="https://dplyr.tidyverse.org/reference/tbl.html" class="external-link">dplyr::tbl()</a></code> for custom queries.</p></li>
-<li><p><code>execute(sql)</code><br>
-A lightweight wrapper around <code><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">DBI::dbExecute()</a></code> using the
-Engine’s connection.</p></li>
-<li><p><code>get_query(sql)</code><br>
-Executes a query and returns the results as a data.frame using
-<code><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">DBI::dbGetQuery()</a></code>.</p></li>
+<li><p><code>model()</code> Creates a <code>TableModel</code> object
+from the Engine. <a href="./using-tablemodels.html">See the TableModel
+vignette</a></p></li>
+<li><p><code>get_connection()</code> Returns the underlying DBI
+connection. You can use this directly for raw SQL or with
+<code><a href="https://dplyr.tidyverse.org/reference/tbl.html" class="external-link">dplyr::tbl()</a></code> for custom queries.</p></li>
+<li><p><code>execute(sql)</code> A lightweight wrapper around
+<code><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">DBI::dbExecute()</a></code> using the Engine’s connection.</p></li>
+<li><p><code>get_query(sql)</code> Executes a query and returns the
+results as a data.frame using <code><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">DBI::dbGetQuery()</a></code>.</p></li>
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>

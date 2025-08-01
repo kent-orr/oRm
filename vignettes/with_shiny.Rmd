@@ -1,5 +1,5 @@
 ---
-title: "Using oRm with Shiny"
+title: "oRm with Shiny"
 output: rmarkdown::html_vignette
 execute: 
   eval: false

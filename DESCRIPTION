@@ -22,7 +22,8 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    stevedore (>= 0.9.6)
+    stevedore (>= 0.9.6),
+    charlatan
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Collate: 

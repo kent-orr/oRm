@@ -1,0 +1,229 @@
+---
+title: "Using Relationships"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using Relationships}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+Having relationships between tables in a relational database can significantly enhance 
+data modeling and querying capabilities. But it can also lead to complex queries and 
+difficulty maintaining data integrity.
+
+In `oRm`, relationships aren’t full R6 objects like `Engine`, `TableModel`, or `Record`, 
+but they are attributes of TableModels that get inherited by their Records. This makes 
+it possible to traverse linked tables using the record you're working with.
+
+---
+
+### Getting Started
+
+Let’s create `Students` and `Classes` tables and populate them with some dummy data.
+
+```{r setup}
+library(oRm)
+engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE
+)
+Classes <- engine$model(
+    tablename = "classes", 
+    id = Column('INTEGER', primary_key = TRUE),
+    subject = Column('TEXT'),
+    teacher_id = ForeignKey('INTEGER', references = 'teachers.id')
+)
+Classes$create_table(overwrite=T)
+
+set.seed(100)
+Students <- engine$model(
+    tablename = "students", 
+    id = Column('INTEGER', primary_key = TRUE),
+    name = Column('TEXT', default = charlatan::ch_name),
+    class_id = ForeignKey('INTEGER', references = 'classes.id'),
+    grade = Column('NUMBER', default = \(x) round(rnorm(1, 85, 5)))
+)
+Students$create_table(overwrite=T)
+
+
+for (i in 1:10) {
+    Classes$record(
+        id = i, 
+        subject = ifelse(i %% 2 == 0, "Math", "Science"),
+        teacher_id = ifelse(i %% 2 == 0, 1, 2)
+    )$create()
+}
+Classes$read(.limit = 3)
+
+for (i in 1:100) {
+    Students$record(
+        id = i, 
+        class_id = sample(1:10, 1)
+    )$create()
+}
+Students$read(.limit = 3)
+
+```
+
+
+Okay, so in the old days, before `oRm` you might use dplyr to view related fields between tables via joins. We'll look at all the students in class with id=1
+
+
+```{r}
+class_tbl <- Classes$tbl()
+student_tbl <- Students$tbl()
+
+dplyr::left_join(class_tbl, student_tbl, by = c(id = "class_id")) |>
+    dplyr::filter(id == 1) |>
+    dplyr::collect()
+```
+
+That is a beutiful join that finds all students in class 1. Ready for all kinds of analysis now. But what if you're not trying to read and analyze the data, but make a change? What if we need to apply a curve to the grades in class 1? We can splice things `dplyr` style and hope to get our joins right, or, we could rely on a previously described relationship to get the necessary records and apply the curve.
+
+
+```{r}
+define_relationship(
+    local_model = Classes, 
+    local_key = 'id',
+    type = 'one_to_many',
+    related_model = Students, 
+    related_key = 'class_id',
+    ref = 'students',
+    backref = 'class'
+)
+```
+
+The possible types are 'one_to_many', 'one_to_one', 'many_to_many', or 'many_to_one'. The ref and backref arguments are used to define the relationship between the two models. You'll use those values to call on related records. Let's see that in action:
+
+```{r}
+class1 = Classes$read(id == 1, mode='get')
+class1_students = class1$relationship('students')
+class1_students |> sapply(\(x) paste(
+    x$data$name, round(x$data$grade), sep = ': '))
+
+# let's go ahead and apply that curve to the grades
+for (student in class1_students) {
+    student$data$grade <- student$data$grade + 3
+    student$update()
+}
+
+class1_students |> sapply(\(x) paste(
+    x$data$name, round(x$data$grade), sep = ': '))
+
+```
+
+And if we look at that in reverse:
+
+```{r}
+class1_students[[1]]$relationship('class')
+```
+
+We can also apply filtering to the related records:
+
+```{r}
+class1$relationship('students', grade < 87)
+```
+
+## Nested Relationships
+
+Let's expand on the complexity by creating a new table for teachers. There are only a handful of teachers, and they may have multipe classes to take care of, so we'll assign teachers to multiple classes. 
+
+
+```{r}
+set.seed(100)
+Teachers <- engine$model(
+    tablename = "teachers", 
+    id = Column('INTEGER', primary_key = TRUE),
+    name = Column('TEXT', default = charlatan::ch_name)
+)
+Teachers$create_table(overwrite=T)
+
+for (i in 1:3) {
+    Teachers$record(id = i)$create()
+}
+Teachers$read()[[1]]
+
+
+set.seed(100)
+TeacherAssignments <- engine$model(
+    tablename = "teacher_assignments", 
+    id = Column('INTEGER', primary_key = TRUE),
+    teacher_id = ForeignKey('INTEGER', references = 'teachers.id'),
+    class_id = ForeignKey('INTEGER', references = 'classes.id')
+)
+
+TeacherAssignments$create_table(overwrite=T)
+
+for (i in 1:length(Classes$read())) {
+    TeacherAssignments$record(
+        teacher_id = sample(1:3, 1),
+        class_id = i
+    )$create()
+} 
+TeacherAssignments$read()[1]
+
+```
+
+We have two relationships we need to deine now: 'one_to_many' from Teachers to TeacherAssignments, and 'many_to_one' from TeacherAssignments to Classes.
+
+
+```{r}
+define_relationship(
+    local_model = Teachers, 
+    local_key = 'id',
+    type = 'one_to_many',
+    related_model = TeacherAssignments,
+    related_key = 'teacher_id',
+    ref = 'teacher_assignments',
+    backref = 'teacher'
+)
+
+define_relationship(
+    local_model = TeacherAssignments, 
+    local_key = 'class_id',
+    type ='one_to_one',
+    related_model = Classes,
+    related_key = 'id',
+    ref = 'class',
+    backref = 'teacher_assignment'
+)
+    
+```
+
+You can now traverse from `Teachers` -> `TeacherAssignments` -> `Classes` and back again. 
+
+
+```{r}
+teacher <- Teachers$read(id == 3, mode='get')
+
+teacher$relationship('teacher_assignments') |>
+    lapply(\(x) x$relationship('class')) |>
+    lapply(\(x) x$relationship('students'))
+
+bslib::card(
+    bslib::card_title(teacher$data$name),
+    bslib::card_body(
+        teacher$relationship('teacher_assignments') |>
+            lapply(\(x) {
+                class = x$relationship('class')
+                bslib::card(
+                    bslib::card_title(class$data$subject),
+                    bslib::card_body(
+                        class$relationship('students') |>
+                            lapply(\(x) shiny::tags$p(paste(x$data$name, round(x$data$grade))))
+                    
+                    )
+                )
+            })
+    )
+)
+```

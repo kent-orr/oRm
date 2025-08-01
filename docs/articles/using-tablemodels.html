@@ -40,9 +40,11 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
-    <li><a class="dropdown-item" href="../articles/using-tablemodel.html">Using TableModels</a></li>
+    <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
+    <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
-    <li><a class="dropdown-item" href="../articles/with_shiny.html">Using oRm with Shiny</a></li>
+    <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
   </ul>
 </li>
       </ul>
@@ -74,8 +76,8 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Using TableModels</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/kent-orr/oRm/blob/HEAD/vignettes/using-tablemodel.Rmd" class="external-link"><code>vignettes/using-tablemodel.Rmd</code></a></small>
-      <div class="d-none name"><code>using-tablemodel.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/kent-orr/oRm/blob/HEAD/vignettes/using-tablemodels.Rmd" class="external-link"><code>vignettes/using-tablemodels.Rmd</code></a></small>
+      <div class="d-none name"><code>using-tablemodels.Rmd</code></div>
     </div>
 
     
@@ -219,9 +221,9 @@ returns one or multiple records.</p>
 argument. It’s a list of unquoted column names that will get applied to
 <code><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">dplyr::arrange()</a></code>. So if it works in <code>arrange</code>
 call, it should work here as well, and that includes the designation of
-<code>desc()</code> to sort in descending order.</p>
+<code><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc()</a></code> to sort in descending order.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">Classes</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.order_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">subject</span>, <span class="fu">desc</span><span class="op">(</span><span class="va">id</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">Classes</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.order_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">subject</span>, <span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">subject</span>, <span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">}</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># sqlite is noisy about arrange and limits</span></span>
 <span><span class="co">#&gt;  [1] "Math 10"   "Math 8"    "Math 6"    "Math 4"    "Math 2"    "Science 9"</span></span>

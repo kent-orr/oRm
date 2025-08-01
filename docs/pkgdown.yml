@@ -4,10 +4,12 @@ pkgdown_sha: ~
 articles:
   get_started: get_started.html
   using-engine: using-engine.html
-  using-tablemodel: using-tablemodel.html
+  using-records: using-records.html
+  using-relationships: using-relationships.html
+  using-tablemodels: using-tablemodels.html
   why_oRm: why_oRm.html
   with_shiny: with_shiny.html
-last_built: 2025-08-01T00:43Z
+last_built: 2025-08-01T01:54Z
 urls:
   reference: https://kent-orr.github.io/oRm/reference
   article: https://kent-orr.github.io/oRm/articles

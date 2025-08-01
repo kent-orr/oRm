@@ -53,18 +53,13 @@ engine
 
 The full API is documented in the Engine reference page, but here are the most commonly used methods:
 
-- `model()`  
-  Creates a `TableModel` object from the Engine. [See the TableModel vignette](./using-tablemodels.html)
+- `model()` Creates a `TableModel` object from the Engine. [See the TableModel vignette](./using-tablemodels.html)
 
-- `get_connection()`  
-  Returns the underlying DBI connection. You can use this directly for raw SQL or with 
-  `dplyr::tbl()` for custom queries.
+- `get_connection()` Returns the underlying DBI connection. You can use this directly for raw SQL or with `dplyr::tbl()` for custom queries.
 
-- `execute(sql)`  
-  A lightweight wrapper around `DBI::dbExecute()` using the Engine's connection.
+- `execute(sql)` A lightweight wrapper around `DBI::dbExecute()` using the Engine's connection.
 
-- `get_query(sql)`  
-  Executes a query and returns the results as a data.frame using `DBI::dbGetQuery()`.
+- `get_query(sql)` Executes a query and returns the results as a data.frame using `DBI::dbGetQuery()`.  
 
 ```{r, eval=FALSE}
 
