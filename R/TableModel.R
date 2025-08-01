@@ -208,7 +208,7 @@ TableModel <- R6::R6Class(
       }
 
       # Apply ordering (only if user provided .order_by)
-      if (!missing(.order_by) && substitute(.order_by) != list()) {
+      if (!missing(.order_by)) {
         order_exprs <- rlang::enexpr(.order_by)
       
         # Handle .order_by = c(x, desc(y)) vs .order_by = x
