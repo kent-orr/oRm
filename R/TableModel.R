@@ -207,9 +207,18 @@ TableModel <- R6::R6Class(
         tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
       }
 
-      if (length(.order_by) > 0) {
-        tbl_ref <- tbl_ref |>
-          dplyr::arrange(!!!.order_by)
+      # Apply ordering (only if user provided .order_by)
+      if (!missing(.order_by) && substitute(.order_by) != list()) {
+        order_exprs <- rlang::enexpr(.order_by)
+      
+        # Handle .order_by = c(x, desc(y)) vs .order_by = x
+        if (rlang::is_call(order_exprs, "c")) {
+          order_exprs <- as.list(order_exprs)[-1]  # Drop the "c" call
+        } else {
+          order_exprs <- list(order_exprs)
+        }
+      
+        tbl_ref <- dplyr::arrange(tbl_ref, !!!order_exprs)
       }
 
       # Apply pagination using SQL-compatible operations
