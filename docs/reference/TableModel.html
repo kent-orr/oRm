@@ -11,7 +11,7 @@ with the database table."><meta property="og:image" content="https://kent-orr.gi
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,6 +23,8 @@ with the database table."><meta property="og:image" content="https://kent-orr.gi
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
+    <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
+    <li><a class="dropdown-item" href="../articles/using-tablemodel.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
     <li><a class="dropdown-item" href="../articles/with_shiny.html">Using oRm with Shiny</a></li>
   </ul></li>
@@ -110,12 +112,13 @@ with the database table.</p>
 <li><p><a href="#method-TableModel-create_table"><code>TableModel$create_table()</code></a></p></li>
 <li><p><a href="#method-TableModel-drop_table"><code>TableModel$drop_table()</code></a></p></li>
 <li><p><a href="#method-TableModel-record"><code>TableModel$record()</code></a></p></li>
+<li><p><a href="#method-TableModel-tbl"><code>TableModel$tbl()</code></a></p></li>
 <li><p><a href="#method-TableModel-read"><code>TableModel$read()</code></a></p></li>
 <li><p><a href="#method-TableModel-relationship"><code>TableModel$relationship()</code></a></p></li>
 <li><p><a href="#method-TableModel-print"><code>TableModel$print()</code></a></p></li>
 <li><p><a href="#method-TableModel-clone"><code>TableModel$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-TableModel-new"></a><div class="section">
-<h3 id="method-new-">Method <code><a href="https://rdrr.io/r/methods/new.html" class="external-link">new()</a></code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
+<h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Constructor for a new TableModel.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/TableModel.html">TableModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">tablename</span>, <span class="va">engine</span>, <span class="va">...</span>, .data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -233,11 +236,26 @@ User$drop_table(ask = FALSE)
 </dl><p></p></div>
 </div>
 
+</div><p></p><hr><a id="method-TableModel-tbl"></a><div class="section">
+<h3 id="method-tbl-">Method <code>tbl()</code><a class="anchor" aria-label="anchor" href="#method-tbl-"></a></h3>
+
+<div class="section">
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">tbl</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
 </div><p></p><hr><a id="method-TableModel-read"></a><div class="section">
 <h3 id="method-read-">Method <code>read()</code><a class="anchor" aria-label="anchor" href="#method-read-"></a></h3>
 <p>Read records using dynamic filters and return in the specified mode.</p><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">...</span>, mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"all"</span>, <span class="st">"one_or_none"</span>, <span class="st">"get"</span><span class="op">)</span>, limit <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"all"</span>, <span class="st">"one_or_none"</span>, <span class="st">"get"</span><span class="op">)</span>,</span>
+<span>  .limit <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  .offset <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  .order_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -250,9 +268,17 @@ User$drop_table(ask = FALSE)
 <dd><p>One of "all", "one_or_none", or "get".</p></dd>
 
 
-<dt><code>limit</code></dt>
-<dd><p>Integer. Maximum number of records to return. NULL (default) means no limit.
+<dt><code>.limit</code></dt>
+<dd><p>Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
 Positive values return the first N records, negative values return the last N records.</p></dd>
+
+
+<dt><code>.offset</code></dt>
+<dd><p>Integer. Offset for pagination. Default is 0.</p></dd>
+
+
+<dt><code>.order_by</code></dt>
+<dd><p>Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()</p></dd>
 
 
 </dl><p></p></div>
@@ -261,7 +287,7 @@ Positive values return the first N records, negative values return the last N re
 </div><p></p><hr><a id="method-TableModel-relationship"></a><div class="section">
 <h3 id="method-relationship-">Method <code>relationship()</code><a class="anchor" aria-label="anchor" href="#method-relationship-"></a></h3>
 <p>Query related records based on defined relationships.</p><div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="va">rel_name</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -285,7 +311,7 @@ Positive values return the first N records, negative values return the last N re
 </div><p></p><hr><a id="method-TableModel-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p>Print a formatted overview of the model, including its fields.</p><div class="section">
-<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -293,7 +319,7 @@ Positive values return the first N records, negative values return the last N re
 </div><p></p><hr><a id="method-TableModel-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 

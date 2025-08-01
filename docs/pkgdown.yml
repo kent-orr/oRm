@@ -3,9 +3,11 @@ pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
   get_started: get_started.html
+  using-engine: using-engine.html
+  using-tablemodel: using-tablemodel.html
   why_oRm: why_oRm.html
   with_shiny: with_shiny.html
-last_built: 2025-07-31T13:52Z
+last_built: 2025-08-01T00:43Z
 urls:
   reference: https://kent-orr.github.io/oRm/reference
   article: https://kent-orr.github.io/oRm/articles

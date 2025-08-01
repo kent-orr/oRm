@@ -9,7 +9,7 @@ for creating, updating, and deleting individual records."><meta property="og:ima
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,8 @@ for creating, updating, and deleting individual records."><meta property="og:ima
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
+    <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
+    <li><a class="dropdown-item" href="../articles/using-tablemodel.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
     <li><a class="dropdown-item" href="../articles/with_shiny.html">Using oRm with Shiny</a></li>
   </ul></li>
@@ -100,6 +102,7 @@ on individual records.</p>
 
 <ul><li><p><a href="#method-Record-new"><code>Record$new()</code></a></p></li>
 <li><p><a href="#method-Record-create"><code>Record$create()</code></a></p></li>
+<li><p><a href="#method-Record-flush"><code>Record$flush()</code></a></p></li>
 <li><p><a href="#method-Record-update"><code>Record$update()</code></a></p></li>
 <li><p><a href="#method-Record-delete"><code>Record$delete()</code></a></p></li>
 <li><p><a href="#method-Record-refresh"><code>Record$refresh()</code></a></p></li>
@@ -107,7 +110,7 @@ on individual records.</p>
 <li><p><a href="#method-Record-print"><code>Record$print()</code></a></p></li>
 <li><p><a href="#method-Record-clone"><code>Record$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-Record-new"></a><div class="section">
-<h3 id="method-new-">Method <code><a href="https://rdrr.io/r/methods/new.html" class="external-link">new()</a></code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
+<h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Initialize a new Record instance.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/Record.html">Record</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">model</span>, <span class="va">...</span>, .data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -138,7 +141,7 @@ on individual records.</p>
 <h3 id="method-create-">Method <code>create()</code><a class="anchor" aria-label="anchor" href="#method-create-"></a></h3>
 <p>Insert this record into the database.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span>flush_record <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -146,10 +149,19 @@ on individual records.</p>
 <p>Invisible NULL</p>
 </div>
 
+</div><p></p><hr><a id="method-Record-flush"></a><div class="section">
+<h3 id="method-flush-">Method <code><a href="https://rdrr.io/r/base/connections.html" class="external-link">flush()</a></code><a class="anchor" aria-label="anchor" href="#method-flush-"></a></h3>
+
+<div class="section">
+<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">flush</span><span class="op">(</span>commit <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
 </div><p></p><hr><a id="method-Record-update"></a><div class="section">
 <h3 id="method-update-">Method <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code><a class="anchor" aria-label="anchor" href="#method-update-"></a></h3>
 <p>Update this record in the database.</p><div class="section">
-<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
+<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span><span class="va">...</span>, .data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -173,7 +185,7 @@ on individual records.</p>
 </div><p></p><hr><a id="method-Record-delete"></a><div class="section">
 <h3 id="method-delete-">Method <code>delete()</code><a class="anchor" aria-label="anchor" href="#method-delete-"></a></h3>
 <p>Delete this record from the database.</p><div class="section">
-<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">delete</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -185,7 +197,7 @@ on individual records.</p>
 </div><p></p><hr><a id="method-Record-refresh"></a><div class="section">
 <h3 id="method-refresh-">Method <code>refresh()</code><a class="anchor" aria-label="anchor" href="#method-refresh-"></a></h3>
 <p>Refresh this record from the database.</p><div class="section">
-<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">refresh</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -197,7 +209,7 @@ on individual records.</p>
 </div><p></p><hr><a id="method-Record-relationship"></a><div class="section">
 <h3 id="method-relationship-">Method <code>relationship()</code><a class="anchor" aria-label="anchor" href="#method-relationship-"></a></h3>
 <p>Retrieve related records based on a defined relationship.</p><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="va">rel_name</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -229,7 +241,7 @@ on individual records.</p>
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 
 <div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -237,7 +249,7 @@ on individual records.</p>
 </div><p></p><hr><a id="method-Record-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
