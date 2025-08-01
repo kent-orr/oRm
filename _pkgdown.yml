@@ -5,11 +5,13 @@ template:
 
 articles:
 - title: "Quickstart"
+  navarbar: ~
   contents:
   - get_started
   - why_oRm
   
 - title: "Using the ORM"
+  navarbar: ~
   contents:
   - using-engine
   - using-tablemodels
@@ -17,5 +19,6 @@ articles:
   - using-relationships
 
 - title: "Advanced Topics"
+  navarbar: ~
   contents:
   - with_shiny
