@@ -3,4 +3,19 @@ template:
   bootstrap: 5
   light-switch: true
 
+articles:
+- title: "Quickstart"
+  contents:
+  - get_started
+  - why_oRm
+  
+- title: "Using the ORM"
+  contents:
+  - using-engine
+  - using-tablemodels
+  - using-records
+  - using-relationships
 
+- title: "Advanced Topics"
+  contents:
+  - with_shiny

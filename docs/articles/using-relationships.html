@@ -35,18 +35,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
-    <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
-    <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
-    <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
-    <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
-    <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
-    <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
-  </ul>
-</li>
+<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -380,220 +369,14 @@ TeacherAssignments to Classes.</p>
 <span><span class="co">#&gt;      class_id    <span style="color: #555555;">INTEGER </span></span></span></code></pre></div>
 <p>You can now traverse from <code>Teachers</code> -&gt;
 <code>TeacherAssignments</code> -&gt; <code>Classes</code> and back
-again.</p>
+again. TO demonstrate that, we’ll make a deck of info cards for a
+teacher showing each class and the students in each class.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">teacher</span> <span class="op">&lt;-</span> <span class="va">Teachers</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">teacher</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'teacher_assignments'</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'class'</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'students'</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [[1]]</span></span>
-<span><span class="co">#&gt; [[1]][[1]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Renada Corwin DDS</span></span>
-<span><span class="co">#&gt; grade: 92</span></span>
-<span><span class="co">#&gt; id: 18</span></span>
-<span><span class="co">#&gt; class_id: 2 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[1]][[2]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Dion Orn</span></span>
-<span><span class="co">#&gt; grade: 87</span></span>
-<span><span class="co">#&gt; id: 23</span></span>
-<span><span class="co">#&gt; class_id: 2 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[1]][[3]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Metta Mohr</span></span>
-<span><span class="co">#&gt; grade: 87</span></span>
-<span><span class="co">#&gt; id: 28</span></span>
-<span><span class="co">#&gt; class_id: 2 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[1]][[4]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Hamp Koch II</span></span>
-<span><span class="co">#&gt; grade: 83</span></span>
-<span><span class="co">#&gt; id: 51</span></span>
-<span><span class="co">#&gt; class_id: 2 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[1]][[5]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Elvia Kuhlman</span></span>
-<span><span class="co">#&gt; grade: 89</span></span>
-<span><span class="co">#&gt; id: 59</span></span>
-<span><span class="co">#&gt; class_id: 2 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[1]][[6]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Shanae Hudson MD</span></span>
-<span><span class="co">#&gt; grade: 86</span></span>
-<span><span class="co">#&gt; id: 62</span></span>
-<span><span class="co">#&gt; class_id: 2 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[1]][[7]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Annabella Beatty MD</span></span>
-<span><span class="co">#&gt; grade: 86</span></span>
-<span><span class="co">#&gt; id: 93</span></span>
-<span><span class="co">#&gt; class_id: 2 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]]</span></span>
-<span><span class="co">#&gt; [[2]][[1]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Dr. Bob Heller</span></span>
-<span><span class="co">#&gt; grade: 91</span></span>
-<span><span class="co">#&gt; id: 5</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[2]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Kathey Dietrich</span></span>
-<span><span class="co">#&gt; grade: 81</span></span>
-<span><span class="co">#&gt; id: 6</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[3]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Tory Boyle</span></span>
-<span><span class="co">#&gt; grade: 81</span></span>
-<span><span class="co">#&gt; id: 11</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[4]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Drury Funk</span></span>
-<span><span class="co">#&gt; grade: 79</span></span>
-<span><span class="co">#&gt; id: 12</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[5]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Dr. Jagger Hoppe Sr.</span></span>
-<span><span class="co">#&gt; grade: 88</span></span>
-<span><span class="co">#&gt; id: 31</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[6]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Dr. Palmer Morissette PhD</span></span>
-<span><span class="co">#&gt; grade: 87</span></span>
-<span><span class="co">#&gt; id: 38</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[7]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Everett Medhurst DVM</span></span>
-<span><span class="co">#&gt; grade: 86</span></span>
-<span><span class="co">#&gt; id: 41</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[8]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Luis Kub</span></span>
-<span><span class="co">#&gt; grade: 86</span></span>
-<span><span class="co">#&gt; id: 69</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[9]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Kareem Schimmel</span></span>
-<span><span class="co">#&gt; grade: 88</span></span>
-<span><span class="co">#&gt; id: 87</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[10]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Mekhi Bednar</span></span>
-<span><span class="co">#&gt; grade: 82</span></span>
-<span><span class="co">#&gt; id: 88</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]][[11]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Arvilla Langworth-Stamm</span></span>
-<span><span class="co">#&gt; grade: 91</span></span>
-<span><span class="co">#&gt; id: 92</span></span>
-<span><span class="co">#&gt; class_id: 4 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]]</span></span>
-<span><span class="co">#&gt; [[3]][[1]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Kacie Torphy</span></span>
-<span><span class="co">#&gt; grade: 86</span></span>
-<span><span class="co">#&gt; id: 10</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[2]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Steve Prohaska-Konopelski</span></span>
-<span><span class="co">#&gt; grade: 90</span></span>
-<span><span class="co">#&gt; id: 20</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[3]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Perry Harris</span></span>
-<span><span class="co">#&gt; grade: 94</span></span>
-<span><span class="co">#&gt; id: 26</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[4]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Miss Danna Stroman DVM</span></span>
-<span><span class="co">#&gt; grade: 88</span></span>
-<span><span class="co">#&gt; id: 49</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[5]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Cecily Gleichner</span></span>
-<span><span class="co">#&gt; grade: 76</span></span>
-<span><span class="co">#&gt; id: 56</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[6]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Ms. Theda Dare</span></span>
-<span><span class="co">#&gt; grade: 84</span></span>
-<span><span class="co">#&gt; id: 65</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[7]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Mr. Marvin Zboncak</span></span>
-<span><span class="co">#&gt; grade: 88</span></span>
-<span><span class="co">#&gt; id: 67</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[8]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Ananias Walter</span></span>
-<span><span class="co">#&gt; grade: 91</span></span>
-<span><span class="co">#&gt; id: 80</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[9]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Dr. Montrell Renner</span></span>
-<span><span class="co">#&gt; grade: 92</span></span>
-<span><span class="co">#&gt; id: 85</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[10]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Jorja Grant</span></span>
-<span><span class="co">#&gt; grade: 79</span></span>
-<span><span class="co">#&gt; id: 86</span></span>
-<span><span class="co">#&gt; class_id: 8 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[3]][[11]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Murdock Nader</span></span>
-<span><span class="co">#&gt; grade: 90</span></span>
-<span><span class="co">#&gt; id: 89</span></span>
-<span><span class="co">#&gt; class_id: 8</span></span>
+<span><span class="co"># teacher$relationship('teacher_assignments') |&gt;</span></span>
+<span><span class="co">#     lapply(\(x) x$relationship('class')) |&gt;</span></span>
+<span><span class="co">#     lapply(\(x) x$relationship('students'))</span></span>
 <span></span>
 <span><span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/card.html" class="external-link">card</a></span><span class="op">(</span></span>
 <span>    <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/card_body.html" class="external-link">card_title</a></span><span class="op">(</span><span class="va">teacher</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span><span class="op">)</span>,</span>
@@ -601,11 +384,11 @@ again.</p>
 <span>        <span class="va">teacher</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'teacher_assignments'</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>            <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span>                <span class="va">class</span> <span class="op">=</span> <span class="va">x</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'class'</span><span class="op">)</span></span>
-<span>                <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/card.html" class="external-link">card</a></span><span class="op">(</span></span>
+<span>                <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/card.html" class="external-link">card</a></span><span class="op">(</span>max_height <span class="op">=</span> <span class="st">'800px'</span>,</span>
 <span>                    <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/card_body.html" class="external-link">card_title</a></span><span class="op">(</span><span class="va">class</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">subject</span><span class="op">)</span>,</span>
 <span>                    <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/card_body.html" class="external-link">card_body</a></span><span class="op">(</span></span>
 <span>                        <span class="va">class</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'students'</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                            <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">shiny</span><span class="fu">::</span><span class="va"><a href="https://rstudio.github.io/htmltools/reference/builder.html" class="external-link">tags</a></span><span class="op">$</span><span class="fu">p</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">grade</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>                            <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">htmltools</span><span class="fu">::</span><span class="va"><a href="https://rstudio.github.io/htmltools/reference/builder.html" class="external-link">tags</a></span><span class="op">$</span><span class="fu">p</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">grade</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span>                    </span>
 <span>                    <span class="op">)</span></span>
 <span>                <span class="op">)</span></span>
@@ -617,7 +400,7 @@ again.</p>
 <h5>Theophile Zemlak</h5>
 </div>
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
-<div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5">
+<div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5" style="max-height:800px;">
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
 <h5>Math</h5>
 </div>
@@ -632,7 +415,7 @@ again.</p>
 </div>
 <script data-bslib-card-init>bslib.Card.initializeAllCards();</script>
 </div>
-<div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5">
+<div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5" style="max-height:800px;">
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
 <h5>Math</h5>
 </div>
@@ -651,7 +434,7 @@ again.</p>
 </div>
 <script data-bslib-card-init>bslib.Card.initializeAllCards();</script>
 </div>
-<div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5">
+<div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5" style="max-height:800px;">
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
 <h5>Math</h5>
 </div>

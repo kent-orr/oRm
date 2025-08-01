@@ -199,15 +199,15 @@ define_relationship(
     
 ```
 
-You can now traverse from `Teachers` -> `TeacherAssignments` -> `Classes` and back again. 
+You can now traverse from `Teachers` -> `TeacherAssignments` -> `Classes` and back again. TO demonstrate that, we'll make a deck of info cards for a teacher showing each class and the students in each class.
 
 
 ```{r}
 teacher <- Teachers$read(id == 3, mode='get')
 
-teacher$relationship('teacher_assignments') |>
-    lapply(\(x) x$relationship('class')) |>
-    lapply(\(x) x$relationship('students'))
+# teacher$relationship('teacher_assignments') |>
+#     lapply(\(x) x$relationship('class')) |>
+#     lapply(\(x) x$relationship('students'))
 
 bslib::card(
     bslib::card_title(teacher$data$name),
@@ -215,11 +215,11 @@ bslib::card(
         teacher$relationship('teacher_assignments') |>
             lapply(\(x) {
                 class = x$relationship('class')
-                bslib::card(
+                bslib::card(max_height = '800px',
                     bslib::card_title(class$data$subject),
                     bslib::card_body(
                         class$relationship('students') |>
-                            lapply(\(x) shiny::tags$p(paste(x$data$name, round(x$data$grade))))
+                            lapply(\(x) htmltools::tags$p(paste(x$data$name, round(x$data$grade))))
                     
                     )
                 )
