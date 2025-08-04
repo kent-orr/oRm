@@ -297,6 +297,23 @@ test_that("Engine handles errors gracefully when executing invalid SQL queries",
   engine$close()
 })
 
+test_that("Engine stores .schema and qualifies model tablename", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    .schema = "analytics"
+  )
+
+  expect_equal(engine$schema, "analytics")
+
+  model <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+
+  expect_s3_class(model, "TableModel")
+  expect_equal(model$tablename, "analytics.users")
+  expect_equal(model$schema, "analytics")
+})
+
+
 test_that("Engine can generate a TableModel using model() method", {
   
   engine <- Engine$new(
