@@ -3,6 +3,37 @@
 #' include Dialect-sqlite.R
 NULL
 
+dispatch_method <- function(x, method, ...) {
+    dialect <- if (inherits(x, "Engine")) {
+        x$dialect
+    } else if (inherits(x, "TableModel")) {
+        x$engine$dialect
+    } else if (inherits(x, "Record")) {
+        x$model$engine$dialect
+    } else {
+        "default"
+    }
+
+    method_name <- paste(method, dialect, sep = '.')
+    method_fn <- get0(method_name, mode = "function", ifnotfound = paste0(method, '.default'))
+    method_fn(x, ...)
+}
+
+# Qualify Schema ---------------------------------------------------------
+
+qualify <- function(x, tablename, schema) {
+    dispatch_method(x, "qualify", tablename, schema)
+}
+
+qualify.default <- function(x, tablename, schema) {
+
+}
+
+
+# Render -----------------------------------------------------------------
+
+
+
 #' Render a column field to SQL
 #'
 #' @param field A Column object
@@ -17,7 +48,7 @@ render_field <- function(field, conn, ...) {
 
 add_part <- function(parts, field, true, false = NULL) {
     if(is.null(field))
-        return(parts)
+    return(parts)
     
     parts <- c(parts, if (field) true else false)
     parts
@@ -25,7 +56,7 @@ add_part <- function(parts, field, true, false = NULL) {
 
 add_extras <- function(parts, fields) {
     if (!is.null(fields) && length(fields) > 0) 
-        parts <- c(parts, unlist(fields))
+    parts <- c(parts, unlist(fields))
     parts
 }
 
@@ -37,11 +68,11 @@ render_field.default <- function(field, conn, ...) {
     parts = c(field$type)
     
     parts = parts |>
-        add_part(field$nullable, NULL, "NOT NULL") |>
-        add_part(field$unique, "UNIQUE") |>
-        add_part(field$primary_key, "PRIMARY KEY") |>
-        add_extras(field$extras)
-        
+    add_part(field$nullable, NULL, "NOT NULL") |>
+    add_part(field$unique, "UNIQUE") |>
+    add_part(field$primary_key, "PRIMARY KEY") |>
+    add_extras(field$extras)
+    
     # if a user wants to use sql() to enter a sql function like CURRENT_TIMESTAMP
     if (!is.null(field$default)) {
         if (inherits(field$default, "sql")) {
@@ -50,7 +81,7 @@ render_field.default <- function(field, conn, ...) {
             parts <- c(parts, "DEFAULT", DBI::dbQuoteLiteral(DBI::ANSI(), field$default))
         }
     }
-        
+    
     parts_string = paste(parts, collapse = ' ')
     paste(DBI::dbQuoteIdentifier(conn, field$name), parts_string)
 }
@@ -85,29 +116,17 @@ render_constraint.default <- function(field, conn, ...) {
         return(NULL)
     }
     
-    fk_string = paste(fk_parts, collapse  = ' ')
+    fk_string = paste(fk_parts, collapse    = ' ')
     fk_string
 }
 
 
+# Flush ------------------------------------------------------------------
+
+
+
 flush <- function(x, table, data, con, commit = TRUE, ...) {
-  # Get the dialect
-  dialect <- if (inherits(x, "Engine")) {
-    x$dialect
-  } else if (inherits(x, "TableModel")) {
-    x$engine$dialect
-  } else if (inherits(x, "Record")) {
-    x$model$engine$dialect
-  } else {
-    "default"
-  }
-  
-  # Find the appropriate method
-  method_name <- paste0("flush.", dialect)
-  method <- get0(method_name, mode = "function", ifnotfound = flush.default)
-  
-  # Call the method
-  method(x, table, data, con, commit, ...)
+    dispatch_method(x, "flush", table, data, con, commit,...)
 }
 
 flush.default <- local({
