@@ -33,6 +33,7 @@ Engine <- R6::R6Class(
         use_pool = FALSE,
         persist = FALSE,
         dialect = NULL,
+        schema  = NULL,
         
         
         
@@ -47,7 +48,7 @@ Engine <- R6::R6Class(
             # Combine dots and conn_args, with dots taking precedence
             self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
             private$detect_dialect()
-            self$.schema <-.schema  
+            self$schema <-.schema  
             self$use_pool <- use_pool
             self$persist <- persist
         },
@@ -115,7 +116,7 @@ Engine <- R6::R6Class(
         #' @param .schema Character. The default schema to apply to the TableModel object
         #' @return A new TableModel object
         model = function(tablename, ..., .data = list(), .schema = NULL) {
-            if (is.null(.schema)) .schema <- self$.schema
+            if (is.null(.schema)) .schema <- self$schema
             tablename <- self$qualify(tablename, schema = .schema)
             TableModel$new(tablename = tablename, engine = self, ..., .data = .data)
         },
@@ -129,7 +130,7 @@ Engine <- R6::R6Class(
             private$in_transaction
         },
         
-        qualify = function(tablename, schema = self$.schema) {
+        qualify = function(tablename, schema = self$schema) {
             if (!grepl("\\.", tablename) && !is.null(schema)) {
                 paste(schema, tablename, sep = ".")
             } else {

@@ -52,6 +52,7 @@ TableModel <- R6::R6Class(
   public = list(
     tablename = NULL,
     engine = NULL,
+    .schema = NULL,
     fields = list(),
     relationships = list(),
 
@@ -61,13 +62,14 @@ TableModel <- R6::R6Class(
     #' @param engine The Engine object for database connection.
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
-    initialize = function(tablename, engine, ..., .data = list()) {
+    initialize = function(tablename, engine, ..., .data = list(), .schema = NULL) {
       if (missing(tablename) || missing(engine)) {
         stop("Both 'tablename' and 'engine' must be provided to TableModel.")
       }
 
       self$tablename <- tablename
       self$engine <- engine
+      if (is.null(.schema)) self$.schema <- self$engine$.schema
 
       dots <- utils::modifyList(.data, rlang::list2(...))
       col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
