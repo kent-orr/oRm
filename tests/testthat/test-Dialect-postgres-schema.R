@@ -7,6 +7,10 @@ setup_postgres_test_db <- function() {
         }
     }
 
+    if (!requireNamespace("RPostgres", quietly = TRUE)) {
+        skip("RPostgres not available, skipping PostgreSQL tests")
+    }
+
     library(stevedore)
     if (!stevedore::docker_available()) {
         testthat::skip("Docker not available, skipping PostgreSQL tests")
@@ -69,14 +73,9 @@ reg.finalizer(environment(), function(e) {
     cleanup_postgres_test_db()
 }, onexit = TRUE)
 
-
-test_that("engine schema operations work with Postgres", {
-    if (!requireNamespace("RPostgres", quietly = TRUE)) {
-        skip("RPostgres not available, skipping PostgreSQL tests")
-    }
-
+test_that('engine schema can be set on initialization', {
     conn_info <- tryCatch({
-        setup_postgres_test_db()
+        c(setup_postgres_test_db(),.schema='test')
     }, error = function(e) {
         skip(paste("Could not set up PostgreSQL container:", e$message))
         NULL
@@ -87,7 +86,59 @@ test_that("engine schema operations work with Postgres", {
 
     engine <- do.call(Engine$new, conn_info)
 
-    engine$set_schema("public")
+    expect_equal(engine$schema, "test")
+    expect_equal(engine$conn_args$dbname, "test")
+    expect_equal(engine$conn_args$schema, "test")
+    expect_equal(engine$conn_args$host, "localhost")
+    expect_equal(engine$conn_args$user, "tester")
+
+})
+
+test_that('engine models create a schema if it does not exist', {
+
+    conn_info <- tryCatch({
+        c(setup_postgres_test_db(),.schema='test')
+    }, error = function(e) {
+        skip(paste("Could not set up PostgreSQL container:", e$message))
+        NULL
+    })
+    if (is.null(conn_info)) {
+        skip("PostgreSQL container setup failed")
+    }
+
+    engine <- do.call(Engine$new, conn_info)
+
+    model = engine$model("users", id = Column("SERIAL", primary_key = TRUE), name = Column("TEXT", nullable = FALSE))
+    model$create_table(overwrite = TRUE)
+    expect_equal(model$tablename, "test.users")
+
+    engine$list_tables()
+    conn = engine$get_connection()
+    res = dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'test'")
+    
+
+    engine$execute("INSERT INTO test.users (name) VALUES ('Alice')")
+
+    cleanup_postgres_test_db()
+
+
+})
+
+test_that("engine schema operations work with Postgres", {
+    
+
+    conn_info <- tryCatch({
+        c(setup_postgres_test_db(), .schema='test')
+    }, error = function(e) {
+        skip(paste("Could not set up PostgreSQL container:", e$message))
+        NULL
+    })
+    if (is.null(conn_info)) {
+        skip("PostgreSQL container setup failed")
+    }
+
+    engine <- do.call(Engine$new, conn_info)
+
     UserPublic <- engine$model(
         "users",
         id = Column("SERIAL", primary_key = TRUE),
