@@ -140,11 +140,13 @@ test_that('The Postgres dialect works as expected', {
     TempUser$create_table(overwrite=TRUE)
     p1 = TempUser$record(name='John', age = 18)
     p1$create()
-    
+    expect_equal(p1$data$id, 1)
+
     # Test SERIAL auto-increment
     p2 = TempUser$record(name='Jane', age = 25)
     p2$create()
-    
+    expect_equal(p2$data$id, 2)
+
     # Read back and verify auto-increment worked
     all_users = TempUser$read(mode='all')
     expect_equal(length(all_users), 2)
