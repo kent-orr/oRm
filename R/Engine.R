@@ -133,7 +133,7 @@ Engine <- R6::R6Class(
         #' @return A new TableModel object
         model = function(tablename, ..., .data = list(), .schema = NULL) {
             if (is.null(.schema)) .schema <- self$schema
-            tablename <- self$qualify(tablename, .schema = .schema)
+            tablename <- qualify(self, tablename, schema = .schema)
             TableModel$new(tablename = tablename, engine = self, ..., .data = .data)
         },
         
@@ -147,15 +147,7 @@ Engine <- R6::R6Class(
         },
         
         qualify = function(tablename, .schema = self$schema) {
-            if (self$dialect == 'sqlite') {
-                warning("SQLite does not support schema qualification. Ignoring schema.")
-                return(tablename)
-            }
-            if (!grepl("\\.", tablename) && !is.null(.schema)) {
-                paste(.schema, tablename, sep = ".")
-            } else {
-                tablename
-            }
+            qualify(self, tablename, schema = .schema)
         },
         
         format_tablename = function(tablename) {

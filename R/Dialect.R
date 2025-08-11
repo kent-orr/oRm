@@ -3,8 +3,8 @@
 #' include Dialect-sqlite.R
 NULL
 
-dispatch_method <- function(x, method, ...) {
-    dialect <- if (inherits(x, "Engine")) {
+get_dialect <- function(x) {
+    if (inherits(x, "Engine")) {
         x$dialect
     } else if (inherits(x, "TableModel")) {
         x$engine$dialect
@@ -13,9 +13,16 @@ dispatch_method <- function(x, method, ...) {
     } else {
         "default"
     }
+}
+
+dispatch_method <- function(x, method, ...) {
+    dialect <- get_dialect(x)
 
     method_name <- paste(method, dialect, sep = '.')
-    method_fn <- get0(method_name, mode = "function", ifnotfound = paste0(method, '.default'))
+    method_fn <- get0(method_name, mode = "function")
+    if (is.null(method_fn)) {
+        method_fn <- get0(paste0(method, '.default'), mode = "function")
+    }
     method_fn(x, ...)
 }
 
@@ -26,7 +33,16 @@ qualify <- function(x, tablename, schema) {
 }
 
 qualify.default <- function(x, tablename, schema) {
-
+    dialect <- get_dialect(x)
+    if (identical(dialect, 'sqlite')) {
+        warning("SQLite does not support schema qualification. Ignoring schema.")
+        return(tablename)
+    }
+    if (!grepl("\\.", tablename) && !is.null(schema)) {
+        paste(schema, tablename, sep = ".")
+    } else {
+        tablename
+    }
 }
 
 
