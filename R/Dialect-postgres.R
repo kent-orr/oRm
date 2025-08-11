@@ -19,3 +19,13 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   return(result)
 }
 
+#' @export
+set_schema.postgres <- function(table, schema, dialect) {
+  if (is.null(schema) || schema == "") {
+    table
+  } else {
+    paste0(schema, ".", table)
+  }
+}
+
+

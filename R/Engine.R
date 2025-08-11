@@ -109,10 +109,11 @@ Engine <- R6::R6Class(
     #' Create a new TableModel object for the specified table
     #' @param tablename Name of the table
     #' @param ... Additional arguments passed to the TableModel constructor
+    #' @param schema Optional schema name to namespace the table
     #' @param .data A named list of the arguments for the TableModel constructor
     #' @return A new TableModel object
-    model = function(tablename, ..., .data=list()) {
-      TableModel$new(tablename = tablename, engine = self, ..., .data=.data)
+    model = function(tablename, ..., schema = NULL, .data=list()) {
+      TableModel$new(tablename = tablename, engine = self, schema = schema, ..., .data=.data)
     },
 
     set_transaction_state = function(state) {
