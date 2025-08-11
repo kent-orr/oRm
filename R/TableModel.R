@@ -112,6 +112,7 @@ TableModel <- R6::R6Class(
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
     #'
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
+      ensure_schema_exists(self$engine, self$schema)
       conn <- self$get_connection()
 
       if (overwrite) {

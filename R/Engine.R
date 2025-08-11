@@ -138,8 +138,9 @@ Engine <- R6::R6Class(
         #' @return A new TableModel object
         model = function(tablename, ..., .data = list(), .schema = NULL) {
             if (is.null(.schema)) .schema <- self$schema
+            if (!is.null(.schema)) ensure_schema_exists(self, .schema)
             tablename <- qualify(self, tablename, schema = .schema)
-            TableModel$new(tablename = tablename, engine = self, ..., .data = .data)
+            TableModel$new(tablename = tablename, engine = self, ..., .data = .data, .schema = .schema)
         },
         
         
