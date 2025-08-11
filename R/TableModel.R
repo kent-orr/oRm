@@ -89,6 +89,18 @@ TableModel <- R6::R6Class(
 
 
     #' @description
+    #' Update the schema for this model and re-qualify the table name.
+    #' @param schema Character. New schema name to apply.
+    #' @return The TableModel object.
+    set_schema = function(schema) {
+      self$schema <- schema
+      base_name <- strsplit(self$tablename, "\\.")[[1]]
+      base_name <- base_name[length(base_name)]
+      self$tablename <- self$engine$qualify(base_name, .schema = schema)
+      self
+    },
+
+    #' @description
     #' Create the associated table in the database.
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
