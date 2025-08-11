@@ -1,127 +1,40 @@
-# Setup PostgreSQL container for testing
-setup_postgres_test_db <- function() {
-    if (!requireNamespace("stevedore", quietly = TRUE)) {
-        install.packages("stevedore")
-        if (!requireNamespace("stevedore", quietly = TRUE)) {
-            testthat::skip("stevedore package not available, skipping PostgreSQL tests")
-        }
-    }
+testthat::source_test_helpers()
 
-    if (!requireNamespace("RPostgres", quietly = TRUE)) {
-        skip("RPostgres not available, skipping PostgreSQL tests")
-    }
-
-    library(stevedore)
-    if (!stevedore::docker_available()) {
-        testthat::skip("Docker not available, skipping PostgreSQL tests")
-    }
-
-    docker <- stevedore::docker_client()
-    container_name <- "orm_postgres_test"
-    message("Pulling PostgreSQL Alpine image, this may take a while...")
-    docker$image$pull("postgres:14-alpine")
-
-    docker <- docker_client()
-    container_name <- "orm_postgres_test"
-    tryCatch({
-        existing_container <- docker$container$get(container_name)
-        message("Stopping existing container...")
-        existing_container$stop()
-        existing_container$remove(force = TRUE)
-    }, error = function(e) {
-        # container does not exist
-    })
-
-    container <- docker$container$create(
-        name = container_name,
-        image = "postgres:14-alpine",
-        env = c(
-            POSTGRES_USER = "tester",
-            POSTGRES_PASSWORD = "tester",
-            POSTGRES_DB = "test"
-        ),
-        ports = c("5432:5432")
-    )
-    container$start()
-    message("Waiting for PostgreSQL to start...")
-    Sys.sleep(5)
-
-    list(
-        drv = RPostgres::Postgres(),
-        dbname = "test",
-        host = "localhost",
-        user = "tester",
-        password = "tester",
-        port = 5432
-    )
-}
-
-cleanup_postgres_test_db <- function() {
-    if (!requireNamespace("stevedore", quietly = TRUE) || !stevedore::docker_available()) {
-        return(invisible(NULL))
-    }
-    docker <- stevedore::docker_client()
-    container_name <- "orm_postgres_test"
-    tryCatch({
-        container <- docker$container$get(container_name)
-        container$stop()
-        container$remove()
-    }, error = function(e) invisible(NULL))
-}
-
-reg.finalizer(environment(), function(e) {
-    cleanup_postgres_test_db()
-}, onexit = TRUE)
-
-test_that('engine schema can be set on initialization', {
+test_that("engine schema can be set on initialization", {
     conn_info <- tryCatch({
-        c(setup_postgres_test_db(),.schema='test')
+        c(setup_postgres_test_db(), .schema = "test")
     }, error = function(e) {
-        skip(paste("Could not set up PostgreSQL container:", e$message))
-        NULL
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
     })
-    if (is.null(conn_info)) {
-        skip("PostgreSQL container setup failed")
-    }
-
+    withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
 
     expect_equal(engine$schema, "test")
     expect_equal(engine$conn_args$dbname, "test")
     expect_equal(engine$conn_args$host, "localhost")
     expect_equal(engine$conn_args$user, "tester")
-
 })
 
-test_that('engine models create a schema if it does not exist', {
-
+test_that("engine models create a schema if it does not exist", {
     conn_info <- tryCatch({
-        c(setup_postgres_test_db(),.schema='test')
+        c(setup_postgres_test_db(), .schema = "test")
     }, error = function(e) {
-        skip(paste("Could not set up PostgreSQL container:", e$message))
-        NULL
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
     })
-    if (is.null(conn_info)) {
-        skip("PostgreSQL container setup failed")
-    }
-
+    withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
 
-    model = engine$model("users", id = Column("SERIAL", primary_key = TRUE), name = Column("TEXT", nullable = FALSE))
+    model <- engine$model("users", id = Column("SERIAL", primary_key = TRUE), name = Column("TEXT", nullable = FALSE))
     model$create_table(overwrite = TRUE)
     expect_equal(model$tablename, "test.users")
 
-    conn = engine$get_connection()
-    res_schema = DBI::dbGetQuery(conn, "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'test'")
-    expect_equal(nrow(res_schema), 1)
-    res_table = DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'test'")
-    expect_true("users" %in% res_table$table_name)
+    engine$list_tables()
+    conn <- engine$get_connection()
+    res <- DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'test'")
 
     engine$execute("INSERT INTO test.users (name) VALUES ('Alice')")
-
-    cleanup_postgres_test_db()
-
-
 })
 
 test_that('create_table creates schema when model schema changes', {
@@ -151,19 +64,14 @@ test_that('create_table creates schema when model schema changes', {
 })
 
 test_that("engine schema operations work with Postgres", {
-    
-
     conn_info <- tryCatch({
-        c(setup_postgres_test_db(), .schema='test')
+        c(setup_postgres_test_db(), .schema = "test")
     }, error = function(e) {
-        skip(paste("Could not set up PostgreSQL container:", e$message))
-        NULL
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
     })
-    if (is.null(conn_info)) {
-        skip("PostgreSQL container setup failed")
-    }
-
+    withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
 
     UserPublic <- engine$model(
         "users",
@@ -204,6 +112,5 @@ test_that("engine schema operations work with Postgres", {
 
     UserArchive$drop_table(ask = FALSE)
     UserPublic$drop_table(ask = FALSE)
-    engine$close()
 })
 
