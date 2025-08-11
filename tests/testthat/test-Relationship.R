@@ -30,6 +30,42 @@ test_that("Should create a one-to-many relationship between two models correctly
   engine$close()
 })
 
+test_that("Should error when local_key or related_key do not exist", {
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+  Post <- engine$model("posts",
+                       id = Column("INTEGER", primary_key = TRUE),
+                       user_id = Column("INTEGER"))
+
+  expect_error(
+    define_relationship(User, "missing", "one_to_many", Post, "user_id"),
+    "Field 'missing' not found in model 'users'"
+  )
+
+  expect_error(
+    define_relationship(User, "id", "one_to_many", Post, "bad"),
+    "Field 'bad' not found in model 'posts'"
+  )
+
+  engine$close()
+})
+
+test_that("Should error when foreign key references mismatch", {
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+  Category <- engine$model("categories", id = Column("INTEGER", primary_key = TRUE))
+  Post <- engine$model("posts",
+                       id = Column("INTEGER", primary_key = TRUE),
+                       user_id = ForeignKey("INTEGER", references = "users.id"))
+
+  expect_error(
+    define_relationship(Post, "user_id", "many_to_one", Category, "id"),
+    sprintf("Field 'user_id' must reference '%s.id'", Category$tablename)
+  )
+
+  engine$close()
+})
+
 test_that("Should handle creation of a many-to-many relationship with proper backref", {
   # Set up test models
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
