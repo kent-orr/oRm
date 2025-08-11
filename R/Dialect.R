@@ -3,6 +3,30 @@
 #' include Dialect-sqlite.R
 NULL
 
+#' Set the schema for a table based on the database dialect
+#'
+#' Allows callers to specify a schema separately from the table name. The
+#' returned value should be the fully qualified identifier used by the
+#' underlying database. Dialects that do not support schemas may simply
+#' combine the schema and table name into a single identifier.
+#'
+#' @param table The table name
+#' @param schema The schema name
+#' @param dialect A character string identifying the database dialect
+#'
+#' @return A character string representing the schema-qualified table name
+#' @export
+set_schema <- function(table, schema, dialect) UseMethod("set_schema", dialect)
+
+#' @export
+set_schema.default <- function(table, schema, dialect) {
+  if (is.null(schema) || schema == "") {
+    table
+  } else {
+    paste0(schema, ".", table)
+  }
+}
+
 #' Render a column field to SQL
 #'
 #' @param field A Column object

@@ -19,3 +19,15 @@ flush.mysql <- function(x, table, data, con, commit = TRUE, ...) {
 
   return(id)
 }
+
+#' @export
+set_schema.mysql <- function(table, schema, dialect) {
+  if (is.null(schema) || schema == "") {
+    table
+  } else {
+    paste0(schema, ".", table)
+  }
+}
+
+#' @export
+set_schema.maria <- set_schema.mysql

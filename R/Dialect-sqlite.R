@@ -27,8 +27,21 @@ flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
     "SELECT * FROM ", tbl_expr, " WHERE rowid = ", id
   )
   result <- DBI::dbGetQuery(con, result_sql)
-  
+
   # Return the full row data instead of just the ID
   # This matches postgres behavior of returning all columns
   return(result)
 }
+
+#' @export
+#' @description For SQLite, schemas are not supported natively. Any provided
+#'   schema name is treated as part of the table name, acting only as a naming
+#'   convention.
+set_schema.sqlite <- function(table, schema, dialect) {
+  if (is.null(schema) || schema == "") {
+    table
+  } else {
+    paste0(schema, ".", table)
+  }
+}
+
