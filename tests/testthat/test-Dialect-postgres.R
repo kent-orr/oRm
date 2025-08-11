@@ -150,6 +150,12 @@ test_that('The Postgres dialect works as expected', {
     # Read back and verify auto-increment worked
     all_users = TempUser$read(mode='all')
     expect_equal(length(all_users), 2)
+
+    # Delete a user and ensure it's removed
+    p1$delete()
+    expect_equal(length(TempUser$read(id == 1, mode = 'all')), 0)
+    remaining_users = TempUser$read(mode = 'all')
+    expect_equal(length(remaining_users), 1)
     
     # Clean up
     TempUser$drop_table()
