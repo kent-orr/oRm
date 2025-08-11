@@ -69,8 +69,17 @@ Record <- R6::R6Class(
       }
       self$data <- utils::modifyList(self$data, args)
     },
-    
-    
+
+
+    #' @description
+    #' Update the schema for the underlying model.
+    #' @param schema Character. New schema name to apply.
+    set_schema = function(schema) {
+      self$model$set_schema(schema)
+      self
+    },
+
+
     #' @description Insert this record into the database.
     #' @return Invisible NULL
     create = function(flush_record = NULL) {

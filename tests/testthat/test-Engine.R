@@ -36,6 +36,7 @@ test_that("Engine connects, runs queries, and executes SQL", {
 })
 
 test_that("Engine creates a connection pool when use_pool is TRUE", {
+  testthat::skip_if_not_installed("pool")
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
     dbname = ":memory:",
@@ -303,6 +304,7 @@ test_that("Engine stores .schema and qualifies model tablename", {
     dbname = ":memory:",
     .schema = "analytics"
   )
+  engine$dialect <- "postgres"
 
   expect_equal(engine$schema, "analytics")
 
