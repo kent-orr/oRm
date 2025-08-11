@@ -51,3 +51,7 @@ set_schema.sqlite <- function(x, schema) {
   }
   invisible(NULL)
 }
+
+ensure_schema_exists.sqlite <- function(x, schema) {
+  invisible(NULL)
+}

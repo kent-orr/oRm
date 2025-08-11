@@ -51,6 +51,22 @@ set_schema.default <- function(x, schema) {
     invisible(NULL)
 }
 
+#' Ensure that a schema exists for the current dialect
+#'
+#' This utility creates the schema if the connected database supports it.
+#' Dialects that do not implement schemas should provide a no-op.
+#'
+#' @param x Engine or TableModel instance used for dispatch.
+#' @param schema Character. Name of the schema to create.
+#' @keywords internal
+ensure_schema_exists <- function(x, schema) {
+    dispatch_method(x, "ensure_schema_exists", schema)
+}
+
+ensure_schema_exists.default <- function(x, schema) {
+    invisible(NULL)
+}
+
 
 # Render -----------------------------------------------------------------
 

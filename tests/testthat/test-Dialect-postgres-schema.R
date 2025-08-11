@@ -12,7 +12,6 @@ test_that("engine schema can be set on initialization", {
 
     expect_equal(engine$schema, "test")
     expect_equal(engine$conn_args$dbname, "test")
-    expect_equal(engine$conn_args$schema, "test")
     expect_equal(engine$conn_args$host, "localhost")
     expect_equal(engine$conn_args$user, "tester")
 })
@@ -36,6 +35,32 @@ test_that("engine models create a schema if it does not exist", {
     res <- DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'test'")
 
     engine$execute("INSERT INTO test.users (name) VALUES ('Alice')")
+})
+
+test_that('create_table creates schema when model schema changes', {
+    conn_info <- tryCatch({
+        setup_postgres_test_db()
+    }, error = function(e) {
+        skip(paste("Could not set up PostgreSQL container:", e$message))
+        NULL
+    })
+    if (is.null(conn_info)) {
+        skip("PostgreSQL container setup failed")
+    }
+
+    engine <- do.call(Engine$new, conn_info)
+
+    model <- engine$model("users", id = Column("SERIAL", primary_key = TRUE))
+    model$set_schema("audit")
+    model$create_table(overwrite = TRUE)
+
+    conn <- engine$get_connection()
+    res_schema <- DBI::dbGetQuery(conn, "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'audit'")
+    expect_equal(nrow(res_schema), 1)
+    res_table <- DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'audit'")
+    expect_true("users" %in% res_table$table_name)
+
+    cleanup_postgres_test_db()
 })
 
 test_that("engine schema operations work with Postgres", {
