@@ -69,7 +69,7 @@ TableModel <- R6::R6Class(
 
       self$engine <- engine
       if (is.null(.schema)) self$schema <- self$engine$schema
-      self$tablename <- engine$qualify(tablename, .schema = .schema)
+      self$tablename <- qualify(engine, tablename, schema = .schema)
 
       dots <- utils::modifyList(.data, rlang::list2(...))
       col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
@@ -96,7 +96,7 @@ TableModel <- R6::R6Class(
       self$schema <- schema
       base_name <- strsplit(self$tablename, "\\.")[[1]]
       base_name <- base_name[length(base_name)]
-      self$tablename <- self$engine$qualify(base_name, .schema = schema)
+      self$tablename <- qualify(self$engine, base_name, schema = schema)
       self
     },
 
