@@ -28,7 +28,7 @@ Key features:
 \section{Methods}{
 
 \describe{
-  \item{\code{initialize(tablename, engine, ..., .data = list())}}{Constructor for creating a new TableModel instance.}
+  \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL)}}{Constructor for creating a new TableModel instance.}
   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
@@ -77,7 +77,7 @@ User$drop_table(ask = FALSE)
 \subsection{Method \code{new()}}{
 Constructor for a new TableModel.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$new(tablename, engine, ..., .data = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$new(tablename, engine, ..., .data = list(), .schema = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -90,6 +90,8 @@ Constructor for a new TableModel.
 \item{\code{...}}{Column definitions.}
 
 \item{\code{.data}}{a list of Column defintions}
+
+\item{\code{.schema}}{Character. Schema to apply to the table name. Defaults to the engine's schema.}
 }
 \if{html}{\out{</div>}}
 }

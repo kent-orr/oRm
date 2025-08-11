@@ -38,7 +38,7 @@ Key features:
 \subsection{Method \code{new()}}{
 Create an Engine object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$new(..., conn_args = list(), use_pool = FALSE, persist = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$new(..., conn_args = list(), .schema = NULL, use_pool = FALSE, persist = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -47,6 +47,8 @@ Create an Engine object
 \item{\code{...}}{Additional arguments to be passed to DBI::dbConnect}
 
 \item{\code{conn_args}}{A list of arguments to be passed to DBI::dbConnect}
+
+\item{\code{.schema}}{Character. The default schema to apply to child TableModel objects}
 
 \item{\code{use_pool}}{Logical. Whether or not to make use of the pool package for connections to this engine}
 
@@ -130,7 +132,7 @@ Execute a SQL query and return the number of rows affected
 \subsection{Method \code{model()}}{
 Create a new TableModel object for the specified table
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list(), .schema = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -141,6 +143,8 @@ Create a new TableModel object for the specified table
 \item{\code{...}}{Additional arguments passed to the TableModel constructor}
 
 \item{\code{.data}}{A named list of the arguments for the TableModel constructor}
+
+\item{\code{.schema}}{Character. The default schema to apply to the TableModel object}
 }
 \if{html}{\out{</div>}}
 }
