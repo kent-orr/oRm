@@ -29,9 +29,7 @@ qualify.postgres <- function(x, tablename, schema) {
 }
 
 set_schema.postgres <- function(x, schema) {
-  conn <- if (inherits(x, "Engine")) x$get_connection() else x$engine$get_connection()
-  sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(conn, schema))
-  DBI::dbExecute(conn, sql)
-  invisible(NULL)
+    # Schema updates are handled during connection retrieval
+    invisible(NULL)
 }
 

@@ -108,6 +108,9 @@ test_that("engine schema operations work with Postgres", {
 
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
     engine$set_schema("audit")
+    engine$close()
+    sp <- DBI::dbGetQuery(engine$get_connection(), "SHOW search_path")[[1]]
+    expect_match(sp, '"audit"')
     UserArchive$set_schema(engine$schema)
     expect_equal(UserArchive$tablename, "audit.users")
 
