@@ -40,7 +40,7 @@ Classes <- engine$model(
     tablename = "classes", 
     id = Column('INTEGER', primary_key = TRUE),
     subject = Column('TEXT'),
-    teacher_id = ForeignKey('INTEGER', references = 'teachers.id')
+    teacher_id = ForeignKey('INTEGER', ref_table = 'teachers', ref_column = 'id')
 )
 Classes$create_table(overwrite=T)
 
@@ -49,7 +49,7 @@ Students <- engine$model(
     tablename = "students", 
     id = Column('INTEGER', primary_key = TRUE),
     name = Column('TEXT', default = charlatan::ch_name),
-    class_id = ForeignKey('INTEGER', references = 'classes.id'),
+    class_id = ForeignKey('INTEGER', ref_table = 'classes', ref_column = 'id'),
     grade = Column('NUMBER', default = \(x) round(rnorm(1, 85, 5)))
 )
 Students$create_table(overwrite=T)
@@ -157,8 +157,8 @@ set.seed(100)
 TeacherAssignments <- engine$model(
     tablename = "teacher_assignments", 
     id = Column('INTEGER', primary_key = TRUE),
-    teacher_id = ForeignKey('INTEGER', references = 'teachers.id'),
-    class_id = ForeignKey('INTEGER', references = 'classes.id')
+    teacher_id = ForeignKey('INTEGER', ref_table = 'teachers', ref_column = 'id'),
+    class_id = ForeignKey('INTEGER', ref_table = 'classes', ref_column = 'id')
 )
 
 TeacherAssignments$create_table(overwrite=T)

@@ -27,7 +27,7 @@ Classes <- engine$model(
     tablename = "classes", 
     id = Column('INTEGER', primary_key = TRUE),
     subject = Column('TEXT'),
-    teacher_id = ForeignKey('INTEGER', references = 'teachers.id'),
+    teacher_id = ForeignKey('INTEGER', ref_table = 'teachers', ref_column = 'id'),
     grade_average = Column('NUMBER', default = \(x) rnorm(1, 80, 10))
 )
 Classes$create_table()

@@ -64,7 +64,7 @@ Users <- TableModel$new(
   "users", 
   engine, 
   id = Column("INTEGER", primary_key = TRUE),
-  organization_id = ForeignKey("INTEGER", references = 'organizations.id'),
+  organization_id = ForeignKey("INTEGER", ref_table = 'organizations', ref_column = 'id'),
   name = Column("TEXT"),
   age = Column('INTEGER', default = 18)
 )

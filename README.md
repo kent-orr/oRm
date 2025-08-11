@@ -30,7 +30,7 @@ engine <- Engine$new(
 User <- engine$model(
   "users",
   id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
-  organization_id = ForeignKey("INTEGER", references = "organizations.id"),
+  organization_id = ForeignKey("INTEGER", ref_table = "organizations", ref_column = "id"),
   name = Column("TEXT", nullable = FALSE),
   age = Column("INTEGER")
 )
