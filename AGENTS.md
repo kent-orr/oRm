@@ -5,6 +5,7 @@
 - Document public functions with roxygen2 comments.
 - Write commit messages in the imperative mood and keep them concise.
 
+- If testing via testthat you will need to install on the container as well as install the packages from DESCRIPTION, RPostgre and RSQLite
 .
 ├── AGENTS.md
 ├── DESCRIPTION
