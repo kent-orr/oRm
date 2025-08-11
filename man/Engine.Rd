@@ -38,7 +38,7 @@ Key features:
 \subsection{Method \code{new()}}{
 Create an Engine object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$new(..., conn_args = list(), use_pool = FALSE, persist = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$new(..., conn_args = list(), use_pool = FALSE, persist = FALSE, .schema = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -50,8 +50,9 @@ Create an Engine object
 
 \item{\code{use_pool}}{Logical. Whether or not to make use of the pool package for connections to this engine}
 
-\item{\code{persist}}{Logical. Whether to keep the connection open after operations (default: FALSE)
-Get a connection to the database}
+\item{\code{persist}}{Logical. Whether to keep the connection open after operations (default: FALSE)}
+
+\item{\code{.schema}}{Default schema for PostgreSQL connections}
 }
 \if{html}{\out{</div>}}
 }
@@ -130,7 +131,7 @@ Execute a SQL query and return the number of rows affected
 \subsection{Method \code{model()}}{
 Create a new TableModel object for the specified table
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., schema = NULL, .data = list())}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -139,6 +140,8 @@ Create a new TableModel object for the specified table
 \item{\code{tablename}}{Name of the table}
 
 \item{\code{...}}{Additional arguments passed to the TableModel constructor}
+
+\item{\code{schema}}{Optional schema name to namespace the table. Defaults to the engine's schema if not provided}
 
 \item{\code{.data}}{A named list of the arguments for the TableModel constructor}
 }
