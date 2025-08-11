@@ -57,7 +57,7 @@ Classes$create_table()
 
 When you supply a default value, it can be either a character string or a function. If a string, it's used as the default value. If a function, it's called with no arguments and the result is used as the default value. that R function gets called by the TableModel when creating a record with no value provided.
 
-`ForeignKey` is a special case of Column that specifies a foreign key relationship to another table. You define the references by using the actual table name and the corresponding key id, like '<tablename>.<column_name>'.
+`ForeignKey` is a special case of Column that specifies a foreign key relationship to another table. Typically you provide the target as a single string using the `references = "other_table.column"` syntax, though `ref_table` and `ref_column` can also be supplied separately if needed.
 
 # Reading Data
 
