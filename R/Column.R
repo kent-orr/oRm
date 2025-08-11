@@ -42,6 +42,10 @@ Column <- function(
     class = "Column"
   )
 }
+
+#' Validate an identifier
+#' 
+#' 
 validate_identifier <- function(x, arg = "identifier") {
   if (!is.character(x) || length(x) != 1 ||
       !grepl("^[A-Za-z_][A-Za-z0-9_]*$", x)) {
@@ -62,9 +66,9 @@ validate_identifier <- function(x, arg = "identifier") {
 #'
 #' @inheritParams Column
 #' @param type SQL data type (e.g. "INTEGER")
+#' @param references "table.column" string. Parsed into ref_table/ref_column if provided.
 #' @param ref_table Character. Name of the referenced table.
 #' @param ref_column Character. Name of the referenced column.
-#' @param references Optional legacy "table.column" string. Parsed if provided.
 #' @param on_delete Optional ON DELETE behavior (e.g. "CASCADE")
 #' @param on_update Optional ON UPDATE behavior
 #'
@@ -80,6 +84,9 @@ validate_identifier <- function(x, arg = "identifier") {
 #'
 #' @examples
 #' # Define a foreign key referencing the 'id' column in the 'users' table
+#' user_id_fk_ref <- ForeignKey("INTEGER", references ="users.id", on_delete = "CASCADE")
+#' 
+#' # or use the implicit ref_table, ref_column args
 #' user_id_fk <- ForeignKey("INTEGER", ref_table = "users", ref_column = "id", on_delete = "CASCADE")
 #'
 #' # Define a nullable foreign key with custom update behavior
@@ -87,7 +94,7 @@ validate_identifier <- function(x, arg = "identifier") {
 #'   "INTEGER", ref_table = "categories", ref_column = "id",
 #'   nullable = TRUE, on_update = "SET NULL"
 #' )
-ForeignKey <- function(type, ref_table = NULL, ref_column = NULL, references = NULL,
+ForeignKey <- function(type, references = NULL, ref_table = NULL, ref_column = NULL,
                        on_delete = NULL, on_update = NULL, ...) {
   if (!is.null(references)) {
     if (!is.null(ref_table) || !is.null(ref_column)) {
