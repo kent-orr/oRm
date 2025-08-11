@@ -57,15 +57,24 @@ Engine <- R6::R6Class(
         
         #' Get a connection to the database
         #'
+        #' Reapplies the configured schema on every connection retrieval to
+        #' ensure consistency after reconnects.
+        #'
         #' @return A DBIConnection object or a pool object
         get_connection = function() {
-            if (is.null(self$conn)) {
+            if (is.null(self$conn) || (!self$use_pool && !DBI::dbIsValid(self$conn))) {
                 if (self$use_pool) {
                     self$conn <- do.call(pool::dbPool, self$conn_args)
                 } else {
                     self$conn <- do.call(DBI::dbConnect, self$conn_args)
                 }
             }
+
+            if (!is.null(self$schema) && identical(self$dialect, "postgres")) {
+                sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(self$conn, self$schema))
+                DBI::dbExecute(self$conn, sql)
+            }
+
             self$conn
         },
         
