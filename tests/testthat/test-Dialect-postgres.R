@@ -151,12 +151,35 @@ test_that('The Postgres dialect works as expected', {
     all_users = TempUser$read(mode='all')
     expect_equal(length(all_users), 2)
 
+
     # Delete a user and ensure it's removed
     p1$delete()
     expect_equal(length(TempUser$read(id == 1, mode = 'all')), 0)
     remaining_users = TempUser$read(mode = 'all')
     expect_equal(length(remaining_users), 1)
     
+
+    # Set a non-default schema and ensure it exists
+    DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
+    engine$set_schema("audit")
+
+    AuditUser <- engine$model(
+        "audit_users",
+        id = Column("SERIAL", primary_key = TRUE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+
+    AuditUser$create_table(overwrite = TRUE)
+    expect_true("audit.audit_users" %in% engine$list_tables())
+    AuditUser$drop_table(ask = FALSE)
+    engine$set_schema("public")
+
+    # Update a record via SQL and refresh the in-memory object
+    engine$execute("UPDATE temp_users SET age = 30 WHERE id = 1")
+    p1$refresh()
+    db_user <- engine$get_query("SELECT * FROM temp_users WHERE id = 1")
+    expect_equal(p1$data, as.list(db_user[1, ]))
+
     # Clean up
     TempUser$drop_table()
 })
