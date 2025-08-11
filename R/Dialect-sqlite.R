@@ -3,34 +3,38 @@ NULL
 
 
 flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
-  # Filter out NULL values like in postgres implementation
-  data <- data[!vapply(data, is.null, logical(1))]
-  
-  tbl_expr <- dbplyr::ident_q(table)
-  fields <- names(data)
+    # Filter out NULL values like in postgres implementation
+    data <- data[!vapply(data, is.null, logical(1))]
 
-  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, sapply(data, `[`)), collapse = ", "), ")")
-  field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
+    tbl_expr <- dbplyr::ident_q(table)
+    fields <- names(data)
+    if (length(fields) == 0) {
+        sql <- paste0("INSERT INTO ", tbl_expr, " DEFAULT VALUES")
+    } else {
+        values <- sapply(data, function(val) if (is.function(val)) val() else val)
+        values_sql <- paste0(
+            "(", paste(DBI::dbQuoteLiteral(con, values), collapse = ", "), ")"
+        )
+        field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
+        sql <- paste0(
+            "INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql
+        )
+    }
+    DBI::dbExecute(con, sql)
 
-  # First insert the data
-  sql <- paste0(
-    "INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql
-  )
-  DBI::dbExecute(con, sql)
-  
-  # Get the last inserted ID
-  id <- DBI::dbGetQuery(con, "SELECT last_insert_rowid();")[[1]]
-  
-  # Now fetch the complete row data to match postgres behavior
-  # which returns all columns including defaults and auto-generated values
-  result_sql <- paste0(
-    "SELECT * FROM ", tbl_expr, " WHERE rowid = ", id
-  )
-  result <- DBI::dbGetQuery(con, result_sql)
-  
-  # Return the full row data instead of just the ID
-  # This matches postgres behavior of returning all columns
-  return(result)
+    # Get the last inserted ID
+    id <- DBI::dbGetQuery(con, "SELECT last_insert_rowid();")[[1]]
+
+    # Now fetch the complete row data to match postgres behavior
+    # which returns all columns including defaults and auto-generated values
+    result_sql <- paste0(
+        "SELECT * FROM ", tbl_expr, " WHERE rowid = ", id
+    )
+    result <- DBI::dbGetQuery(con, result_sql)
+
+    # Return the full row data instead of just the ID
+    # This matches postgres behavior of returning all columns
+    return(result)
 }
 
 
