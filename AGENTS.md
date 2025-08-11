@@ -5,8 +5,6 @@
 - Document public functions with roxygen2 comments.
 - Write commit messages in the imperative mood and keep them concise.
 
-The repository should have a renv:: environment set up with allthe necessary packages and dependencies to reduce install time.
-
 .
 ├── AGENTS.md
 ├── DESCRIPTION
