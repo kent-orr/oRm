@@ -24,6 +24,17 @@ engine <- Engine$new(
 )
 ```
 
+For PostgreSQL connections, you can set a default schema that will be used
+for `search_path` and by `model()` when no schema is supplied:
+
+```r
+engine <- Engine$new(
+  drv = RPostgres::Postgres(),
+  dbname = "mydb",
+  .schema = "custom_schema"
+)
+```
+
 ### 2. Define Models
 
 ```r

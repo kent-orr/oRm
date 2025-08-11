@@ -33,6 +33,7 @@ Engine <- R6::R6Class(
     use_pool = FALSE,
     persist = FALSE,
     dialect = NULL,
+    schema = NULL,
 
 
 
@@ -42,12 +43,16 @@ Engine <- R6::R6Class(
     #' @param conn_args A list of arguments to be passed to DBI::dbConnect
     #' @param use_pool Logical. Whether or not to make use of the pool package for connections to this engine
     #' @param persist Logical. Whether to keep the connection open after operations (default: FALSE)
-    initialize = function(..., conn_args = list(), use_pool = FALSE, persist = FALSE) {
+    #' @param .schema Default schema for PostgreSQL connections
+    initialize = function(..., conn_args = list(), use_pool = FALSE, persist = FALSE, .schema = NULL) {
       # Combine dots and conn_args, with dots taking precedence
       self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
+      self$conn_args$schema <- NULL
+      self$conn_args$.schema <- NULL
       private$detect_dialect()
       self$use_pool <- use_pool
       self$persist <- persist
+      self$schema <- .schema
     },
 
 
@@ -61,6 +66,9 @@ Engine <- R6::R6Class(
           self$conn <- do.call(pool::dbPool, self$conn_args)
         } else {
           self$conn <- do.call(DBI::dbConnect, self$conn_args)
+        }
+        if (self$dialect == "postgres" && !is.null(self$schema)) {
+          DBI::dbExecute(self$conn, paste0("SET search_path TO ", DBI::dbQuoteIdentifier(self$conn, self$schema)))
         }
       }
       self$conn
@@ -109,10 +117,11 @@ Engine <- R6::R6Class(
     #' Create a new TableModel object for the specified table
     #' @param tablename Name of the table
     #' @param ... Additional arguments passed to the TableModel constructor
-    #' @param schema Optional schema name to namespace the table
+    #' @param schema Optional schema name to namespace the table. Defaults to the engine's schema if not provided
     #' @param .data A named list of the arguments for the TableModel constructor
     #' @return A new TableModel object
     model = function(tablename, ..., schema = NULL, .data=list()) {
+      if (is.null(schema)) schema <- self$schema
       TableModel$new(tablename = tablename, engine = self, schema = schema, ..., .data=.data)
     },
 
