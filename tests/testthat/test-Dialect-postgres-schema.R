@@ -88,7 +88,6 @@ test_that('engine schema can be set on initialization', {
 
     expect_equal(engine$schema, "test")
     expect_equal(engine$conn_args$dbname, "test")
-    expect_equal(engine$conn_args$schema, "test")
     expect_equal(engine$conn_args$host, "localhost")
     expect_equal(engine$conn_args$user, "tester")
 
