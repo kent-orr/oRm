@@ -9,7 +9,7 @@ test_that("SQLite dialect handles auto-increment and defaults", {
   expect_equal(engine$dialect, "sqlite")
 
   Example <- engine$model(
-    "sqlite_test",
+    "test_table",
     id = Column("INTEGER", primary_key = TRUE),
     name = Column("TEXT", default = "anon")
   )
