@@ -150,7 +150,22 @@ test_that('The Postgres dialect works as expected', {
     # Read back and verify auto-increment worked
     all_users = TempUser$read(mode='all')
     expect_equal(length(all_users), 2)
-    
+
+    # Set a non-default schema and ensure it exists
+    DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
+    engine$set_schema("audit")
+
+    AuditUser <- engine$model(
+        "audit_users",
+        id = Column("SERIAL", primary_key = TRUE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+
+    AuditUser$create_table(overwrite = TRUE)
+    expect_true("audit.audit_users" %in% engine$list_tables())
+    AuditUser$drop_table(ask = FALSE)
+    engine$set_schema("public")
+
     # Clean up
     TempUser$drop_table()
 })
