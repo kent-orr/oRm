@@ -87,81 +87,133 @@ reg.finalizer(environment(), function(e) {
     cleanup_postgres_test_db()
 }, onexit = TRUE)
 
-test_that('The Postgres dialect works as expected', {
-    # Skip if RPostgres is not available
+get_postgres_engine <- function() {
     if (!requireNamespace("RPostgres", quietly = TRUE)) {
-        skip("RPostgres not available, skipping PostgreSQL tests")
+        testthat::skip("RPostgres not available, skipping PostgreSQL tests")
     }
-    
-    # Get connection info from the Docker container
+
     conn_info <- tryCatch({
         setup_postgres_test_db()
     }, error = function(e) {
-        skip(paste("Could not set up PostgreSQL container:", e$message))
-        NULL
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
     })
-    
-    if (is.null(conn_info)) {
-        skip("PostgreSQL container setup failed")
-    }
-    
-    # Create engine with the connection info
-    engine <- do.call(Engine$new, conn_info)
-    
-    expect_equal(engine$dialect, 'postgres')
-    
-    expect_no_error({
-        engine$get_connection()
-        engine$close()
-    })
-    
+
+    do.call(Engine$new, conn_info)
+}
+
+test_that("postgres engine initializes and closes", {
+    engine <- get_postgres_engine()
+    withr::defer(engine$close())
+
+    expect_equal(engine$dialect, "postgres")
+    expect_no_error(engine$get_connection())
+    expect_no_error(engine$close())
+})
+
+test_that("postgres create operations work", {
+    engine <- get_postgres_engine()
+    withr::defer(engine$close())
+
+    TempUser <- engine$model(
+        "temp_users",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        name = Column("TEXT", nullable = FALSE),
+        age = Column("INTEGER")
+    )
+
+    TempUser$create_table(overwrite = TRUE)
+    withr::defer(TempUser$drop_table(ask = FALSE))
+    expect_true("temp_users" %in% engine$list_tables())
+
+    p1 <- TempUser$record(name = "John", age = 18)
+    p1$create()
+    expect_equal(p1$data$id, 1)
+
+    p2 <- TempUser$record(name = "Jane", age = 25)
+    p2$create()
+    expect_equal(p2$data$id, 2)
+
+    all_users <- TempUser$read(mode = "all")
+    expect_equal(length(all_users), 2)
+})
+
+test_that("postgres read operations work", {
+    engine <- get_postgres_engine()
+    withr::defer(engine$close())
+
     TempUser <- engine$model(
         "temp_users",
         id = Column("SERIAL", primary_key = TRUE),
         name = Column("TEXT", nullable = FALSE),
         age = Column("INTEGER")
     )
-    
+
     TempUser$create_table(overwrite = TRUE)
-    expect_true('temp_users' %in% engine$list_tables())
-    
-    p1 = TempUser$record(id=1, name='test_person', age=19)
+    withr::defer(TempUser$drop_table(ask = FALSE))
+
+    p1 <- TempUser$record(id = 1, name = "test_person", age = 19)
     p1$create()
-    p1user = TempUser$read(id==1, mode='get')
-    expect_equal(p1, p1user)
-    
+    p1_user <- TempUser$read(id == 1, mode = "get")
+    expect_equal(p1, p1_user)
+})
+
+test_that("postgres update/refresh works", {
+    engine <- get_postgres_engine()
+    withr::defer(engine$close())
+
     TempUser <- engine$model(
-        "temp_users",    # Use a unique name even for temp tables
-        id = Column("SERIAL", primary_key = TRUE, nullable=FALSE),
+        "temp_users",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
         name = Column("TEXT", nullable = FALSE),
         age = Column("INTEGER")
     )
-  
-    TempUser$create_table(overwrite=TRUE)
-    p1 = TempUser$record(name='John', age = 18)
+
+    TempUser$create_table(overwrite = TRUE)
+    withr::defer(TempUser$drop_table(ask = FALSE))
+
+    p1 <- TempUser$record(name = "John", age = 18)
     p1$create()
-    expect_equal(p1$data$id, 1)
 
-    # Test SERIAL auto-increment
-    p2 = TempUser$record(name='Jane', age = 25)
+    engine$execute("UPDATE temp_users SET age = 30 WHERE id = 1")
+    p1$refresh()
+    db_user <- engine$get_query("SELECT * FROM temp_users WHERE id = 1")
+    expect_equal(p1$data, as.list(db_user[1, ]))
+})
+
+test_that("postgres delete operations work", {
+    engine <- get_postgres_engine()
+    withr::defer(engine$close())
+
+    TempUser <- engine$model(
+        "temp_users",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        name = Column("TEXT", nullable = FALSE),
+        age = Column("INTEGER")
+    )
+
+    TempUser$create_table(overwrite = TRUE)
+    withr::defer(TempUser$drop_table(ask = FALSE))
+
+    p1 <- TempUser$record(name = "John", age = 18)
+    p1$create()
+    p2 <- TempUser$record(name = "Jane", age = 25)
     p2$create()
-    expect_equal(p2$data$id, 2)
 
-    # Read back and verify auto-increment worked
-    all_users = TempUser$read(mode='all')
-    expect_equal(length(all_users), 2)
-
-
-    # Delete a user and ensure it's removed
     p1$delete()
-    expect_equal(length(TempUser$read(id == 1, mode = 'all')), 0)
-    remaining_users = TempUser$read(mode = 'all')
+    expect_equal(length(TempUser$read(id == 1, mode = "all")), 0)
+    remaining_users <- TempUser$read(mode = "all")
     expect_equal(length(remaining_users), 1)
-    
+})
 
-    # Set a non-default schema and ensure it exists
+test_that("postgres schema switching works", {
+    engine <- get_postgres_engine()
+    withr::defer(engine$close())
+
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
+    withr::defer(DBI::dbExecute(engine$get_connection(), "DROP SCHEMA IF EXISTS audit CASCADE"))
+
     engine$set_schema("audit")
+    withr::defer(engine$set_schema("public"))
 
     AuditUser <- engine$model(
         "audit_users",
@@ -170,16 +222,6 @@ test_that('The Postgres dialect works as expected', {
     )
 
     AuditUser$create_table(overwrite = TRUE)
+    withr::defer(AuditUser$drop_table(ask = FALSE))
     expect_true("audit.audit_users" %in% engine$list_tables())
-    AuditUser$drop_table(ask = FALSE)
-    engine$set_schema("public")
-
-    # Update a record via SQL and refresh the in-memory object
-    engine$execute("UPDATE temp_users SET age = 30 WHERE id = 1")
-    p1$refresh()
-    db_user <- engine$get_query("SELECT * FROM temp_users WHERE id = 1")
-    expect_equal(p1$data, as.list(db_user[1, ]))
-
-    # Clean up
-    TempUser$drop_table()
 })
