@@ -118,27 +118,37 @@ render_constraint <- function(field, ...) {
 #' @inheritParams render_field
 #' @export
 render_constraint.default <- function(field, conn, ...) {
-    fk_parts = c()
+    fk_parts <- c()
     if (inherits(field, 'ForeignKey')) {
-        reference_parts = strsplit(field$references, '\\.')[[1]]
-        stopifnot(
-            "Invalid foreign key reference format. Expected 'table.column'" =
-            length(reference_parts) == 2
-        )
-        fk_parts = c(fk_parts, paste0(
+        if (is.null(field$ref_table) || is.null(field$ref_column)) {
+            stop(sprintf("ForeignKey '%s' must define 'ref_table' and 'ref_column'.", field$name))
+        }
+
+        validate_identifier(field$ref_table, "ref_table")
+        validate_identifier(field$ref_column, "ref_column")
+
+        if (!DBI::dbExistsTable(conn, field$ref_table)) {
+            stop(sprintf("Referenced table '%s' for foreign key '%s' does not exist.", field$ref_table, field$name))
+        }
+        existing_fields <- DBI::dbListFields(conn, field$ref_table)
+        if (!(field$ref_column %in% existing_fields)) {
+            stop(sprintf("Referenced column '%s.%s' does not exist.", field$ref_table, field$ref_column))
+        }
+
+        fk_parts <- c(fk_parts, paste0(
             "FOREIGN KEY (", DBI::dbQuoteIdentifier(conn, field$name), ") REFERENCES ",
-            DBI::dbQuoteIdentifier(conn, reference_parts[1]), " (",
-            DBI::dbQuoteIdentifier(conn, reference_parts[2]), ")"
+            DBI::dbQuoteIdentifier(conn, field$ref_table), " (",
+            DBI::dbQuoteIdentifier(conn, field$ref_column), ")"
         ))
         if (!is.null(field$on_delete))
-        fk_parts = c(fk_parts, paste("ON DELETE", toupper(field$on_delete)))
+            fk_parts <- c(fk_parts, paste("ON DELETE", toupper(field$on_delete)))
         if (!is.null(field$on_update))
-        fk_parts = c(fk_parts, paste('ON UPDATE', toupper(field$on_update)))
+            fk_parts <- c(fk_parts, paste('ON UPDATE', toupper(field$on_update)))
     } else {
         return(NULL)
     }
-    
-    fk_string = paste(fk_parts, collapse    = ' ')
+
+    fk_string <- paste(fk_parts, collapse = ' ')
     fk_string
 }
 
