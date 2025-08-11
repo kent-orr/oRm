@@ -51,6 +51,32 @@ test_that("Record$create() can take and implement a default function", {
 
 })
 
+test_that("Record$update() modifies existing rows and requires primary key", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:"
+  )
+
+  User <- engine$model(
+    "users",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    name = Column("TEXT", nullable = FALSE)
+  )
+  User$create_table()
+
+  rec <- User$record(id = 1, name = "Alice")
+  rec$create()
+  rec$update(name = "Alicia")
+
+  result <- DBI::dbGetQuery(engine$get_connection(), "SELECT name FROM users WHERE id = 1")
+  expect_equal(result$name, "Alicia")
+
+  rec_no_pk <- User$record(name = "Bob")
+  expect_error(rec_no_pk$update(name = "Bobby"), "primary key")
+
+  engine$close()
+})
+
 test_that("Relationships work correctly", {
   # Setup
   engine <- Engine$new(
