@@ -150,7 +150,13 @@ test_that('The Postgres dialect works as expected', {
     # Read back and verify auto-increment worked
     all_users = TempUser$read(mode='all')
     expect_equal(length(all_users), 2)
-    
+
+    # Update a record via SQL and refresh the in-memory object
+    engine$execute("UPDATE temp_users SET age = 30 WHERE id = 1")
+    p1$refresh()
+    db_user <- engine$get_query("SELECT * FROM temp_users WHERE id = 1")
+    expect_equal(p1$data, as.list(db_user[1, ]))
+
     # Clean up
     TempUser$drop_table()
 })
