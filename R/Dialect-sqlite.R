@@ -32,3 +32,18 @@ flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
   # This matches postgres behavior of returning all columns
   return(result)
 }
+
+
+qualify.sqlite <- function(x, tablename, schema) {
+  if (!is.null(schema)) {
+    warning("SQLite does not support schema qualification. Ignoring schema.")
+  }
+  tablename
+}
+
+set_schema.sqlite <- function(x, schema) {
+  if (!is.null(schema)) {
+    warning("SQLite does not support schemas. Ignoring set_schema().")
+  }
+  invisible(NULL)
+}

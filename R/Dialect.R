@@ -33,16 +33,22 @@ qualify <- function(x, tablename, schema) {
 }
 
 qualify.default <- function(x, tablename, schema) {
-    dialect <- get_dialect(x)
-    if (identical(dialect, 'sqlite')) {
-        warning("SQLite does not support schema qualification. Ignoring schema.")
-        return(tablename)
-    }
     if (!grepl("\\.", tablename) && !is.null(schema)) {
         paste(schema, tablename, sep = ".")
     } else {
         tablename
     }
+}
+
+
+# Schema -----------------------------------------------------------------
+
+set_schema <- function(x, schema) {
+    dispatch_method(x, "set_schema", schema)
+}
+
+set_schema.default <- function(x, schema) {
+    invisible(NULL)
 }
 
 

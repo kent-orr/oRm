@@ -115,11 +115,7 @@ Engine <- R6::R6Class(
             on.exit(if (private$exit_check()) self$close())
             self$schema <- schema
             self$conn_args$schema <- schema
-            engine.schema::set_schema(
-                conn = self$get_connection(),
-                dialect = self$dialect,
-                schema = schema
-            )
+            set_schema(self, schema)
             return(self)
         },
         
