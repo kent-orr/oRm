@@ -106,6 +106,22 @@ Engine <- R6::R6Class(
             on.exit(if (private$exit_check()) self$close())
             DBI::dbExecute(self$get_connection(), sql)
         },
+
+        #' @description
+        #' Set the default schema for the engine and active connection
+        #' @param schema Character. Schema name to apply
+        #' @return The Engine object
+        set_schema = function(schema) {
+            on.exit(if (private$exit_check()) self$close())
+            self$schema <- schema
+            self$conn_args$schema <- schema
+            engine.schema::set_schema(
+                conn = self$get_connection(),
+                dialect = self$dialect,
+                schema = schema
+            )
+            return(self)
+        },
         
         
         #' @description
