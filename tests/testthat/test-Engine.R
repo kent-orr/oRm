@@ -298,7 +298,7 @@ test_that("Engine handles errors gracefully when executing invalid SQL queries",
   engine$close()
 })
 
-test_that("Engine stores .schema and qualifies model tablename", {
+test_that("Engine stores schema and qualifies model tablename", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
     dbname = ":memory:",

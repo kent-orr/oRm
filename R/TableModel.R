@@ -27,7 +27,7 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{initialize(tablename, engine, ..., .data = list())}}{Constructor for creating a new TableModel instance.}
+#'   \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL)}}{Constructor for creating a new TableModel instance.}
 #'   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
 #'   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
 #'   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
@@ -62,23 +62,28 @@ TableModel <- R6::R6Class(
     #' @param engine The Engine object for database connection.
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
+    #' @param .schema Character. Schema to apply to the table name. Defaults to the engine's schema.
     initialize = function(tablename, engine, ..., .data = list(), .schema = NULL) {
-      if (missing(tablename) || missing(engine)) {
-        stop("Both 'tablename' and 'engine' must be provided to TableModel.")
-      }
+        if (missing(tablename) || missing(engine)) {
+            stop("Both 'tablename' and 'engine' must be provided to TableModel.")
+        }
 
-      self$engine <- engine
-      if (is.null(.schema)) self$schema <- self$engine$schema
-      self$tablename <- qualify(engine, tablename, schema = .schema)
+        self$engine <- engine
+        if (is.null(.schema)) {
+            self$schema <- self$engine$schema
+        } else {
+            self$schema <- .schema
+        }
+        self$tablename <- qualify(engine, tablename, schema = self$schema)
 
-      dots <- utils::modifyList(.data, rlang::list2(...))
-      col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
-      col_names <- names(dots[vapply(dots, inherits, logical(1), "Column")])
-      for (i in seq_along(col_defs)) {
-        col_defs[[i]][['name']] <- col_names[i]
-        class(col_defs[[i]]) <- append(class(col_defs[[i]]), engine$dialect)
-      }
-      self$fields <- col_defs
+        dots <- utils::modifyList(.data, rlang::list2(...))
+        col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
+        col_names <- names(dots[vapply(dots, inherits, logical(1), "Column")])
+        for (i in seq_along(col_defs)) {
+            col_defs[[i]][['name']] <- col_names[i]
+            class(col_defs[[i]]) <- append(class(col_defs[[i]]), engine$dialect)
+        }
+        self$fields <- col_defs
     },
 
     #' @description

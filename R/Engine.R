@@ -48,7 +48,7 @@ Engine <- R6::R6Class(
             # Combine dots and conn_args, with dots taking precedence
             self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
             private$detect_dialect()
-            self$schema <-.schema  
+            self$schema <- .schema
             self$use_pool <- use_pool
             self$persist <- persist
         },
