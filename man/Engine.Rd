@@ -49,7 +49,6 @@ Create an Engine object
   use_pool = FALSE,
   persist = FALSE
 )}\if{html}{\out{</div>}}
-
 }
 
 \subsection{Arguments}{
@@ -68,7 +67,6 @@ Get a connection to the database
 
 Reapplies the configured schema on every connection retrieval to
 ensure consistency after reconnects.}
-
 }
 \if{html}{\out{</div>}}
 }
@@ -168,7 +166,6 @@ The Engine object
 Create a new TableModel object for the specified table
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list(), .schema = NULL)}\if{html}{\out{</div>}}
-
 }
 
 \subsection{Arguments}{
@@ -177,8 +174,6 @@ Create a new TableModel object for the specified table
 \item{\code{tablename}}{Name of the table}
 
 \item{\code{...}}{Additional arguments passed to the TableModel constructor}
-
-\item{\code{schema}}{Optional schema name to namespace the table. Defaults to the engine's schema if not provided}
 
 \item{\code{.data}}{A named list of the arguments for the TableModel constructor}
 

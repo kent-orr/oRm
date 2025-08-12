@@ -93,6 +93,8 @@ Constructor for a new TableModel.
 \item{\code{.data}}{a list of Column defintions}
 
 \item{\code{.schema}}{Character. Schema to apply to the table name. Defaults to the engine's schema.}
+
+\item{\code{schema}}{Optional schema name used to namespace the table.}
 }
 \if{html}{\out{</div>}}
 }
