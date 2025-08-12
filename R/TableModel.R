@@ -209,14 +209,15 @@ TableModel <- R6::R6Class(
     #' @description
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
-    #' @param mode One of "all", "one_or_none", or "get".
+    #' @param mode One of "all", "one_or_none", "get", or "data.frame".
+    #'   "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
     #' @param .limit Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
     #'   Positive values return the first N records, negative values return the last N records.
     #' @param .offset Integer. Offset for pagination. Default is 0.
     #' @param .order_by Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
     read = function(
       ..., 
-      mode = c("all", "one_or_none", "get"), 
+      mode = c("all", "one_or_none", "get", "data.frame"),
       .limit = 100, 
       .offset=0,
       .order_by = list()
@@ -277,6 +278,10 @@ TableModel <- R6::R6Class(
       }
       
       rows <- dplyr::collect(tbl_ref)
+
+      if (mode == "data.frame") {
+        return(rows)
+      }
 
       if (nrow(rows) == 0) {
         if (mode == "get") {

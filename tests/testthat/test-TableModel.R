@@ -152,6 +152,11 @@ test_that("TableModel$read() works with filter expressions and mode", {
   none <- User$read(name == "Nobody", mode = "one_or_none")
   expect_null(none)
 
+  # data.frame: returns collected rows
+  df <- User$read(mode = "data.frame")
+  expect_true(inherits(df, "data.frame"))
+  expect_equal(nrow(df), 3)
+
   engine$close()
 })
 
