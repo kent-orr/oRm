@@ -2,12 +2,11 @@
 % Please edit documentation in R/Dialect-sqlite.R
 \name{set_schema.sqlite}
 \alias{set_schema.sqlite}
-\title{Apply schema prefix to SQLite table names}
+\title{Set schema for SQLite dialect}
 \usage{
-set_schema.sqlite(table, schema, dialect)
+set_schema.sqlite(x, schema)
 }
 \description{
-For SQLite, schemas are not supported natively. Any provided
-  schema name is treated as part of the table name, acting only as a naming
-  convention.
+SQLite does not support schemas. This method is a no-op and any supplied
+  schema name is ignored.
 }

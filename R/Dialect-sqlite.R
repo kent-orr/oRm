@@ -47,28 +47,23 @@ qualify.sqlite <- function(x, tablename, schema) {
   tablename
 }
 
+#' Set schema for SQLite dialect
+#'
+#' SQLite does not support schemas. This method is a no-op and any supplied
+#' schema name is ignored.
+#'
+#' @param x Engine or TableModel instance used for dispatch.
+#' @param schema Character. Schema name to apply, ignored.
+#' @export
 set_schema.sqlite <- function(x, schema) {
-  if (!is.null(schema)) {
-    warning("SQLite does not support schemas. Ignoring set_schema().")
-  }
-  invisible(NULL)
+    if (!is.null(schema)) {
+        warning("SQLite does not support schemas. Ignoring set_schema().")
+    }
+    invisible(NULL)
 }
 
 ensure_schema_exists.sqlite <- function(x, schema) {
-  invisible(NULL)
+    invisible(NULL)
 
-}
-
-#' @title Apply schema prefix to SQLite table names
-#' @description For SQLite, schemas are not supported natively. Any provided
-#'   schema name is treated as part of the table name, acting only as a naming
-#'   convention.
-#' @export
-set_schema.sqlite <- function(table, schema, dialect) {
-  if (is.null(schema) || schema == "") {
-    table
-  } else {
-    paste0(schema, ".", table)
-  }
 }
 
