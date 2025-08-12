@@ -38,6 +38,7 @@ on individual records.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-Record-new}{\code{Record$new()}}
+\item \href{#method-Record-set_schema}{\code{Record$set_schema()}}
 \item \href{#method-Record-create}{\code{Record$create()}}
 \item \href{#method-Record-flush}{\code{Record$flush()}}
 \item \href{#method-Record-update}{\code{Record$update()}}
@@ -70,6 +71,23 @@ Initialize a new Record instance.
 }
 \subsection{Returns}{
 A new Record instance.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Record-set_schema"></a>}}
+\if{latex}{\out{\hypertarget{method-Record-set_schema}{}}}
+\subsection{Method \code{set_schema()}}{
+Update the schema for the underlying model.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Record$set_schema(schema)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{schema}}{Character. New schema name to apply.}
+}
+\if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}

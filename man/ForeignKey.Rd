@@ -17,11 +17,13 @@ ForeignKey(
 \arguments{
 \item{type}{SQL data type (e.g. "INTEGER")}
 
-\item{references}{"table.column" string specifying the referenced field. This is the recommended way to declare the target.}
-
 \item{ref_table}{Character. Name of the referenced table.}
 
-\item{ref_column}{Character. Name of the referenced column. Used when specifying the pieces separately.}
+\item{ref_column}{Character. Name of the referenced column.
+Used when specifying the pieces separately.}
+
+\item{references}{"table.column" string specifying the referenced field.
+This is the recommended way to declare the target.}
 
 \item{on_delete}{Optional ON DELETE behavior (e.g. "CASCADE")}
 

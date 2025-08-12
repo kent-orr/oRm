@@ -28,7 +28,7 @@ Key features:
 \section{Methods}{
 
 \describe{
-  \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL)}}{Constructor for creating a new TableModel instance.}
+  \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL)}}{Constructor for creating a new TableModel instance.}
   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
@@ -61,6 +61,7 @@ User$drop_table(ask = FALSE)
 \itemize{
 \item \href{#method-TableModel-new}{\code{TableModel$new()}}
 \item \href{#method-TableModel-get_connection}{\code{TableModel$get_connection()}}
+\item \href{#method-TableModel-set_schema}{\code{TableModel$set_schema()}}
 \item \href{#method-TableModel-create_table}{\code{TableModel$create_table()}}
 \item \href{#method-TableModel-drop_table}{\code{TableModel$drop_table()}}
 \item \href{#method-TableModel-record}{\code{TableModel$record()}}
@@ -105,6 +106,26 @@ Retrieve the active database connection from the engine.
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$get_connection(...)}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-set_schema"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-set_schema}{}}}
+\subsection{Method \code{set_schema()}}{
+Update the schema for this model and re-qualify the table name.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$set_schema(schema)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{schema}}{Character. New schema name to apply.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The TableModel object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-create_table"></a>}}
@@ -191,6 +212,7 @@ Create a new Record object with this model.
 \if{html}{\out{<a id="method-TableModel-tbl"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-tbl}{}}}
 \subsection{Method \code{tbl()}}{
+Generate a dbplyr tbl() object to be consumed by the model.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$tbl()}\if{html}{\out{</div>}}
 }
@@ -217,7 +239,7 @@ Read records using dynamic filters and return in the specified mode.
 \item{\code{...}}{Unquoted expressions for filtering.}
 
 \item{\code{mode}}{One of "all", "one_or_none", "get", or "data.frame".
-"data.frame" returns the raw result of \code{dplyr::collect()}.}
+"data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.}
 
 \item{\code{.limit}}{Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
 Positive values return the first N records, negative values return the last N records.}
@@ -255,7 +277,7 @@ A list of related records or a single record, depending on the relationship type
 \if{html}{\out{<a id="method-TableModel-print"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-print}{}}}
 \subsection{Method \code{print()}}{
-Print a formatted overview of the model, including its fields.
+Print a concise overview of the model.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$print(...)}\if{html}{\out{</div>}}
 }
