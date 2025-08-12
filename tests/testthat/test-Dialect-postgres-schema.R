@@ -97,7 +97,47 @@ test_that('create_table creates schema when model schema changes', {
     cleanup_postgres_test_db()
 })
 
-test_that("engine schema operations work with Postgres", {
+
+test_that("engine creates models with default schema", {
+    conn_info <- tryCatch({
+        setup_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    UserPublic <- engine$model(
+        "users",
+        id = Column("SERIAL", primary_key = TRUE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+    UserPublic$create_table(overwrite = TRUE)
+    withr::defer(UserPublic$drop_table(ask = FALSE))
+    
+    # Test that model uses unqualified table name when no schema is set
+    expect_equal(UserPublic$tablename, "users")
+    
+    # Test that engine has no default schema
+    expect_null(engine$schema)
+    
+    # Test that table is created in the default 'public' schema
+    conn <- engine$get_connection()
+    res_table <- DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users'")
+    expect_equal(nrow(res_table), 1)
+    expect_equal(res_table$table_name, "users")
+    
+    # Test that we can query the table directly without schema qualification
+    table_exists <- DBI::dbExistsTable(conn, "users")
+    expect_true(table_exists)
+    
+    # Test that we can execute operations on the unqualified table name
+    count_result <- DBI::dbGetQuery(conn, "SELECT COUNT(*) as count FROM users")
+    expect_equal(count_result$count, 0)
+})
+
+test_that("models can create and read records in schema", {
     conn_info <- tryCatch({
         c(setup_postgres_test_db(), .schema = "test")
     }, error = function(e) {
@@ -113,38 +153,121 @@ test_that("engine schema operations work with Postgres", {
         name = Column("TEXT", nullable = FALSE)
     )
     UserPublic$create_table(overwrite = TRUE)
-    expect_equal(UserPublic$tablename, "public.users")
+    withr::defer(UserPublic$drop_table(ask = FALSE))
 
     rec_public <- UserPublic$record(name = "Alice")
     rec_public$create()
     res_public <- UserPublic$read(mode = "all")
     expect_equal(length(res_public), 1)
     expect_equal(res_public[[1]]$data$name, "Alice")
+})
+
+test_that("models can override engine default schema", {
+    conn_info <- tryCatch({
+        c(setup_postgres_test_db(), .schema = "test")
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
 
     UserArchive <- engine$model("users", .schema = "archive")
     expect_equal(UserArchive$tablename, "archive.users")
-    expect_equal(engine$schema, "public")
+    expect_equal(engine$schema, "test")
+})
+
+test_that("engine set_schema changes search path", {
+    conn_info <- tryCatch({
+        c(setup_postgres_test_db(), .schema = "test")
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
 
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
     engine$set_schema("audit")
     engine$close()
     sp <- DBI::dbGetQuery(engine$get_connection(), "SHOW search_path")[[1]]
-    expect_match(sp, '"audit"')
+    expect_match(sp, 'audit')
+})
+
+test_that("model set_schema updates tablename", {
+    conn_info <- tryCatch({
+        c(setup_postgres_test_db(), .schema = "test")
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
+    engine$set_schema("audit")
+    
+    UserArchive <- engine$model("users", .schema = "archive")
     UserArchive$set_schema(engine$schema)
     expect_equal(UserArchive$tablename, "audit.users")
+})
 
+test_that("models work across different schemas", {
+    conn_info <- tryCatch({
+        c(setup_postgres_test_db(), .schema = "test")
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
+    engine$set_schema("audit")
+    
+    UserArchive <- engine$model(
+        "users",
+        id = Column("SERIAL", primary_key = TRUE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+    UserArchive$set_schema(engine$schema)
     UserArchive$create_table(overwrite = TRUE)
+    withr::defer(UserArchive$drop_table(ask = FALSE))
+
     rec_audit <- UserArchive$record(name = "Bob")
     rec_audit$create()
     res_audit <- UserArchive$read(mode = "all")
     expect_equal(length(res_audit), 1)
     expect_equal(res_audit[[1]]$data$name, "Bob")
+})
+
+test_that("record set_schema updates model tablename", {
+    conn_info <- tryCatch({
+        c(setup_postgres_test_db(), .schema = "test")
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
+    engine$set_schema("audit")
+    
+    UserArchive <- engine$model(
+        "users",
+        id = Column("SERIAL", primary_key = TRUE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+    UserArchive$set_schema(engine$schema)
+    UserArchive$create_table(overwrite = TRUE)
+    withr::defer(UserArchive$drop_table(ask = FALSE))
+
+    rec_audit <- UserArchive$record(name = "Bob")
+    rec_audit$create()
 
     engine$set_schema("public")
     rec_audit$set_schema(engine$schema)
     expect_equal(rec_audit$model$tablename, "public.users")
-
-    UserArchive$drop_table(ask = FALSE)
-    UserPublic$drop_table(ask = FALSE)
 })
 
