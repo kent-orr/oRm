@@ -15,7 +15,9 @@ Imports:
     DBI,
     dbplyr,
     dplyr,
+    pool,
     R6,
+    rlang,
 Suggests:
     knitr,
     rmarkdown,
