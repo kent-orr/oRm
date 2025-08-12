@@ -107,10 +107,22 @@ Invisible NULL
 \if{html}{\out{<a id="method-Record-flush"></a>}}
 \if{latex}{\out{\hypertarget{method-Record-flush}{}}}
 \subsection{Method \code{flush()}}{
+Flush this record's data to the database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Record$flush(commit = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{commit}}{Logical. Whether to commit the transaction; defaults to NULL to
+automatically commit when not already in a transaction.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The Record instance (invisibly).
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Record-update"></a>}}

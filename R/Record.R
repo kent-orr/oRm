@@ -114,6 +114,10 @@ Record <- R6::R6Class(
       }
     },
 
+    #' @description Flush this record's data to the database.
+    #' @param commit Logical. Whether to commit the transaction; defaults to NULL to
+    #'   automatically commit when not already in a transaction.
+    #' @return The Record instance (invisibly).
     flush = function(commit = NULL) {
       con <- self$model$get_connection()
       
