@@ -39,5 +39,3 @@ Collate:
 URL: https://kent-orr.github.io/oRm/, https://github.com/kent-orr/oRm
 VignetteBuilder: knitr
 BugReports: https://github.com/kent-orr/oRm/issues
-Remotes: 
-    richfitz/stevedore
