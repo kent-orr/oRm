@@ -3,6 +3,7 @@ NULL
 
 
 flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
+
     # Filter out NULL values like in postgres implementation
     data <- data[!vapply(data, is.null, logical(1))]
 
@@ -54,4 +55,18 @@ set_schema.sqlite <- function(x, schema) {
 
 ensure_schema_exists.sqlite <- function(x, schema) {
   invisible(NULL)
+
 }
+
+#' @export
+#' @description For SQLite, schemas are not supported natively. Any provided
+#'   schema name is treated as part of the table name, acting only as a naming
+#'   convention.
+set_schema.sqlite <- function(table, schema, dialect) {
+  if (is.null(schema) || schema == "") {
+    table
+  } else {
+    paste0(schema, ".", table)
+  }
+}
+

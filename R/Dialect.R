@@ -3,6 +3,7 @@
 #' include Dialect-sqlite.R
 NULL
 
+
 get_dialect <- function(x) {
     if (inherits(x, "Engine")) {
         x$dialect

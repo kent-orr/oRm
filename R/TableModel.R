@@ -51,6 +51,7 @@ TableModel <- R6::R6Class(
   "TableModel",
   public = list(
     tablename = NULL,
+    schema = NULL,
     engine = NULL,
     fields = list(),
     relationships = list(),
@@ -60,6 +61,7 @@ TableModel <- R6::R6Class(
     #' Constructor for a new TableModel.
     #' @param tablename The name of the database table.
     #' @param engine The Engine object for database connection.
+    #' @param schema Optional schema name used to namespace the table.
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
     #' @param .schema Character. Schema to apply to the table name. Defaults to the engine's schema.
@@ -67,6 +69,7 @@ TableModel <- R6::R6Class(
         if (missing(tablename) || missing(engine)) {
             stop("Both 'tablename' and 'engine' must be provided to TableModel.")
         }
+
 
         self$engine <- engine
         if (is.null(.schema)) {

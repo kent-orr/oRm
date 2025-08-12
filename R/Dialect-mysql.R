@@ -29,6 +29,7 @@ qualify.mysql <- function(x, tablename, schema) {
   }
 }
 
+
 set_schema.mysql <- function(x, schema) {
   conn <- if (inherits(x, "Engine")) x$get_connection() else x$engine$get_connection()
   sql <- paste0("USE ", DBI::dbQuoteIdentifier(conn, schema))

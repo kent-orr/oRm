@@ -155,6 +155,7 @@ Engine <- R6::R6Class(
             qualify(self, tablename, schema = .schema)
         },
 
+
         format_tablename = function(tablename) {
             parts <- strsplit(tablename, "\\.")[[1]]
             quoted <- vapply(
@@ -207,6 +208,7 @@ Engine <- R6::R6Class(
             }
         }
     )
+
 )
 
 #' Transaction Function
