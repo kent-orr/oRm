@@ -56,6 +56,21 @@ User$drop_table(ask = FALSE)
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
 }
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{tablename}}{Fully qualified name of the table in the database.}
+
+\item{\code{schema}}{Schema that namespaces the table; defaults to the engine's schema.}
+
+\item{\code{engine}}{Engine instance providing connections and SQL dialect.}
+
+\item{\code{fields}}{Named list of Column objects defining the table structure.}
+
+\item{\code{relationships}}{Named list of Relationship objects linking to other models.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
