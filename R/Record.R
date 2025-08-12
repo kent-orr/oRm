@@ -372,6 +372,13 @@ Record <- R6::R6Class(
   )
 )
 
+        
+#' Evaluate an expression within a Record's data.
+#'
+#' @param record A Record object.
+#' @param expr Expression to evaluate within the record.
+#' @return The result of the evaluated expression.
+#' @export
 with.Record <- function(record, expr) {
     eval(substitute(expr), record$data, enclos = parent.frame())  
 }

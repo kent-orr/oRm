@@ -3,6 +3,7 @@
 S3method(render_constraint,default)
 S3method(render_field,default)
 S3method(with,Engine)
+S3method(with,Record)
 export(Column)
 export(Engine)
 export(ForeignKey)
