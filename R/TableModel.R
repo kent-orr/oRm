@@ -40,7 +40,6 @@ NULL
 #'
 #' @seealso \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
 #'
-#' @importFrom crayon silver magenta
 #' @importFrom R6 R6Class
 #' @importFrom dplyr tbl filter slice_head slice_tail collect
 #' @importFrom rlang enquos
