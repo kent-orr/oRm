@@ -119,13 +119,13 @@ List tables in the database connection
 
 \subsection{Returns}{
 A character vector of table names
-Execute a SQL query and return the result as a data.frame
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-get_query"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-get_query}{}}}
 \subsection{Method \code{get_query()}}{
+Execute a SQL query and return the result as a data.frame
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$get_query(sql)}\if{html}{\out{</div>}}
 }
@@ -139,17 +139,27 @@ Execute a SQL query and return the result as a data.frame
 }
 \subsection{Returns}{
 A data.frame
-Execute a SQL query and return the number of rows affected
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-execute"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-execute}{}}}
 \subsection{Method \code{execute()}}{
+Execute a SQL query and return the number of rows affected
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$execute(sql)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{sql}}{SQL query}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The number of rows affected
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-set_schema"></a>}}
@@ -201,37 +211,75 @@ A new TableModel object
 \if{html}{\out{<a id="method-Engine-set_transaction_state"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-set_transaction_state}{}}}
 \subsection{Method \code{set_transaction_state()}}{
+Set the internal transaction state
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$set_transaction_state(state)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{state}}{Logical. Indicates if a transaction is active}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+NULL
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-get_transaction_state"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-get_transaction_state}{}}}
 \subsection{Method \code{get_transaction_state()}}{
+Retrieve the current transaction state
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$get_transaction_state()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Logical indicating if a transaction is active
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-qualify"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-qualify}{}}}
 \subsection{Method \code{qualify()}}{
+Qualify a table name with a schema
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$qualify(tablename, .schema = self$schema)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{tablename}}{Character. Table name to qualify}
+\item{\code{.schema}}{Character. Schema name to prepend}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A fully qualified table name
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-format_tablename"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-format_tablename}{}}}
 \subsection{Method \code{format_tablename()}}{
+Quote and format a schema-qualified table name
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$format_tablename(tablename)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{tablename}}{Character. Table name to format}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A quoted table name
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-print"></a>}}
