@@ -1,24 +1,25 @@
 url: https://kent-orr.github.io/oRm/
+
 template:
-  bootstrap: 5
-  light-switch: true
+    bootstrap: 5
+    light-switch: true
 
 articles:
-- title: "Quickstart"
-  navarbar: ~
-  contents:
-  - get_started
-  - why_oRm
-  
-- title: "Using the ORM"
-  navarbar: ~
-  contents:
-  - using-engine
-  - using-tablemodels
-  - using-records
-  - using-relationships
+    - title: "Quickstart"
+      navbar: "Quickstart"
+      contents:
+        - get_started
+        - why_oRm
 
-- title: "Advanced Topics"
-  navarbar: ~
-  contents:
-  - with_shiny
+    - title: "Using the ORM"
+      navbar: "Using the ORM"
+      contents:
+        - using-engine
+        - using-tablemodels
+        - using-records
+        - using-relationships
+
+    - title: "Advanced Topics"
+      navbar: "Advanced Topics"
+      contents:
+        - with_shiny
