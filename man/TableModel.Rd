@@ -204,7 +204,7 @@ Read records using dynamic filters and return in the specified mode.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$read(
   ...,
-  mode = c("all", "one_or_none", "get"),
+  mode = c("all", "one_or_none", "get", "data.frame"),
   .limit = 100,
   .offset = 0,
   .order_by = list()
@@ -216,7 +216,8 @@ Read records using dynamic filters and return in the specified mode.
 \describe{
 \item{\code{...}}{Unquoted expressions for filtering.}
 
-\item{\code{mode}}{One of "all", "one_or_none", or "get".}
+\item{\code{mode}}{One of "all", "one_or_none", "get", or "data.frame".
+"data.frame" returns the raw result of \code{dplyr::collect()}.}
 
 \item{\code{.limit}}{Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
 Positive values return the first N records, negative values return the last N records.}
