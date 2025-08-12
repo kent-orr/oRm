@@ -144,6 +144,7 @@ test_that("postgres schema switching works", {
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
+    
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
     withr::defer(DBI::dbExecute(engine$get_connection(), "DROP SCHEMA IF EXISTS audit CASCADE"))
 
