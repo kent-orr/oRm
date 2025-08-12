@@ -309,3 +309,49 @@ test_that("Relationship print method displays correct details", {
   # Clean up
   engine$close()
 })
+
+test_that("Relationships include schema in table names", {
+    engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+    engine$dialect <- "postgres"
+    User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+    Post <- engine$model("posts",
+        id = Column("INTEGER", primary_key = TRUE),
+        user_id = Column("INTEGER")
+    )
+    User$set_schema("public")
+    Post$set_schema("public")
+
+    define_relationship(User, "id", "one_to_many", Post, "user_id", ref = "posts", backref = "user")
+
+    rel <- User$relationships$posts
+    expect_equal(rel$local_model$tablename, "public.users")
+    expect_equal(rel$related_model$tablename, "public.posts")
+
+    output <- capture.output(rel$print())
+    expect_equal(output, "Relationship: one 'public.users.id' => many 'public.posts.user_id'")
+
+    engine$close()
+})
+
+test_that("Relationships update when model schema changes", {
+    engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+    engine$dialect <- "postgres"
+    User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+    Post <- engine$model("posts",
+        id = Column("INTEGER", primary_key = TRUE),
+        user_id = Column("INTEGER")
+    )
+    define_relationship(User, "id", "one_to_many", Post, "user_id", ref = "posts", backref = "user")
+
+    User$set_schema("archive")
+    Post$set_schema("archive")
+
+    rel <- User$relationships$posts
+    expect_equal(rel$local_model$tablename, "archive.users")
+    expect_equal(rel$related_model$tablename, "archive.posts")
+
+    output <- capture.output(rel$print())
+    expect_equal(output, "Relationship: one 'archive.users.id' => many 'archive.posts.user_id'")
+
+    engine$close()
+})
