@@ -124,11 +124,13 @@ Retrieve the active database connection from the engine.
 }
 
 \subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
 \describe{
-\item{...}{Additional arguments passed to the engine's \code{get_connection} method.}
+\item{\code{...}}{Additional arguments passed to the engine's
+`get_connection` method.}
 }
+\if{html}{\out{</div>}}
 }
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-set_schema"></a>}}

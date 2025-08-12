@@ -1,5 +1,8 @@
 #' @include Dialect-mysql.R Dialect-postgres.R Dialect-sqlite.R
 #' @name dialect_core
+#' @title Dialect core helpers
+#' @description Internal dispatch utilities for database dialects.
+#' @keywords internal
 NULL
 
 get_dialect <- function(x) {

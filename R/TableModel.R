@@ -1,5 +1,8 @@
 #' @include Dialect.R
 #' @name tablemodel_core
+#' @title TableModel core helpers
+#' @description Internal utilities for the TableModel class.
+#' @keywords internal
 NULL
 
 #' TableModel Class

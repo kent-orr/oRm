@@ -2,7 +2,8 @@
 % Please edit documentation in R/Dialect.R
 \name{dialect_core}
 \alias{dialect_core}
-\title{dialect_core}
+\title{Dialect core helpers}
 \description{
-    dialect_core
+Internal dispatch utilities for database dialects.
 }
+\keyword{internal}

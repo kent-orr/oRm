@@ -1,5 +1,8 @@
 #' @include Dialect.R
 #' @name dialect_sqlite
+#' @title SQLite dialect helpers
+#' @description Internal methods for SQLite-specific behavior.
+#' @keywords internal
 NULL
 
 

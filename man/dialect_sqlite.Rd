@@ -2,6 +2,8 @@
 % Please edit documentation in R/Dialect-sqlite.R
 \name{dialect_sqlite}
 \alias{dialect_sqlite}
-\title{dialect_sqlite}
+\title{SQLite dialect helpers}
 \description{
+Internal methods for SQLite-specific behavior.
 }
+\keyword{internal}
