@@ -275,7 +275,10 @@ Record <- R6::R6Class(
     #' @description
     #' Refresh this record from the database.
     #' @return The Record instance (invisibly).
-    #' @details
+    #' @details Re-fetches this record from the database using its primary
+    #' key, replacing the current data and relationships. Any unsaved local
+    #' changes are discarded, and an error is raised if the record cannot be
+    #' found.
     refresh = function() {
       key_fields <- names(self$model$fields)[
         vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))

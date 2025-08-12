@@ -165,6 +165,13 @@ Refresh this record from the database.
 \if{html}{\out{<div class="r">}}\preformatted{Record$refresh()}\if{html}{\out{</div>}}
 }
 
+\subsection{Details}{
+Re-fetches this record from the database using its primary
+key, replacing the current data and relationships. Any unsaved local
+changes are discarded, and an error is raised if the record cannot be
+found.
+}
+
 \subsection{Returns}{
 The Record instance (invisibly).
 }
