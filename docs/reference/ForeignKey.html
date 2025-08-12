@@ -16,7 +16,23 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Quickstart</h6></li>
+    <li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
+    <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Using the ORM</h6></li>
+    <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
+    <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
+    <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Advanced Topics</h6></li>
+    <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
+    <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
+  </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/kent-orr/oRm/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -44,7 +60,15 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ForeignKey</span><span class="op">(</span><span class="va">type</span>, <span class="va">references</span>, on_delete <span class="op">=</span> <span class="cn">NULL</span>, on_update <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ForeignKey</span><span class="op">(</span></span>
+<span>  <span class="va">type</span>,</span>
+<span>  ref_table <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ref_column <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  references <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  on_delete <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  on_update <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -55,8 +79,18 @@
 <dd><p>SQL data type (e.g. "INTEGER")</p></dd>
 
 
+<dt id="arg-ref-table">ref_table<a class="anchor" aria-label="anchor" href="#arg-ref-table"></a></dt>
+<dd><p>Character. Name of the referenced table.</p></dd>
+
+
+<dt id="arg-ref-column">ref_column<a class="anchor" aria-label="anchor" href="#arg-ref-column"></a></dt>
+<dd><p>Character. Name of the referenced column.
+Used when specifying the pieces separately.</p></dd>
+
+
 <dt id="arg-references">references<a class="anchor" aria-label="anchor" href="#arg-references"></a></dt>
-<dd><p>Character. The referenced table and column (e.g. "users.id")</p></dd>
+<dd><p>"table.column" string specifying the referenced field.
+This is the recommended way to declare the target.</p></dd>
 
 
 <dt id="arg-on-delete">on_delete<a class="anchor" aria-label="anchor" href="#arg-on-delete"></a></dt>
@@ -92,8 +126,10 @@ See <code><a href="Column.html">Column</a></code> for details on additional para
 <span class="r-in"><span><span class="va">user_id_fk</span> <span class="op">&lt;-</span> <span class="fu">ForeignKey</span><span class="op">(</span><span class="st">"INTEGER"</span>, references <span class="op">=</span> <span class="st">"users.id"</span>, on_delete <span class="op">=</span> <span class="st">"CASCADE"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Define a nullable foreign key with custom update behavior</span></span></span>
-<span class="r-in"><span><span class="va">category_id_fk</span> <span class="op">&lt;-</span> <span class="fu">ForeignKey</span><span class="op">(</span><span class="st">"INTEGER"</span>, references <span class="op">=</span> <span class="st">"categories.id"</span>,</span></span>
-<span class="r-in"><span>                             nullable <span class="op">=</span> <span class="cn">TRUE</span>, on_update <span class="op">=</span> <span class="st">"SET NULL"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">category_id_fk</span> <span class="op">&lt;-</span> <span class="fu">ForeignKey</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"INTEGER"</span>, references <span class="op">=</span> <span class="st">"categories.id"</span>,</span></span>
+<span class="r-in"><span>  nullable <span class="op">=</span> <span class="cn">TRUE</span>, on_update <span class="op">=</span> <span class="st">"SET NULL"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

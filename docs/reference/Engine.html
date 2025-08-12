@@ -36,7 +36,23 @@ Supports persistent connections for improved performance
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Quickstart</h6></li>
+    <li><a class="dropdown-item" href="../articles/get_started.html">Get Started</a></li>
+    <li><a class="dropdown-item" href="../articles/why_oRm.html">Why oRm</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Using the ORM</h6></li>
+    <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
+    <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
+    <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Advanced Topics</h6></li>
+    <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
+    <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
+  </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/kent-orr/oRm/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -82,15 +98,25 @@ in how database resources are managed.</p>
 <li><p><a href="#method-Engine-list_tables"><code>Engine$list_tables()</code></a></p></li>
 <li><p><a href="#method-Engine-get_query"><code>Engine$get_query()</code></a></p></li>
 <li><p><a href="#method-Engine-execute"><code>Engine$execute()</code></a></p></li>
+<li><p><a href="#method-Engine-set_schema"><code>Engine$set_schema()</code></a></p></li>
 <li><p><a href="#method-Engine-model"><code>Engine$model()</code></a></p></li>
 <li><p><a href="#method-Engine-set_transaction_state"><code>Engine$set_transaction_state()</code></a></p></li>
 <li><p><a href="#method-Engine-get_transaction_state"><code>Engine$get_transaction_state()</code></a></p></li>
+<li><p><a href="#method-Engine-qualify"><code>Engine$qualify()</code></a></p></li>
+<li><p><a href="#method-Engine-format_tablename"><code>Engine$format_tablename()</code></a></p></li>
+<li><p><a href="#method-Engine-print"><code>Engine$print()</code></a></p></li>
 <li><p><a href="#method-Engine-clone"><code>Engine$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-Engine-new"></a><div class="section">
 <h3 id="method-new-">Method <code><a href="https://rdrr.io/r/methods/new.html" class="external-link">new()</a></code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Create an Engine object</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">...</span>, conn_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>, use_pool <span class="op">=</span> <span class="cn">FALSE</span>, persist <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  conn_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  .schema <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  use_pool <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  persist <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -103,13 +129,19 @@ in how database resources are managed.</p>
 <dd><p>A list of arguments to be passed to DBI::dbConnect</p></dd>
 
 
+<dt><code>.schema</code></dt>
+<dd><p>Character. The default schema to apply to child TableModel objects</p></dd>
+
+
 <dt><code>use_pool</code></dt>
 <dd><p>Logical. Whether or not to make use of the pool package for connections to this engine</p></dd>
 
 
 <dt><code>persist</code></dt>
 <dd><p>Logical. Whether to keep the connection open after operations (default: FALSE)
-Get a connection to the database</p></dd>
+Get a connection to the database</p>
+<p>Reapplies the configured schema on every connection retrieval to
+ensure consistency after reconnects.</p></dd>
 
 
 </dl><p></p></div>
@@ -184,15 +216,35 @@ Execute a SQL query and return the number of rows affected</p>
 </div>
 
 
-</div><p></p><hr><a id="method-Engine-model"></a><div class="section">
-<h3 id="method-model-">Method <code>model()</code><a class="anchor" aria-label="anchor" href="#method-model-"></a></h3>
-<p>Create a new TableModel object for the specified table</p><div class="section">
+</div><p></p><hr><a id="method-Engine-set_schema"></a><div class="section">
+<h3 id="method-set-schema-">Method <code>set_schema()</code><a class="anchor" aria-label="anchor" href="#method-set-schema-"></a></h3>
+<p>Set the default schema for the engine and active connection</p><div class="section">
 <h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span><span class="va">tablename</span>, <span class="va">...</span>, .data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">set_schema</span><span class="op">(</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>schema</code></dt>
+<dd><p>Character. Schema name to apply</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<p>The Engine object</p>
+</div>
+
+</div><p></p><hr><a id="method-Engine-model"></a><div class="section">
+<h3 id="method-model-">Method <code>model()</code><a class="anchor" aria-label="anchor" href="#method-model-"></a></h3>
+<p>Create a new TableModel object for the specified table</p><div class="section">
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span><span class="va">tablename</span>, <span class="va">...</span>, .data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>, .schema <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>tablename</code></dt>
 <dd><p>Name of the table</p></dd>
 
@@ -205,10 +257,14 @@ Execute a SQL query and return the number of rows affected</p>
 <dd><p>A named list of the arguments for the TableModel constructor</p></dd>
 
 
+<dt><code>.schema</code></dt>
+<dd><p>Character. The default schema to apply to the TableModel object</p></dd>
+
+
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
 <p>A new TableModel object</p>
 </div>
 
@@ -216,7 +272,7 @@ Execute a SQL query and return the number of rows affected</p>
 <h3 id="method-set-transaction-state-">Method <code>set_transaction_state()</code><a class="anchor" aria-label="anchor" href="#method-set-transaction-state-"></a></h3>
 
 <div class="section">
-<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">set_transaction_state</span><span class="op">(</span><span class="va">state</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -225,20 +281,58 @@ Execute a SQL query and return the number of rows affected</p>
 <h3 id="method-get-transaction-state-">Method <code>get_transaction_state()</code><a class="anchor" aria-label="anchor" href="#method-get-transaction-state-"></a></h3>
 
 <div class="section">
-<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">get_transaction_state</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
+</div><p></p><hr><a id="method-Engine-qualify"></a><div class="section">
+<h3 id="method-qualify-">Method <code>qualify()</code><a class="anchor" aria-label="anchor" href="#method-qualify-"></a></h3>
+
+<div class="section">
+<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">qualify</span><span class="op">(</span><span class="va">tablename</span>, .schema <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-Engine-format_tablename"></a><div class="section">
+<h3 id="method-format-tablename-">Method <code>format_tablename()</code><a class="anchor" aria-label="anchor" href="#method-format-tablename-"></a></h3>
+
+<div class="section">
+<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">format_tablename</span><span class="op">(</span><span class="va">tablename</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-Engine-print"></a><div class="section">
+<h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
+<p>Print a concise summary of the engine.</p><div class="section">
+<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>...</code></dt>
+<dd><p>Unused, present for compatibility.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-6">Returns<a class="anchor" aria-label="anchor" href="#returns-6"></a></h4>
+<p>The Engine object, invisibly.</p>
+</div>
+
 </div><p></p><hr><a id="method-Engine-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
+<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
