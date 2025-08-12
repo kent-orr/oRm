@@ -59,10 +59,11 @@ ensure_schema_exists.sqlite <- function(x, schema) {
 
 }
 
-#' @export
+#' @title Apply schema prefix to SQLite table names
 #' @description For SQLite, schemas are not supported natively. Any provided
 #'   schema name is treated as part of the table name, acting only as a naming
 #'   convention.
+#' @export
 set_schema.sqlite <- function(table, schema, dialect) {
   if (is.null(schema) || schema == "") {
     table
