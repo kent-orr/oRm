@@ -1,5 +1,4 @@
 #' @include Dialect.R
-#' @name tablemodel_core
 NULL
 
 #' TableModel Class

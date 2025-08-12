@@ -1,7 +1,16 @@
 #' @include Dialect-mysql.R Dialect-postgres.R Dialect-sqlite.R
-#' @name dialect_core
 NULL
 
+
+#' Get the dialect from an oRm object
+#'
+#' This internal function extracts the database dialect from various oRm objects
+#' by traversing their object hierarchy to find the associated Engine.
+#'
+#' @param x An oRm object (Engine, TableModel, or Record)
+#'
+#' @return Character string representing the dialect name, or "default" if no dialect is found
+#' @keywords internal
 get_dialect <- function(x) {
     if (inherits(x, "Engine")) {
         x$dialect
@@ -14,6 +23,19 @@ get_dialect <- function(x) {
     }
 }
 
+
+#' Dispatch method calls based on dialect
+#'
+#' This internal function provides a mechanism for method dispatch based on the
+#' dialect of the database engine. It looks for dialect-specific implementations
+#' first, then falls back to default implementations.
+#'
+#' @param x An object that has an associated dialect (Engine, TableModel, or Record)
+#' @param method Character string naming the method to dispatch
+#' @param ... Additional arguments passed to the dispatched method
+#'
+#' @return The result of calling the appropriate dialect-specific or default method
+#' @keywords internal
 dispatch_method <- function(x, method, ...) {
     dialect <- get_dialect(x)
 
@@ -27,10 +49,24 @@ dispatch_method <- function(x, method, ...) {
 
 # Qualify Schema ---------------------------------------------------------
 
+
+#' Qualify table name with schema
+#'
+#' This internal function adds schema qualification to table names when needed,
+#' using dialect-specific logic for different database systems.
+#'
+#' @param x An oRm object (Engine, TableModel, or Record) used for dialect dispatch
+#' @param tablename Character string of the table name to qualify
+#' @param schema Character string of the schema name, or NULL
+#'
+#' @return Character string of the qualified table name
+#' @keywords internal
 qualify <- function(x, tablename, schema) {
     dispatch_method(x, "qualify", tablename, schema)
 }
 
+#' @rdname qualify
+#' @keywords internal
 qualify.default <- function(x, tablename, schema) {
     if (!grepl("\\.", tablename) && !is.null(schema)) {
         paste(schema, tablename, sep = ".")
@@ -42,10 +78,23 @@ qualify.default <- function(x, tablename, schema) {
 
 # Schema -----------------------------------------------------------------
 
+
+#' Set schema for database operations
+#'
+#' This internal function sets the schema context for database operations,
+#' using dialect-specific logic for different database systems.
+#'
+#' @param x An oRm object (Engine, TableModel, or Record) used for dialect dispatch
+#' @param schema Character string of the schema name to set
+#'
+#' @return Invisible NULL (called for side effects)
+#' @keywords internal
 set_schema <- function(x, schema) {
     dispatch_method(x, "set_schema", schema)
 }
 
+#' @rdname set_schema
+#' @keywords internal
 set_schema.default <- function(x, schema) {
     invisible(NULL)
 }
@@ -83,6 +132,18 @@ render_field <- function(field, conn, ...) {
     UseMethod("render_field", field)
 }
 
+#' Add conditional SQL parts to column definition
+#'
+#' This internal helper function conditionally adds SQL fragments to a column
+#' definition based on field properties.
+#'
+#' @param parts Character vector of existing SQL parts
+#' @param field Logical value or NULL indicating whether to add the SQL fragment
+#' @param true Character string to add when field is TRUE
+#' @param false Character string to add when field is FALSE (optional)
+#'
+#' @return Character vector with potentially added SQL parts
+#' @keywords internal
 add_part <- function(parts, field, true, false = NULL) {
     if(is.null(field))
     return(parts)
@@ -91,6 +152,16 @@ add_part <- function(parts, field, true, false = NULL) {
     parts
 }
 
+#' Add extra SQL parts to column definition
+#'
+#' This internal helper function adds additional SQL fragments from a list
+#' of extras to the column definition.
+#'
+#' @param parts Character vector of existing SQL parts
+#' @param fields List or vector of additional SQL fragments to add
+#'
+#' @return Character vector with added SQL parts
+#' @keywords internal
 add_extras <- function(parts, fields) {
     if (!is.null(fields) && length(fields) > 0) 
     parts <- c(parts, unlist(fields))
@@ -164,10 +235,28 @@ render_constraint.default <- function(field, conn, ...) {
 
 
 
+
+#' Flush data to database table
+#'
+#' This internal function inserts data into a database table using dialect-specific
+#' logic for different database systems. It handles the actual database write operation
+#' for Record objects.
+#'
+#' @param x An oRm object (Engine, TableModel, or Record) used for dialect dispatch
+#' @param table Character string of the table name
+#' @param data Named list or vector of data to insert
+#' @param con DBI connection object
+#' @param commit Logical indicating whether to commit the transaction
+#' @param ... Additional arguments passed to dialect-specific methods
+#'
+#' @return Invisible NULL or dialect-specific return value
+#' @keywords internal
 flush <- function(x, table, data, con, commit = TRUE, ...) {
     dispatch_method(x, "flush", table, data, con, commit,...)
 }
 
+#' @rdname flush
+#' @keywords internal
 flush.default <- local({
     warned <- FALSE
     

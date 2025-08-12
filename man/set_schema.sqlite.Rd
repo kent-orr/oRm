@@ -6,7 +6,12 @@
 \usage{
 set_schema.sqlite(x, schema)
 }
+\arguments{
+\item{x}{Engine or TableModel instance used for dispatch.}
+
+\item{schema}{Character. Schema name to apply, ignored.}
+}
 \description{
 SQLite does not support schemas. This method is a no-op and any supplied
-  schema name is ignored.
+schema name is ignored.
 }

@@ -1,5 +1,4 @@
 #' @include Dialect.R
-#' @name dialect_sqlite
 NULL
 
 
