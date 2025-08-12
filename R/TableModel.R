@@ -173,7 +173,7 @@ TableModel <- R6::R6Class(
     #' }
     drop_table = function(ask = interactive()) {
       con <- self$get_connection()
-      drop_sql <- paste0("DROP TABLE IF EXISTS ", , self$engine$format_tablename(self$tablename))
+      drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
 
       resp <- 'y'
       if (ask) {
@@ -198,9 +198,12 @@ TableModel <- R6::R6Class(
       Record$new(self, ..., .data = .data)
     },
 
+    #' @description
+    #' Generate a dbplyr tbl() object to be consumed by the model.
     tbl = function() {
       con = self$get_connection()
-      dplyr::tbl(con, self$tablename)
+      formatted_name <- self$engine$format_tablename(self$tablename)
+      dplyr::tbl(con, I(formatted_name))
     },
 
     #' @description
