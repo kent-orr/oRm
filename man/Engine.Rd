@@ -17,6 +17,18 @@ Key features:
   \item Supports persistent connections for improved performance
 }
 }
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{conn_args}}{A list of arguments for establishing a connection}
+\item{\code{conn}}{Active database connection or pool}
+\item{\code{use_pool}}{Whether to use connection pooling}
+\item{\code{persist}}{Whether to keep connections open between operations}
+\item{\code{dialect}}{Database dialect in use}
+\item{\code{schema}}{Default schema applied to tables}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
