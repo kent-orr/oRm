@@ -23,7 +23,7 @@ setup_postgres_test_db <- function() {
     message("Pulling PostgreSQL Alpine image, this may take a while...")
     docker$image$pull("postgres:14-alpine")
 
-    docker <- docker_client()
+    docker <- stevedore::docker_client()
     tryCatch({
         existing_container <- docker$container$get(container_name)
         message("Stopping existing container...")

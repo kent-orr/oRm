@@ -123,7 +123,6 @@ Engine <- R6::R6Class(
         set_schema = function(schema) {
             on.exit(if (private$exit_check()) self$close())
             self$schema <- schema
-            self$conn_args$schema <- schema
             set_schema(self, schema)
             return(self)
         },

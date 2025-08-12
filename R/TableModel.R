@@ -135,7 +135,7 @@ TableModel <- R6::R6Class(
       create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
       sql <- paste0(
         create_clause, " ",
-        DBI::dbQuoteIdentifier(conn, self$tablename),
+        self$engine$format_tablename(self$tablename), 
         " (\n  ", paste(fields_sql, collapse = ',\n'), 
         if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
           paste0(",\n  ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n  "))
@@ -173,7 +173,7 @@ TableModel <- R6::R6Class(
     #' }
     drop_table = function(ask = interactive()) {
       con <- self$get_connection()
-      drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(con, self$tablename))
+      drop_sql <- paste0("DROP TABLE IF EXISTS ", , self$engine$format_tablename(self$tablename))
 
       resp <- 'y'
       if (ask) {
