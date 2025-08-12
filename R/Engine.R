@@ -154,7 +154,7 @@ Engine <- R6::R6Class(
         qualify = function(tablename, .schema = self$schema) {
             qualify(self, tablename, schema = .schema)
         },
-        
+
         format_tablename = function(tablename) {
             parts <- strsplit(tablename, "\\.")[[1]]
             quoted <- vapply(
@@ -163,6 +163,25 @@ Engine <- R6::R6Class(
                 character(1)
             )
             paste(quoted, collapse = ".")
+        },
+
+        #' @description
+        #' Print a concise summary of the engine.
+        #' @param ... Unused, present for compatibility.
+        #' @return The Engine object, invisibly.
+        print = function(...) {
+            connected <- FALSE
+            if (!is.null(self$conn)) {
+                connected <- DBI::dbIsValid(self$conn)
+            }
+            cat("<", class(self)[1], ">\n", sep = "")
+            cat(
+                "  dialect: ", self$dialect,
+                ", schema: ", if (is.null(self$schema)) "NULL" else self$schema,
+                ", connected: ", connected, "\n",
+                sep = ""
+            )
+            invisible(self)
         }
         
         
