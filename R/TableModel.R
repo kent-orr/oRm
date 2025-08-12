@@ -45,8 +45,14 @@ NULL
 #' @importFrom rlang enquos
 #' @importFrom DBI dbQuoteIdentifier dbQuoteLiteral dbExecute
 #'
+#' @field tablename Fully qualified name of the table in the database.
+#' @field schema Schema that namespaces the table; defaults to the engine's schema.
+#' @field engine Engine instance providing connections and SQL dialect.
+#' @field fields Named list of Column objects defining the table structure.
+#' @field relationships Named list of Relationship objects linking to other models.
+#' 
 #' @export
-#'
+#' 
 TableModel <- R6::R6Class(
   "TableModel",
   public = list(
