@@ -11,14 +11,12 @@ Description: oRm is a lightweight Object-Relational Mapper (ORM) for R.
     compatibility with most database dialects.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
-Imports: 
+Imports:
     DBI,
     dbplyr,
     dplyr,
-    pool,
     R6,
-Suggests: 
+Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
@@ -40,5 +38,3 @@ Collate:
 URL: https://kent-orr.github.io/oRm/, https://github.com/kent-orr/oRm
 VignetteBuilder: knitr
 BugReports: https://github.com/kent-orr/oRm/issues
-Remotes: 
-    richfitz/stevedore

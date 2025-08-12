@@ -3,29 +3,75 @@
 #' include Dialect-sqlite.R
 NULL
 
-#' Set the schema for a table based on the database dialect
-#'
-#' Allows callers to specify a schema separately from the table name. The
-#' returned value should be the fully qualified identifier used by the
-#' underlying database. Dialects that do not support schemas may simply
-#' combine the schema and table name into a single identifier.
-#'
-#' @param table The table name
-#' @param schema The schema name
-#' @param dialect A character string identifying the database dialect
-#'
-#' @return A character string representing the schema-qualified table name
-#' @export
-set_schema <- function(table, schema, dialect) UseMethod("set_schema", dialect)
 
-#' @export
-set_schema.default <- function(table, schema, dialect) {
-  if (is.null(schema) || schema == "") {
-    table
-  } else {
-    paste0(schema, ".", table)
-  }
+get_dialect <- function(x) {
+    if (inherits(x, "Engine")) {
+        x$dialect
+    } else if (inherits(x, "TableModel")) {
+        x$engine$dialect
+    } else if (inherits(x, "Record")) {
+        x$model$engine$dialect
+    } else {
+        "default"
+    }
 }
+
+dispatch_method <- function(x, method, ...) {
+    dialect <- get_dialect(x)
+
+    method_name <- paste(method, dialect, sep = '.')
+    method_fn <- get0(method_name, mode = "function")
+    if (is.null(method_fn)) {
+        method_fn <- get0(paste0(method, '.default'), mode = "function")
+    }
+    method_fn(x, ...)
+}
+
+# Qualify Schema ---------------------------------------------------------
+
+qualify <- function(x, tablename, schema) {
+    dispatch_method(x, "qualify", tablename, schema)
+}
+
+qualify.default <- function(x, tablename, schema) {
+    if (!grepl("\\.", tablename) && !is.null(schema)) {
+        paste(schema, tablename, sep = ".")
+    } else {
+        tablename
+    }
+}
+
+
+# Schema -----------------------------------------------------------------
+
+set_schema <- function(x, schema) {
+    dispatch_method(x, "set_schema", schema)
+}
+
+set_schema.default <- function(x, schema) {
+    invisible(NULL)
+}
+
+#' Ensure that a schema exists for the current dialect
+#'
+#' This utility creates the schema if the connected database supports it.
+#' Dialects that do not implement schemas should provide a no-op.
+#'
+#' @param x Engine or TableModel instance used for dispatch.
+#' @param schema Character. Name of the schema to create.
+#' @keywords internal
+ensure_schema_exists <- function(x, schema) {
+    dispatch_method(x, "ensure_schema_exists", schema)
+}
+
+ensure_schema_exists.default <- function(x, schema) {
+    invisible(NULL)
+}
+
+
+# Render -----------------------------------------------------------------
+
+
 
 #' Render a column field to SQL
 #'
@@ -41,7 +87,7 @@ render_field <- function(field, conn, ...) {
 
 add_part <- function(parts, field, true, false = NULL) {
     if(is.null(field))
-        return(parts)
+    return(parts)
     
     parts <- c(parts, if (field) true else false)
     parts
@@ -49,7 +95,7 @@ add_part <- function(parts, field, true, false = NULL) {
 
 add_extras <- function(parts, fields) {
     if (!is.null(fields) && length(fields) > 0) 
-        parts <- c(parts, unlist(fields))
+    parts <- c(parts, unlist(fields))
     parts
 }
 
@@ -61,11 +107,11 @@ render_field.default <- function(field, conn, ...) {
     parts = c(field$type)
     
     parts = parts |>
-        add_part(field$nullable, NULL, "NOT NULL") |>
-        add_part(field$unique, "UNIQUE") |>
-        add_part(field$primary_key, "PRIMARY KEY") |>
-        add_extras(field$extras)
-        
+    add_part(field$nullable, NULL, "NOT NULL") |>
+    add_part(field$unique, "UNIQUE") |>
+    add_part(field$primary_key, "PRIMARY KEY") |>
+    add_extras(field$extras)
+    
     # if a user wants to use sql() to enter a sql function like CURRENT_TIMESTAMP
     if (!is.null(field$default)) {
         if (inherits(field$default, "sql")) {
@@ -74,7 +120,7 @@ render_field.default <- function(field, conn, ...) {
             parts <- c(parts, "DEFAULT", DBI::dbQuoteLiteral(DBI::ANSI(), field$default))
         }
     }
-        
+    
     parts_string = paste(parts, collapse = ' ')
     paste(DBI::dbQuoteIdentifier(conn, field$name), parts_string)
 }
@@ -89,49 +135,39 @@ render_constraint <- function(field, ...) {
 #' @inheritParams render_field
 #' @export
 render_constraint.default <- function(field, conn, ...) {
-    fk_parts = c()
+    fk_parts <- c()
     if (inherits(field, 'ForeignKey')) {
-        reference_parts = strsplit(field$references, '\\.')[[1]]
-        stopifnot(
-            "Invalid foreign key reference format. Expected 'table.column'" =
-            length(reference_parts) == 2
-        )
-        fk_parts = c(fk_parts, paste0(
+        if (is.null(field$ref_table) || is.null(field$ref_column)) {
+            stop(sprintf("ForeignKey '%s' must define 'ref_table' and 'ref_column'.", field$name))
+        }
+
+        validate_identifier(field$ref_table, "ref_table")
+        validate_identifier(field$ref_column, "ref_column")
+
+        fk_parts <- c(fk_parts, paste0(
             "FOREIGN KEY (", DBI::dbQuoteIdentifier(conn, field$name), ") REFERENCES ",
-            DBI::dbQuoteIdentifier(conn, reference_parts[1]), " (",
-            DBI::dbQuoteIdentifier(conn, reference_parts[2]), ")"
+            DBI::dbQuoteIdentifier(conn, field$ref_table), " (",
+            DBI::dbQuoteIdentifier(conn, field$ref_column), ")"
         ))
         if (!is.null(field$on_delete))
-        fk_parts = c(fk_parts, paste("ON DELETE", toupper(field$on_delete)))
+            fk_parts <- c(fk_parts, paste("ON DELETE", toupper(field$on_delete)))
         if (!is.null(field$on_update))
-        fk_parts = c(fk_parts, paste('ON UPDATE', toupper(field$on_update)))
+            fk_parts <- c(fk_parts, paste('ON UPDATE', toupper(field$on_update)))
     } else {
         return(NULL)
     }
-    
-    fk_string = paste(fk_parts, collapse  = ' ')
+
+    fk_string <- paste(fk_parts, collapse = ' ')
     fk_string
 }
 
 
+# Flush ------------------------------------------------------------------
+
+
+
 flush <- function(x, table, data, con, commit = TRUE, ...) {
-  # Get the dialect
-  dialect <- if (inherits(x, "Engine")) {
-    x$dialect
-  } else if (inherits(x, "TableModel")) {
-    x$engine$dialect
-  } else if (inherits(x, "Record")) {
-    x$model$engine$dialect
-  } else {
-    "default"
-  }
-  
-  # Find the appropriate method
-  method_name <- paste0("flush.", dialect)
-  method <- get0(method_name, mode = "function", ifnotfound = flush.default)
-  
-  # Call the method
-  method(x, table, data, con, commit, ...)
+    dispatch_method(x, "flush", table, data, con, commit,...)
 }
 
 flush.default <- local({

@@ -102,16 +102,31 @@ Relationship = R6::R6Class(
 #'
 #' @export
 define_relationship = function(
-  local_model, 
-  local_key, 
-  type = c('one_to_one', 'one_to_many', 'many_to_one', 'many_to_many'), 
-  related_model, 
-  related_key, 
-  ref = NULL, 
+  local_model,
+  local_key,
+  type = c('one_to_one', 'one_to_many', 'many_to_one', 'many_to_many'),
+  related_model,
+  related_key,
+  ref = NULL,
   backref = NULL) {
-  
+
   if (is.null(ref)) {
     ref <- tolower(related_model$tablename)
+  }
+
+  if (!(local_key %in% names(local_model$fields))) {
+    stop(sprintf("Field '%s' not found in model '%s'", local_key, local_model$tablename), call. = FALSE)
+  }
+  if (!(related_key %in% names(related_model$fields))) {
+    stop(sprintf("Field '%s' not found in model '%s'", related_key, related_model$tablename), call. = FALSE)
+  }
+
+  fk_field <- local_model$fields[[local_key]]
+  if (inherits(fk_field, "ForeignKey")) {
+    expected <- paste0(related_model$tablename, ".", related_key)
+    if (is.null(fk_field$references) || fk_field$references != expected) {
+      stop(sprintf("Field '%s' must reference '%s'", local_key, expected), call. = FALSE)
+    }
   }
 
   relationship = Relationship$new(local_model, local_key, type, related_model, related_key)

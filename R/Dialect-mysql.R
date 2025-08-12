@@ -13,21 +13,26 @@ flush.mysql <- function(x, table, data, con, commit = TRUE, ...) {
   id <- DBI::dbGetQuery(con, "SELECT LAST_INSERT_ID();")[[1]]
 
   # Optionally commit or return the id
-  if (commit) {
-    DBI::dbCommit(con)
+    if (commit) {
+      DBI::dbCommit(con)
+    }
+
+    return(id)
   }
 
-  return(id)
-}
 
-#' @export
-set_schema.mysql <- function(table, schema, dialect) {
-  if (is.null(schema) || schema == "") {
-    table
+qualify.mysql <- function(x, tablename, schema) {
+  if (!grepl("\\.", tablename) && !is.null(schema)) {
+    paste(schema, tablename, sep = ".")
   } else {
-    paste0(schema, ".", table)
+    tablename
   }
 }
 
-#' @export
-set_schema.maria <- set_schema.mysql
+
+set_schema.mysql <- function(x, schema) {
+  conn <- if (inherits(x, "Engine")) x$get_connection() else x$engine$get_connection()
+  sql <- paste0("USE ", DBI::dbQuoteIdentifier(conn, schema))
+  DBI::dbExecute(conn, sql)
+  invisible(NULL)
+}

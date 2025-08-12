@@ -4,12 +4,26 @@
 \alias{ForeignKey}
 \title{Define a foreign key column}
 \usage{
-ForeignKey(type, references, on_delete = NULL, on_update = NULL, ...)
+ForeignKey(
+  type,
+  ref_table = NULL,
+  ref_column = NULL,
+  references = NULL,
+  on_delete = NULL,
+  on_update = NULL,
+  ...
+)
 }
 \arguments{
 \item{type}{SQL data type (e.g. "INTEGER")}
 
-\item{references}{Character. The referenced table and column (e.g. "users.id")}
+\item{ref_table}{Character. Name of the referenced table.}
+
+\item{ref_column}{Character. Name of the referenced column.
+Used when specifying the pieces separately.}
+
+\item{references}{"table.column" string specifying the referenced field.
+This is the recommended way to declare the target.}
 
 \item{on_delete}{Optional ON DELETE behavior (e.g. "CASCADE")}
 
@@ -33,8 +47,10 @@ See \code{\link{Column}} for details on additional parameters that can be passed
 user_id_fk <- ForeignKey("INTEGER", references = "users.id", on_delete = "CASCADE")
 
 # Define a nullable foreign key with custom update behavior
-category_id_fk <- ForeignKey("INTEGER", references = "categories.id",
-                             nullable = TRUE, on_update = "SET NULL")
+category_id_fk <- ForeignKey(
+  "INTEGER", references = "categories.id",
+  nullable = TRUE, on_update = "SET NULL"
+)
 }
 \seealso{
 \code{\link{Column}}

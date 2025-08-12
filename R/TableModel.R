@@ -27,7 +27,7 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{initialize(tablename, engine, ..., .data = list())}}{Constructor for creating a new TableModel instance.}
+#'   \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL)}}{Constructor for creating a new TableModel instance.}
 #'   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
 #'   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
 #'   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
@@ -55,6 +55,7 @@ TableModel <- R6::R6Class(
     engine = NULL,
     fields = list(),
     relationships = list(),
+    schema = NULL,
 
     #' @description
     #' Constructor for a new TableModel.
@@ -63,23 +64,29 @@ TableModel <- R6::R6Class(
     #' @param schema Optional schema name used to namespace the table.
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
-    initialize = function(tablename, engine, ..., schema = NULL, .data = list()) {
-      if (missing(tablename) || missing(engine)) {
-        stop("Both 'tablename' and 'engine' must be provided to TableModel.")
-      }
+    #' @param .schema Character. Schema to apply to the table name. Defaults to the engine's schema.
+    initialize = function(tablename, engine, ..., .data = list(), .schema = NULL) {
+        if (missing(tablename) || missing(engine)) {
+            stop("Both 'tablename' and 'engine' must be provided to TableModel.")
+        }
 
-      self$engine <- engine
-      self$schema <- schema
-      self$tablename <- set_schema(tablename, schema, engine$dialect)
 
-      dots <- utils::modifyList(.data, rlang::list2(...))
-      col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
-      col_names <- names(dots[vapply(dots, inherits, logical(1), "Column")])
-      for (i in seq_along(col_defs)) {
-        col_defs[[i]][['name']] <- col_names[i]
-        class(col_defs[[i]]) <- append(class(col_defs[[i]]), engine$dialect)
-      }
-      self$fields <- col_defs
+        self$engine <- engine
+        if (is.null(.schema)) {
+            self$schema <- self$engine$schema
+        } else {
+            self$schema <- .schema
+        }
+        self$tablename <- qualify(engine, tablename, schema = self$schema)
+
+        dots <- utils::modifyList(.data, rlang::list2(...))
+        col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
+        col_names <- names(dots[vapply(dots, inherits, logical(1), "Column")])
+        for (i in seq_along(col_defs)) {
+            col_defs[[i]][['name']] <- col_names[i]
+            class(col_defs[[i]]) <- append(class(col_defs[[i]]), engine$dialect)
+        }
+        self$fields <- col_defs
     },
 
     #' @description
@@ -90,12 +97,25 @@ TableModel <- R6::R6Class(
 
 
     #' @description
+    #' Update the schema for this model and re-qualify the table name.
+    #' @param schema Character. New schema name to apply.
+    #' @return The TableModel object.
+    set_schema = function(schema) {
+      self$schema <- schema
+      base_name <- strsplit(self$tablename, "\\.")[[1]]
+      base_name <- base_name[length(base_name)]
+      self$tablename <- qualify(self$engine, base_name, schema = schema)
+      self
+    },
+
+    #' @description
     #' Create the associated table in the database.
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
     #'
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
+      ensure_schema_exists(self$engine, self$schema)
       conn <- self$get_connection()
 
       if (overwrite) {
@@ -118,7 +138,7 @@ TableModel <- R6::R6Class(
       create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
       sql <- paste0(
         create_clause, " ",
-        DBI::dbQuoteIdentifier(conn, self$tablename),
+        self$engine$format_tablename(self$tablename), 
         " (\n  ", paste(fields_sql, collapse = ',\n'), 
         if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
           paste0(",\n  ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n  "))
@@ -156,7 +176,7 @@ TableModel <- R6::R6Class(
     #' }
     drop_table = function(ask = interactive()) {
       con <- self$get_connection()
-      drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(con, self$tablename))
+      drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
 
       resp <- 'y'
       if (ask) {
@@ -181,22 +201,26 @@ TableModel <- R6::R6Class(
       Record$new(self, ..., .data = .data)
     },
 
+    #' @description
+    #' Generate a dbplyr tbl() object to be consumed by the model.
     tbl = function() {
       con = self$get_connection()
-      dplyr::tbl(con, self$tablename)
+      formatted_name <- self$engine$format_tablename(self$tablename)
+      dplyr::tbl(con, I(formatted_name))
     },
 
     #' @description
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
-    #' @param mode One of "all", "one_or_none", or "get".
+    #' @param mode One of "all", "one_or_none", "get", or "data.frame".
+    #'   "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
     #' @param .limit Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
     #'   Positive values return the first N records, negative values return the last N records.
     #' @param .offset Integer. Offset for pagination. Default is 0.
     #' @param .order_by Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
     read = function(
       ..., 
-      mode = c("all", "one_or_none", "get"), 
+      mode = c("all", "one_or_none", "get", "data.frame"),
       .limit = 100, 
       .offset=0,
       .order_by = list()
@@ -258,6 +282,10 @@ TableModel <- R6::R6Class(
       
       rows <- dplyr::collect(tbl_ref)
 
+      if (mode == "data.frame") {
+        return(rows)
+      }
+
       if (nrow(rows) == 0) {
         if (mode == "get") {
           stop("Expected exactly one row, got: 0")
@@ -310,69 +338,13 @@ TableModel <- R6::R6Class(
     },
 
     #' @description
-    #' Print a formatted overview of the model, including its fields.
+    #' Print a concise overview of the model.
     print = function(...) {
-      cat("<", class(self)[1], ">\n", sep = "")
-      cat("  Table: ", self$tablename, "\n", sep = "")
-
-      if (length(self$fields) == 0) {
-        cat("  Fields: (none defined)\n")
-        return(invisible(self))
-      }
-
-      cat("  Fields:\n")
-
-      field_df <- data.frame(
-        name = names(self$fields),
-        type = vapply(self$fields, function(x) x$type, character(1)),
-        nullable = vapply(self$fields, function(x) {
-          if (is.null(x$nullable)) NA else x$nullable
-        }, logical(1)),
-        key = vapply(self$fields, function(x) isTRUE(x$primary_key), logical(1)),
-        stringsAsFactors = FALSE
-      )
-
-      field_df <- field_df[order(-field_df$key), ]
-      n_display <- min(10, nrow(field_df))
-      field_df <- field_df[seq_len(n_display), ]
-
-      col_widths <- list(
-        name = max(10, max(nchar(field_df$name))),
-        type = max(8, max(nchar(field_df$type))),
-        null = 9
-      )
-
-      color_type <- function(x) {
-        switch(tolower(x),
-        "integer"   = green(x),
-        "int"       = green(x),
-        "numeric"   = yellow(x),
-        "real"      = yellow(x),
-        "text"      = blue(x),
-        "varchar"   = blue(x),
-        "date"      = magenta:70
-        (x),
-        "timestamp" = magenta(x),
-        silver(x))
-      }
-
-      for (i in seq_len(nrow(field_df))) {
-        row <- field_df[i, ]
-        key_icon <- if (row$key) "🔑" else "  "
-        name_str <- format(row$name, width = col_widths$name)
-        type_raw <- format(row$type, width = col_widths$type)
-        type_str <- color_type(type_raw)
-        null_str <- if (is.na(row$nullable)) "" else if (row$nullable) "NULL" else "NOT NULL"
-
-        cat(sprintf("  %s %s  %s  %s\n", key_icon, name_str, type_str, null_str))
-      }
-
-      if (length(self$fields) > n_display) {
-        cat(silver(sprintf("  ... %d more columns not shown\n",
-        length(self$fields) - n_display)))
-      }
-
-      invisible(self)
+        cat("<TableModel>\n")
+        cat("Table: ", self$tablename, "\n", sep = "")
+        cols <- paste(names(self$fields), collapse = ", ")
+        cat("Columns: ", cols, "\n", sep = "")
+        invisible(self)
     }
 
   )

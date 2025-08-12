@@ -19,13 +19,45 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   return(result)
 }
 
-#' @export
-set_schema.postgres <- function(table, schema, dialect) {
-  if (is.null(schema) || schema == "") {
-    table
+
+qualify.postgres <- function(x, tablename, schema) {
+  if (!grepl("\\.", tablename) && !is.null(schema)) {
+    paste(schema, tablename, sep = ".")
   } else {
-    paste0(schema, ".", table)
+    tablename
   }
+}
+
+set_schema.postgres <- function(x, schema) {
+    # Schema updates are handled during connection retrieval
+    invisible(NULL)
+}
+
+ensure_schema_exists.postgres <- function(x, schema) {
+  if (is.null(schema)) return(invisible(NULL))
+
+  conn <- NULL
+  if (inherits(x, "Engine")) {
+    conn <- x$conn
+    if (is.null(conn) || !DBI::dbIsValid(conn)) {
+      args <- x$conn_args
+      args$schema <- NULL
+      conn <- do.call(DBI::dbConnect, args)
+      on.exit(DBI::dbDisconnect(conn), add = TRUE)
+    }
+  } else if (inherits(x, "TableModel")) {
+    conn <- x$engine$conn
+    if (is.null(conn) || !DBI::dbIsValid(conn)) {
+      args <- x$engine$conn_args
+      args$schema <- NULL
+      conn <- do.call(DBI::dbConnect, args)
+      on.exit(DBI::dbDisconnect(conn), add = TRUE)
+    }
+  }
+
+  sql <- paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(conn, schema))
+  DBI::dbExecute(conn, sql)
+  invisible(NULL)
 }
 
 

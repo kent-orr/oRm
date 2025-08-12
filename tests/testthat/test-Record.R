@@ -29,6 +29,64 @@ test_that("Record$create() inserts a row into the database", {
   engine$close()
 })
 
+test_that("Record$update() modifies an existing row", {
+    engine <- Engine$new(
+        drv = RSQLite::SQLite(),
+        dbname = ":memory:"
+    )
+
+    User <- engine$model(
+        "users",
+        id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+
+    User$create_table()
+
+    rec <- Record$new(User, id = 1, name = "Alice")
+    rec$create()
+
+    rec$update(name = "Alicia")
+
+    result <- DBI::dbGetQuery(
+        engine$get_connection(),
+        "SELECT * FROM users WHERE id = 1"
+    )
+
+    expect_equal(result$name, "Alicia")
+
+    engine$close()
+})
+
+test_that("Record$delete() removes a row from the database", {
+    engine <- Engine$new(
+        drv = RSQLite::SQLite(),
+        dbname = ":memory:"
+    )
+
+    User <- engine$model(
+        "users",
+        id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+
+    User$create_table()
+
+    rec <- Record$new(User, id = 1, name = "Alice")
+    rec$create()
+
+    rec$delete()
+
+    result <- DBI::dbGetQuery(
+        engine$get_connection(),
+        "SELECT * FROM users WHERE id = 1"
+    )
+
+    expect_equal(nrow(result), 0)
+
+    engine$close()
+})
+
 test_that("Record$create() can take and implement a default function", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),

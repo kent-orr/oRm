@@ -30,6 +30,42 @@ test_that("Should create a one-to-many relationship between two models correctly
   engine$close()
 })
 
+test_that("Should error when local_key or related_key do not exist", {
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+  Post <- engine$model("posts",
+                       id = Column("INTEGER", primary_key = TRUE),
+                       user_id = Column("INTEGER"))
+
+  expect_error(
+    define_relationship(User, "missing", "one_to_many", Post, "user_id"),
+    "Field 'missing' not found in model 'users'"
+  )
+
+  expect_error(
+    define_relationship(User, "id", "one_to_many", Post, "bad"),
+    "Field 'bad' not found in model 'posts'"
+  )
+
+  engine$close()
+})
+
+test_that("Should error when foreign key references mismatch", {
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+  Category <- engine$model("categories", id = Column("INTEGER", primary_key = TRUE))
+  Post <- engine$model("posts",
+                       id = Column("INTEGER", primary_key = TRUE),
+                       user_id = ForeignKey("INTEGER", references = "users.id"))
+
+  expect_error(
+    define_relationship(Post, "user_id", "many_to_one", Category, "id"),
+    sprintf("Field 'user_id' must reference '%s.id'", Category$tablename)
+  )
+
+  engine$close()
+})
+
 test_that("Should handle creation of a many-to-many relationship with proper backref", {
   # Set up test models
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
@@ -272,4 +308,50 @@ test_that("Relationship print method displays correct details", {
 
   # Clean up
   engine$close()
+})
+
+test_that("Relationships include schema in table names", {
+    engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+    engine$dialect <- "postgres"
+    User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+    Post <- engine$model("posts",
+        id = Column("INTEGER", primary_key = TRUE),
+        user_id = Column("INTEGER")
+    )
+    User$set_schema("public")
+    Post$set_schema("public")
+
+    define_relationship(User, "id", "one_to_many", Post, "user_id", ref = "posts", backref = "user")
+
+    rel <- User$relationships$posts
+    expect_equal(rel$local_model$tablename, "public.users")
+    expect_equal(rel$related_model$tablename, "public.posts")
+
+    output <- capture.output(rel$print())
+    expect_equal(output, "Relationship: one 'public.users.id' => many 'public.posts.user_id'")
+
+    engine$close()
+})
+
+test_that("Relationships update when model schema changes", {
+    engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+    engine$dialect <- "postgres"
+    User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+    Post <- engine$model("posts",
+        id = Column("INTEGER", primary_key = TRUE),
+        user_id = Column("INTEGER")
+    )
+    define_relationship(User, "id", "one_to_many", Post, "user_id", ref = "posts", backref = "user")
+
+    User$set_schema("archive")
+    Post$set_schema("archive")
+
+    rel <- User$relationships$posts
+    expect_equal(rel$local_model$tablename, "archive.users")
+    expect_equal(rel$related_model$tablename, "archive.posts")
+
+    output <- capture.output(rel$print())
+    expect_equal(output, "Relationship: one 'archive.users.id' => many 'archive.posts.user_id'")
+
+    engine$close()
 })

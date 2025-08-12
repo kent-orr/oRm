@@ -26,9 +26,13 @@ Key features:
 \item \href{#method-Engine-list_tables}{\code{Engine$list_tables()}}
 \item \href{#method-Engine-get_query}{\code{Engine$get_query()}}
 \item \href{#method-Engine-execute}{\code{Engine$execute()}}
+\item \href{#method-Engine-set_schema}{\code{Engine$set_schema()}}
 \item \href{#method-Engine-model}{\code{Engine$model()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
+\item \href{#method-Engine-qualify}{\code{Engine$qualify()}}
+\item \href{#method-Engine-format_tablename}{\code{Engine$format_tablename()}}
+\item \href{#method-Engine-print}{\code{Engine$print()}}
 \item \href{#method-Engine-clone}{\code{Engine$clone()}}
 }
 }
@@ -38,7 +42,14 @@ Key features:
 \subsection{Method \code{new()}}{
 Create an Engine object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$new(..., conn_args = list(), use_pool = FALSE, persist = FALSE, .schema = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$new(
+  ...,
+  conn_args = list(),
+  .schema = NULL,
+  use_pool = FALSE,
+  persist = FALSE
+)}\if{html}{\out{</div>}}
+
 }
 
 \subsection{Arguments}{
@@ -48,11 +59,16 @@ Create an Engine object
 
 \item{\code{conn_args}}{A list of arguments to be passed to DBI::dbConnect}
 
+\item{\code{.schema}}{Character. The default schema to apply to child TableModel objects}
+
 \item{\code{use_pool}}{Logical. Whether or not to make use of the pool package for connections to this engine}
 
-\item{\code{persist}}{Logical. Whether to keep the connection open after operations (default: FALSE)}
+\item{\code{persist}}{Logical. Whether to keep the connection open after operations (default: FALSE)
+Get a connection to the database
 
-\item{\code{.schema}}{Default schema for PostgreSQL connections}
+Reapplies the configured schema on every connection retrieval to
+ensure consistency after reconnects.}
+
 }
 \if{html}{\out{</div>}}
 }
@@ -126,12 +142,33 @@ Execute a SQL query and return the number of rows affected
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-set_schema"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-set_schema}{}}}
+\subsection{Method \code{set_schema()}}{
+Set the default schema for the engine and active connection
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$set_schema(schema)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{schema}}{Character. Schema name to apply}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The Engine object
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-model"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-model}{}}}
 \subsection{Method \code{model()}}{
 Create a new TableModel object for the specified table
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., schema = NULL, .data = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list(), .schema = NULL)}\if{html}{\out{</div>}}
+
 }
 
 \subsection{Arguments}{
@@ -144,6 +181,8 @@ Create a new TableModel object for the specified table
 \item{\code{schema}}{Optional schema name to namespace the table. Defaults to the engine's schema if not provided}
 
 \item{\code{.data}}{A named list of the arguments for the TableModel constructor}
+
+\item{\code{.schema}}{Character. The default schema to apply to the TableModel object}
 }
 \if{html}{\out{</div>}}
 }
@@ -168,6 +207,44 @@ A new TableModel object
 \if{html}{\out{<div class="r">}}\preformatted{Engine$get_transaction_state()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-qualify"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-qualify}{}}}
+\subsection{Method \code{qualify()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$qualify(tablename, .schema = self$schema)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-format_tablename"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-format_tablename}{}}}
+\subsection{Method \code{format_tablename()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$format_tablename(tablename)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-print"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-print}{}}}
+\subsection{Method \code{print()}}{
+Print a concise summary of the engine.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$print(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused, present for compatibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The Engine object, invisibly.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-clone"></a>}}

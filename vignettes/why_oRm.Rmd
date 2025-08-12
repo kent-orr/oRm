@@ -109,7 +109,7 @@ Measurement <- engine$model(
   "measurements",
   id = Column("INTEGER", primary_key = TRUE),
   observer_id = Column("INTEGER"),
-  plant_id = ForeignKey("INTEGER", 'plants.id'),  # we'll define this table shortly
+  plant_id = ForeignKey("INTEGER", references = 'plants.id'),  # we'll define this table shortly
 
   measurement_date = Column("DATE"),
   measurement_value = Column("REAL")
