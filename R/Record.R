@@ -355,8 +355,14 @@ Record <- R6::R6Class(
     },
     
     
-    print = function() {
-      cat("<Record>: '", self$model$tablename, "'\n", sep='')
+    #' @description
+    #' Print a summary of the record.
+    #'
+    #' @param ... Additional arguments passed to 
+    #'   other print methods.
+    #' @return The Record object, invisibly.
+    print = function(...) {
+      cat("<Record>: '", self$model$tablename, "'\n", sep = '')
       cat(paste(names(self$data), self$data, sep = ": ", collapse = "\n"), "\n")
       invisible(self)
     }
