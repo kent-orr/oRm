@@ -46,6 +46,26 @@ To register a new dialect, create a file like `R/Dialect-mydialect.R` and implem
 
 Each function will be called through `dispatch_method()` when working with engines, models, or records that declare your dialect.
 
+## Documenting methods
+
+Default implementations should include a roxygen block with `@rdname` so they create the base manual page. Dialect-specific
+variants then add their notes with `@describeIn`, which appends a subsection to the same page and keeps everything discoverable
+via `?` or F1.
+
+```r
+#' @rdname ensure_schema_exists
+ensure_schema_exists.default <- function(x, schema) {
+    # ...
+}
+
+#' @describeIn ensure_schema_exists Create schema if missing for PostgreSQL.
+ensure_schema_exists.postgres <- function(x, schema) {
+    # ...
+}
+```
+
+Running `devtools::document()` after adding a dialect updates the shared documentation so new sections appear automatically.
+
 ## Submitting a dialect
 
 After implementing these functions, ensure the new dialect file is listed in the `Collate:` field of `DESCRIPTION` and export any user-facing helpers. Dialects are peer-reviewed through pull requests—include tests demonstrating inserts, schema qualification, and other behaviour specific to your backend.
