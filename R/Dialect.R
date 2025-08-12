@@ -143,14 +143,6 @@ render_constraint.default <- function(field, conn, ...) {
         validate_identifier(field$ref_table, "ref_table")
         validate_identifier(field$ref_column, "ref_column")
 
-        if (!DBI::dbExistsTable(conn, field$ref_table)) {
-            stop(sprintf("Referenced table '%s' for foreign key '%s' does not exist.", field$ref_table, field$name))
-        }
-        existing_fields <- DBI::dbListFields(conn, field$ref_table)
-        if (!(field$ref_column %in% existing_fields)) {
-            stop(sprintf("Referenced column '%s.%s' does not exist.", field$ref_table, field$ref_column))
-        }
-
         fk_parts <- c(fk_parts, paste0(
             "FOREIGN KEY (", DBI::dbQuoteIdentifier(conn, field$name), ") REFERENCES ",
             DBI::dbQuoteIdentifier(conn, field$ref_table), " (",
