@@ -216,13 +216,8 @@ to define our table schema and enter our first few observations.</p>
 <span></span>
 <span><span class="va">Measurement</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
-<span><span class="co">#&gt;   Table: measurements</span></span>
-<span><span class="co">#&gt;   Fields:</span></span>
-<span><span class="co">#&gt;   🔑 id                 <span style="color: #555555;">INTEGER </span>  </span></span>
-<span><span class="co">#&gt;      observer_id        <span style="color: #555555;">INTEGER </span>  </span></span>
-<span><span class="co">#&gt;      plant_id           <span style="color: #555555;">INTEGER </span>  </span></span>
-<span><span class="co">#&gt;      measurement_date   <span style="color: #555555;">DATE    </span>  </span></span>
-<span><span class="co">#&gt;      measurement_value  <span style="color: #555555;">REAL    </span></span></span>
+<span><span class="co">#&gt; Table: measurements</span></span>
+<span><span class="co">#&gt; Columns: id, observer_id, plant_id, measurement_date, measurement_value</span></span>
 <span></span>
 <span><span class="co"># ===== table setup complete =====</span></span>
 <span></span>
@@ -291,10 +286,8 @@ to the Plants table. We’ll make use of that relationship now.</p>
 <span><span class="op">)</span></span>
 <span><span class="va">Plants</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
-<span><span class="co">#&gt;   Table: plants</span></span>
-<span><span class="co">#&gt;   Fields:</span></span>
-<span><span class="co">#&gt;   🔑 id          <span style="color: #555555;">INTEGER </span>  </span></span>
-<span><span class="co">#&gt;      plant_type  <span style="color: #555555;">TEXT    </span></span></span>
+<span><span class="co">#&gt; Table: plants</span></span>
+<span><span class="co">#&gt; Columns: id, plant_type</span></span>
 <span></span>
 <span><span class="co"># and we'll make a handful of plant records</span></span>
 <span><span class="va">Plants</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">101</span>, plant_type <span class="op">=</span> <span class="st">"pea"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
@@ -315,10 +308,8 @@ tables which oRm <strong>objects</strong> will use.</p>
 <span>    backref <span class="op">=</span> <span class="st">"plant"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
-<span><span class="co">#&gt;   Table: plants</span></span>
-<span><span class="co">#&gt;   Fields:</span></span>
-<span><span class="co">#&gt;   🔑 id          <span style="color: #555555;">INTEGER </span>  </span></span>
-<span><span class="co">#&gt;      plant_type  <span style="color: #555555;">TEXT    </span></span></span></code></pre></div>
+<span><span class="co">#&gt; Table: plants</span></span>
+<span><span class="co">#&gt; Columns: id, plant_type</span></span></code></pre></div>
 <p>And after we’ve made that mapping, we can find all the related
 measurements for a specific plant.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
