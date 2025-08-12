@@ -81,6 +81,9 @@ Record <- R6::R6Class(
 
 
     #' @description Insert this record into the database.
+    #' @param flush_record Logical flag determining whether to call `flush()` after
+    #'   insertion. Defaults to `NULL`, which flushes when not currently in a
+    #'   transaction.
     #' @return Invisible NULL
     create = function(flush_record = NULL) {
       con <- self$model$get_connection()

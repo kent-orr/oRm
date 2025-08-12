@@ -99,6 +99,15 @@ Insert this record into the database.
 \if{html}{\out{<div class="r">}}\preformatted{Record$create(flush_record = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{flush_record}}{Logical flag determining whether to call `flush()` after
+insertion. Defaults to `NULL`, which flushes when not currently in a
+transaction.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 Invisible NULL
 }
