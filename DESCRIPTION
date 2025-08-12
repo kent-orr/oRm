@@ -10,6 +10,7 @@ Description: oRm is a lightweight Object-Relational Mapper (ORM) for R.
     writing raw SQL. oRm uses a combination of DBI, dbplyr, and R6 to provide 
     compatibility with most database dialects.
 License: MIT + file LICENSE
+Depends: R (>= 4.1.0)
 Encoding: UTF-8
 Imports:
     DBI,
