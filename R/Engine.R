@@ -17,12 +17,19 @@ NULL
 #'   \item Allows creation of TableModel objects for ORM operations
 #'   \item Supports persistent connections for improved performance
 #' }
+#' 
+#' @field conn_args A list of arguments for establishing a connection
+#' @field conn Active database connection or pool
+#' @field use_pool Whether to use connection pooling
+#' @field persist Whether to keep connections open between operations
+#' @field dialect Database dialect in use
+#' @field schema Default schema applied to tables
 #'
 #' @importFrom pool dbPool poolClose
 #' @importFrom DBI dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery dbExecute
 #' @importFrom utils modifyList
 #' @importFrom rlang list2
-#'
+#' 
 #' @export
 #'
 Engine <- R6::R6Class(
