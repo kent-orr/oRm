@@ -1,4 +1,5 @@
-#' include Dialect.R
+#' @include Dialect.R
+#' @name tablemodel_core
 NULL
 
 #' TableModel Class
@@ -90,6 +91,8 @@ TableModel <- R6::R6Class(
 
     #' @description
     #' Retrieve the active database connection from the engine.
+    #' @param ... Additional arguments passed to the engine's
+    #'   `get_connection` method.
     get_connection = function(...) {
       self$engine$get_connection(...)
     },
@@ -338,6 +341,8 @@ TableModel <- R6::R6Class(
 
     #' @description
     #' Print a concise overview of the model.
+    #' @param ... Unused, present for compatibility.
+    #' @return The TableModel object, invisibly.
     print = function(...) {
         cat("<TableModel>\n")
         cat("Table: ", self$tablename, "\n", sep = "")

@@ -1,8 +1,6 @@
-#' include Dialect-mysql.R
-#' include Dialect-postgres.R
-#' include Dialect-sqlite.R
+#' @include Dialect-mysql.R Dialect-postgres.R Dialect-sqlite.R
+#' @name dialect_core
 NULL
-
 
 get_dialect <- function(x) {
     if (inherits(x, "Engine")) {

@@ -81,6 +81,9 @@ Record <- R6::R6Class(
 
 
     #' @description Insert this record into the database.
+    #' @param flush_record Logical flag determining whether to call `flush()` after
+    #'   insertion. Defaults to `NULL`, which flushes when not currently in a
+    #'   transaction.
     #' @return Invisible NULL
     create = function(flush_record = NULL) {
       con <- self$model$get_connection()
@@ -355,14 +358,21 @@ Record <- R6::R6Class(
     },
     
     
-    print = function() {
-      cat("<Record>: '", self$model$tablename, "'\n", sep='')
+    #' @description
+    #' Print a summary of the record.
+    #'
+    #' @param ... Additional arguments passed to 
+    #'   other print methods.
+    #' @return The Record object, invisibly.
+    print = function(...) {
+      cat("<Record>: '", self$model$tablename, "'\n", sep = '')
       cat(paste(names(self$data), self$data, sep = ": ", collapse = "\n"), "\n")
       invisible(self)
     }
   )
 )
 
+        
 #' Evaluate an expression within a Record's data.
 #'
 #' @param record A Record object.
@@ -370,5 +380,5 @@ Record <- R6::R6Class(
 #' @return The result of the evaluated expression.
 #' @export
 with.Record <- function(record, expr) {
-    eval(substitute(expr), record$data, enclos = parent.frame())
+    eval(substitute(expr), record$data, enclos = parent.frame())  
 }

@@ -99,6 +99,15 @@ Insert this record into the database.
 \if{html}{\out{<div class="r">}}\preformatted{Record$create(flush_record = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{flush_record}}{Logical flag determining whether to call `flush()` after
+insertion. Defaults to `NULL`, which flushes when not currently in a
+transaction.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 Invisible NULL
 }
@@ -192,10 +201,22 @@ A single Record, a list of Records, or NULL, depending on the relationship type.
 \if{html}{\out{<a id="method-Record-print"></a>}}
 \if{latex}{\out{\hypertarget{method-Record-print}{}}}
 \subsection{Method \code{print()}}{
+Print a summary of the record.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Record$print()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Record$print(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Additional arguments passed to 
+other print methods.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The Record object, invisibly.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Record-clone"></a>}}

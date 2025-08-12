@@ -108,6 +108,12 @@ Retrieve the active database connection from the engine.
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$get_connection(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\describe{
+\item{...}{Additional arguments passed to the engine's \code{get_connection} method.}
+}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-set_schema"></a>}}
@@ -284,6 +290,16 @@ Print a concise overview of the model.
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$print(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused, present for compatibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The TableModel object, invisibly.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-clone"></a>}}
