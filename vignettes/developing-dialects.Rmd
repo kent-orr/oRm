@@ -1,0 +1,52 @@
+---
+title: "Developing Dialects"
+output: rmarkdown::html_vignette
+vignette: >
+    %\VignetteIndexEntry{Developing Dialects}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+`oRm` supports multiple SQL dialects through a lightweight dispatch system. This vignette is aimed at developers who want to add support for a new database backend.
+
+## Dialect dispatch
+
+Dialects are selected from the context of the object calling a helper. The internal `dispatch_method()` looks for a function with the naming pattern `method.dialect` and falls back to `method.default` when a dialect-specific method is not defined.
+
+```r
+# simplified dispatch
+dispatch_method <- function(x, method, ...) {
+    dialect <- get_dialect(x)
+    method_name <- paste(method, dialect, sep = '.')
+    method_fn <- get0(method_name, mode = "function")
+    if (is.null(method_fn)) {
+        method_fn <- get0(paste0(method, '.default'), mode = "function")
+    }
+    method_fn(x, ...)
+}
+```
+
+The dialect is typically stored on an `Engine` and propagates to associated `TableModel` and `Record` objects.
+
+## Required methods
+
+To register a new dialect, create a file like `R/Dialect-mydialect.R` and implement methods using the dispatch naming convention. The following functions are commonly needed:
+
+- `flush.mydialect(x, table, data, con, commit = TRUE, ...)`: Insert a row and return inserted data or identifiers.
+- `qualify.mydialect(x, tablename, schema)`: Qualify a table name with its schema if supported.
+- `set_schema.mydialect(x, schema)`: Switch the current schema on the connection.
+- `ensure_schema_exists.mydialect(x, schema)`: (Optional) Create the schema if it does not exist.
+
+Each function will be called through `dispatch_method()` when working with engines, models, or records that declare your dialect.
+
+## Submitting a dialect
+
+After implementing these functions, ensure the new dialect file is listed in the `Collate:` field of `DESCRIPTION` and export any user-facing helpers. Dialects are peer-reviewed through pull requests—include tests demonstrating inserts, schema qualification, and other behaviour specific to your backend.
+
