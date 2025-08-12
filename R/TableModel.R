@@ -55,7 +55,6 @@ TableModel <- R6::R6Class(
     engine = NULL,
     fields = list(),
     relationships = list(),
-    schema = NULL,
 
     #' @description
     #' Constructor for a new TableModel.
