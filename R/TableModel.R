@@ -340,6 +340,8 @@ TableModel <- R6::R6Class(
 
     #' @description
     #' Print a concise overview of the model.
+    #' @param ... Unused, present for compatibility.
+    #' @return The TableModel object, invisibly.
     print = function(...) {
         cat("<TableModel>\n")
         cat("Table: ", self$tablename, "\n", sep = "")

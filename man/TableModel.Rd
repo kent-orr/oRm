@@ -290,6 +290,16 @@ Print a concise overview of the model.
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$print(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused, present for compatibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The TableModel object, invisibly.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-clone"></a>}}
