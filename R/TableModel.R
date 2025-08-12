@@ -330,69 +330,13 @@ TableModel <- R6::R6Class(
     },
 
     #' @description
-    #' Print a formatted overview of the model, including its fields.
+    #' Print a concise overview of the model.
     print = function(...) {
-      cat("<", class(self)[1], ">\n", sep = "")
-      cat("  Table: ", self$tablename, "\n", sep = "")
-
-      if (length(self$fields) == 0) {
-        cat("  Fields: (none defined)\n")
-        return(invisible(self))
-      }
-
-      cat("  Fields:\n")
-
-      field_df <- data.frame(
-        name = names(self$fields),
-        type = vapply(self$fields, function(x) x$type, character(1)),
-        nullable = vapply(self$fields, function(x) {
-          if (is.null(x$nullable)) NA else x$nullable
-        }, logical(1)),
-        key = vapply(self$fields, function(x) isTRUE(x$primary_key), logical(1)),
-        stringsAsFactors = FALSE
-      )
-
-      field_df <- field_df[order(-field_df$key), ]
-      n_display <- min(10, nrow(field_df))
-      field_df <- field_df[seq_len(n_display), ]
-
-      col_widths <- list(
-        name = max(10, max(nchar(field_df$name))),
-        type = max(8, max(nchar(field_df$type))),
-        null = 9
-      )
-
-      color_type <- function(x) {
-        switch(tolower(x),
-        "integer"   = green(x),
-        "int"       = green(x),
-        "numeric"   = yellow(x),
-        "real"      = yellow(x),
-        "text"      = blue(x),
-        "varchar"   = blue(x),
-        "date"      = magenta:70
-        (x),
-        "timestamp" = magenta(x),
-        silver(x))
-      }
-
-      for (i in seq_len(nrow(field_df))) {
-        row <- field_df[i, ]
-        key_icon <- if (row$key) "🔑" else "  "
-        name_str <- format(row$name, width = col_widths$name)
-        type_raw <- format(row$type, width = col_widths$type)
-        type_str <- color_type(type_raw)
-        null_str <- if (is.na(row$nullable)) "" else if (row$nullable) "NULL" else "NOT NULL"
-
-        cat(sprintf("  %s %s  %s  %s\n", key_icon, name_str, type_str, null_str))
-      }
-
-      if (length(self$fields) > n_display) {
-        cat(silver(sprintf("  ... %d more columns not shown\n",
-        length(self$fields) - n_display)))
-      }
-
-      invisible(self)
+        cat("<TableModel>\n")
+        cat("Table: ", self$tablename, "\n", sep = "")
+        cols <- paste(names(self$fields), collapse = ", ")
+        cat("Columns: ", cols, "\n", sep = "")
+        invisible(self)
     }
 
   )
