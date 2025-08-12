@@ -101,16 +101,19 @@ Engine <- R6::R6Class(
         },
         
         
+        #' @description
         #' Execute a SQL query and return the result as a data.frame
-        #'
         #' @param sql SQL query
         #' @return A data.frame
         get_query = function(sql) {
             on.exit(if (private$exit_check()) self$close())
             DBI::dbGetQuery(self$get_connection(), sql)
         },
-        
+
+        #' @description
         #' Execute a SQL query and return the number of rows affected
+        #' @param sql SQL query
+        #' @return The number of rows affected
         execute = function(sql) {
             on.exit(if (private$exit_check()) self$close())
             DBI::dbExecute(self$get_connection(), sql)
@@ -143,19 +146,35 @@ Engine <- R6::R6Class(
         },
         
         
+        #' @description
+        #' Set the internal transaction state
+        #' @param state Logical. Indicates if a transaction is active
+        #' @return NULL
         set_transaction_state = function(state) {
             private$in_transaction <- state
         },
-        
+
+        #' @description
+        #' Retrieve the current transaction state
+        #' @return Logical indicating if a transaction is active
         get_transaction_state = function() {
             private$in_transaction
         },
-        
+
+        #' @description
+        #' Qualify a table name with a schema
+        #' @param tablename Character. Table name to qualify
+        #' @param .schema Character. Schema name to prepend
+        #' @return A fully qualified table name
         qualify = function(tablename, .schema = self$schema) {
             qualify(self, tablename, schema = .schema)
         },
 
 
+        #' @description
+        #' Quote and format a schema-qualified table name
+        #' @param tablename Character. Table name to format
+        #' @return A quoted table name
         format_tablename = function(tablename) {
             parts <- strsplit(tablename, "\\.")[[1]]
             quoted <- vapply(
