@@ -1,18 +1,9 @@
 # Helper functions for PostgreSQL tests
 
 setup_postgres_test_db <- function() {
-    if (!requireNamespace("stevedore", quietly = TRUE)) {
-        install.packages("stevedore")
-        if (!requireNamespace("stevedore", quietly = TRUE)) {
-            testthat::skip("stevedore package not available, skipping PostgreSQL tests")
-        }
-    }
-
-    if (!requireNamespace("RPostgres", quietly = TRUE)) {
-        testthat::skip("RPostgres not available, skipping PostgreSQL tests")
-    }
-
-    library(stevedore)
+    testthat::skip_on_cran()
+    testthat::skip_if_not_installed("stevedore")
+    testthat::skip_if_not_installed("RPostgres")
 
     if (!stevedore::docker_available()) {
         testthat::skip("Docker not available, skipping PostgreSQL tests")
