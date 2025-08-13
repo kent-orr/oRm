@@ -123,7 +123,6 @@ ensure_schema_exists.default <- function(x, schema) {
 #' Render a column field to SQL
 #'
 #' @param field A Column object
-#' @param field_name the name of the column
 #' @param conn a DBI connection object
 #' @param ... Ignored
 #' @return A character SQL fragment
