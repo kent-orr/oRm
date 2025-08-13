@@ -9,3 +9,5 @@
 ^\.github$
 ^doc$
 ^Meta$
+^AGENTS\.md$
+^oRm_diagram\.svg$
