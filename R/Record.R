@@ -384,8 +384,9 @@ Record <- R6::R6Class(
 #'
 #' @param record A Record object.
 #' @param expr Expression to evaluate within the record.
+#' @param ... Additional arguments passed to downstream methods.
 #' @return The result of the evaluated expression.
 #' @export
-with.Record <- function(record, expr) {
-    eval(substitute(expr), record$data, enclos = parent.frame())  
+with.Record <- function(record, expr, ...) {
+    eval(substitute(expr), record$data, enclos = parent.frame())
 }
