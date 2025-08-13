@@ -2,10 +2,11 @@
 ^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^LICENSE\.md$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
 ^\.github$
 ^doc$
 ^Meta$
+^AGENTS\.md$
+^oRm_diagram\.svg$
