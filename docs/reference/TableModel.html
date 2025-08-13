@@ -111,6 +111,30 @@ with the database table.</p>
     <div class="dont-index"><p><code><a href="Engine.html">Engine</a></code>, <code><a href="Record.html">Record</a></code>, <code><a href="Column.html">Column</a></code>, <code><a href="ForeignKey.html">ForeignKey</a></code></p></div>
     </div>
     <div class="section level2">
+    <h2 id="public-fields">Public fields<a class="anchor" aria-label="anchor" href="#public-fields"></a></h2>
+    <p></p><div class="r6-fields"><dl><dt><code>tablename</code></dt>
+<dd><p>Fully qualified name of the table in the database.</p></dd>
+
+
+<dt><code>schema</code></dt>
+<dd><p>Schema that namespaces the table; defaults to the engine's schema.</p></dd>
+
+
+<dt><code>engine</code></dt>
+<dd><p>Engine instance providing connections and SQL dialect.</p></dd>
+
+
+<dt><code>fields</code></dt>
+<dd><p>Named list of Column objects defining the table structure.</p></dd>
+
+
+<dt><code>relationships</code></dt>
+<dd><p>Named list of Relationship objects linking to other models.</p></dd>
+
+
+</dl><p></p></div>
+    </div>
+    <div class="section level2">
     <h2 id="methods-1">Methods<a class="anchor" aria-label="anchor" href="#methods-1"></a></h2>
 
 <div class="section">
@@ -170,16 +194,25 @@ with the database table.</p>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">get_connection</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>...</code></dt>
+<dd><p>Additional arguments passed to the engine's
+`get_connection` method.</p></dd>
+
+
+</dl><p></p></div>
+</div>
 
 </div><p></p><hr><a id="method-TableModel-set_schema"></a><div class="section">
-<h3 id="method-set-schema-">Method <code>set_schema()</code><a class="anchor" aria-label="anchor" href="#method-set-schema-"></a></h3>
+<h3 id="method-set-schema-">Method <code><a href="set_schema.html">set_schema()</a></code><a class="anchor" aria-label="anchor" href="#method-set-schema-"></a></h3>
 <p>Update the schema for this model and re-qualify the table name.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">set_schema</span><span class="op">(</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>schema</code></dt>
 <dd><p>Character. New schema name to apply.</p></dd>
 
@@ -203,7 +236,7 @@ with the database table.</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>if_not_exists</code></dt>
 <dd><p>Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.</p></dd>
 
@@ -228,7 +261,7 @@ by default if running interactively.</p><div class="section">
 </div>
 
 <div class="section">
-<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>ask</code></dt>
 <dd><p>Logical. If TRUE (default in interactive sessions), prompts
 the user for confirmation before dropping the table.</p></dd>
@@ -262,7 +295,7 @@ User$drop_table(ask = FALSE)
 </div>
 
 <div class="section">
-<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Named values to initialize the record's data.</p></dd>
 
@@ -296,7 +329,7 @@ User$drop_table(ask = FALSE)
 </div>
 
 <div class="section">
-<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unquoted expressions for filtering.</p></dd>
 
@@ -330,7 +363,7 @@ Positive values return the first N records, negative values return the last N re
 </div>
 
 <div class="section">
-<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>rel_name</code></dt>
 <dd><p>The name of the relationship to query.</p></dd>
 
@@ -353,6 +386,18 @@ Positive values return the first N records, negative values return the last N re
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>...</code></dt>
+<dd><p>Unused, present for compatibility.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-3">Returns<a class="anchor" aria-label="anchor" href="#returns-3"></a></h4>
+<p>The TableModel object, invisibly.</p>
+</div>
 
 </div><p></p><hr><a id="method-TableModel-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
@@ -362,7 +407,7 @@ Positive values return the first N records, negative values return the last N re
 </div>
 
 <div class="section">
-<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 

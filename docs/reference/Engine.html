@@ -87,6 +87,34 @@ in how database resources are managed.</p>
 
 
     <div class="section level2">
+    <h2 id="public-fields">Public fields<a class="anchor" aria-label="anchor" href="#public-fields"></a></h2>
+    <p></p><div class="r6-fields"><dl><dt><code>conn_args</code></dt>
+<dd><p>A list of arguments for establishing a connection</p></dd>
+
+
+<dt><code>conn</code></dt>
+<dd><p>Active database connection or pool</p></dd>
+
+
+<dt><code>use_pool</code></dt>
+<dd><p>Whether to use connection pooling</p></dd>
+
+
+<dt><code>persist</code></dt>
+<dd><p>Whether to keep connections open between operations</p></dd>
+
+
+<dt><code>dialect</code></dt>
+<dd><p>Database dialect in use</p></dd>
+
+
+<dt><code>schema</code></dt>
+<dd><p>Default schema applied to tables</p></dd>
+
+
+</dl><p></p></div>
+    </div>
+    <div class="section level2">
     <h2 id="methods">Methods<a class="anchor" aria-label="anchor" href="#methods"></a></h2>
 
 <div class="section">
@@ -181,14 +209,12 @@ ensure consistency after reconnects.</p></dd>
 
 <div class="section">
 <h4 id="returns-2">Returns<a class="anchor" aria-label="anchor" href="#returns-2"></a></h4>
-<p>A character vector of table names
-Execute a SQL query and return the result as a data.frame</p>
+<p>A character vector of table names</p>
 </div>
 
 </div><p></p><hr><a id="method-Engine-get_query"></a><div class="section">
 <h3 id="method-get-query-">Method <code>get_query()</code><a class="anchor" aria-label="anchor" href="#method-get-query-"></a></h3>
-
-<div class="section">
+<p>Execute a SQL query and return the result as a data.frame</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">get_query</span><span class="op">(</span><span class="va">sql</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
@@ -203,28 +229,38 @@ Execute a SQL query and return the result as a data.frame</p>
 </div>
 <div class="section">
 <h4 id="returns-3">Returns<a class="anchor" aria-label="anchor" href="#returns-3"></a></h4>
-<p>A data.frame
-Execute a SQL query and return the number of rows affected</p>
+<p>A data.frame</p>
 </div>
 
 </div><p></p><hr><a id="method-Engine-execute"></a><div class="section">
 <h3 id="method-execute-">Method <code>execute()</code><a class="anchor" aria-label="anchor" href="#method-execute-"></a></h3>
-
-<div class="section">
+<p>Execute a SQL query and return the number of rows affected</p><div class="section">
 <h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">execute</span><span class="op">(</span><span class="va">sql</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>sql</code></dt>
+<dd><p>SQL query</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<p>The number of rows affected</p>
+</div>
 
 </div><p></p><hr><a id="method-Engine-set_schema"></a><div class="section">
-<h3 id="method-set-schema-">Method <code>set_schema()</code><a class="anchor" aria-label="anchor" href="#method-set-schema-"></a></h3>
+<h3 id="method-set-schema-">Method <code><a href="set_schema.html">set_schema()</a></code><a class="anchor" aria-label="anchor" href="#method-set-schema-"></a></h3>
 <p>Set the default schema for the engine and active connection</p><div class="section">
 <h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">set_schema</span><span class="op">(</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>schema</code></dt>
 <dd><p>Character. Schema name to apply</p></dd>
 
@@ -232,7 +268,7 @@ Execute a SQL query and return the number of rows affected</p>
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
 <p>The Engine object</p>
 </div>
 
@@ -244,7 +280,7 @@ Execute a SQL query and return the number of rows affected</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>tablename</code></dt>
 <dd><p>Name of the table</p></dd>
 
@@ -264,45 +300,85 @@ Execute a SQL query and return the number of rows affected</p>
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
+<h4 id="returns-6">Returns<a class="anchor" aria-label="anchor" href="#returns-6"></a></h4>
 <p>A new TableModel object</p>
 </div>
 
 </div><p></p><hr><a id="method-Engine-set_transaction_state"></a><div class="section">
 <h3 id="method-set-transaction-state-">Method <code>set_transaction_state()</code><a class="anchor" aria-label="anchor" href="#method-set-transaction-state-"></a></h3>
-
-<div class="section">
+<p>Set the internal transaction state</p><div class="section">
 <h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">set_transaction_state</span><span class="op">(</span><span class="va">state</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>state</code></dt>
+<dd><p>Logical. Indicates if a transaction is active</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-7">Returns<a class="anchor" aria-label="anchor" href="#returns-7"></a></h4>
+<p>NULL</p>
+</div>
 
 </div><p></p><hr><a id="method-Engine-get_transaction_state"></a><div class="section">
 <h3 id="method-get-transaction-state-">Method <code>get_transaction_state()</code><a class="anchor" aria-label="anchor" href="#method-get-transaction-state-"></a></h3>
-
-<div class="section">
+<p>Retrieve the current transaction state</p><div class="section">
 <h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">get_transaction_state</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="returns-8">Returns<a class="anchor" aria-label="anchor" href="#returns-8"></a></h4>
+<p>Logical indicating if a transaction is active</p>
+</div>
 
 </div><p></p><hr><a id="method-Engine-qualify"></a><div class="section">
-<h3 id="method-qualify-">Method <code>qualify()</code><a class="anchor" aria-label="anchor" href="#method-qualify-"></a></h3>
-
-<div class="section">
+<h3 id="method-qualify-">Method <code><a href="qualify.html">qualify()</a></code><a class="anchor" aria-label="anchor" href="#method-qualify-"></a></h3>
+<p>Qualify a table name with a schema</p><div class="section">
 <h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">qualify</span><span class="op">(</span><span class="va">tablename</span>, .schema <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>tablename</code></dt>
+<dd><p>Character. Table name to qualify</p></dd>
+
+
+<dt><code>.schema</code></dt>
+<dd><p>Character. Schema name to prepend</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-9">Returns<a class="anchor" aria-label="anchor" href="#returns-9"></a></h4>
+<p>A fully qualified table name</p>
+</div>
 
 </div><p></p><hr><a id="method-Engine-format_tablename"></a><div class="section">
 <h3 id="method-format-tablename-">Method <code>format_tablename()</code><a class="anchor" aria-label="anchor" href="#method-format-tablename-"></a></h3>
-
-<div class="section">
+<p>Quote and format a schema-qualified table name</p><div class="section">
 <h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">format_tablename</span><span class="op">(</span><span class="va">tablename</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>tablename</code></dt>
+<dd><p>Character. Table name to format</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-10">Returns<a class="anchor" aria-label="anchor" href="#returns-10"></a></h4>
+<p>A quoted table name</p>
+</div>
 
 </div><p></p><hr><a id="method-Engine-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
@@ -312,7 +388,7 @@ Execute a SQL query and return the number of rows affected</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unused, present for compatibility.</p></dd>
 
@@ -320,7 +396,7 @@ Execute a SQL query and return the number of rows affected</p>
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-6">Returns<a class="anchor" aria-label="anchor" href="#returns-6"></a></h4>
+<h4 id="returns-11">Returns<a class="anchor" aria-label="anchor" href="#returns-11"></a></h4>
 <p>The Engine object, invisibly.</p>
 </div>
 
@@ -332,7 +408,7 @@ Execute a SQL query and return the number of rows affected</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 

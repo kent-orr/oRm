@@ -1,7 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://kent-orr.github.io/oRm/404.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/AGENTS.html</loc></url>
-<url><loc>https://kent-orr.github.io/oRm/LICENSE-text.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/LICENSE.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/developing-dialects.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/get_started.html</loc></url>
@@ -20,12 +19,20 @@
 <url><loc>https://kent-orr.github.io/oRm/reference/Record.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Relationship.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/TableModel.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/add_extras.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/add_part.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/define_relationship.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/dispatch_method.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/ensure_schema_exists.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/flush.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/get_dialect.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/index.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/qualify.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/render_constraint.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/render_field.default.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/render_field.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/set_schema.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/with.Engine.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/with.Record.html</loc></url>
 </urlset>
 

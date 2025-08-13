@@ -148,7 +148,7 @@ on individual records.</p>
 </div>
 
 </div><p></p><hr><a id="method-Record-set_schema"></a><div class="section">
-<h3 id="method-set-schema-">Method <code>set_schema()</code><a class="anchor" aria-label="anchor" href="#method-set-schema-"></a></h3>
+<h3 id="method-set-schema-">Method <code><a href="set_schema.html">set_schema()</a></code><a class="anchor" aria-label="anchor" href="#method-set-schema-"></a></h3>
 <p>Update the schema for the underlying model.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">set_schema</span><span class="op">(</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -171,18 +171,40 @@ on individual records.</p>
 </div>
 
 <div class="section">
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>flush_record</code></dt>
+<dd><p>Logical flag determining whether to call `flush()` after
+insertion. Defaults to `NULL`, which flushes when not currently in a
+transaction.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
 <h4 id="returns-1">Returns<a class="anchor" aria-label="anchor" href="#returns-1"></a></h4>
 <p>Invisible NULL</p>
 </div>
 
 </div><p></p><hr><a id="method-Record-flush"></a><div class="section">
-<h3 id="method-flush-">Method <code><a href="https://rdrr.io/r/base/connections.html" class="external-link">flush()</a></code><a class="anchor" aria-label="anchor" href="#method-flush-"></a></h3>
-
-<div class="section">
+<h3 id="method-flush-">Method <code><a href="flush.html">flush()</a></code><a class="anchor" aria-label="anchor" href="#method-flush-"></a></h3>
+<p>Flush this record's data to the database.</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">flush</span><span class="op">(</span>commit <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>commit</code></dt>
+<dd><p>Logical. Whether to commit the transaction; defaults to NULL to
+automatically commit when not already in a transaction.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-2">Returns<a class="anchor" aria-label="anchor" href="#returns-2"></a></h4>
+<p>The Record instance (invisibly).</p>
+</div>
 
 </div><p></p><hr><a id="method-Record-update"></a><div class="section">
 <h3 id="method-update-">Method <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code><a class="anchor" aria-label="anchor" href="#method-update-"></a></h3>
@@ -192,7 +214,7 @@ on individual records.</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Named arguments corresponding to field values to update.</p></dd>
 
@@ -204,7 +226,7 @@ on individual records.</p>
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-2">Returns<a class="anchor" aria-label="anchor" href="#returns-2"></a></h4>
+<h4 id="returns-3">Returns<a class="anchor" aria-label="anchor" href="#returns-3"></a></h4>
 <p>The Record instance (invisibly).</p>
 </div>
 
@@ -216,7 +238,7 @@ on individual records.</p>
 </div>
 
 <div class="section">
-<h4 id="returns-3">Returns<a class="anchor" aria-label="anchor" href="#returns-3"></a></h4>
+<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
 <p>Invisible NULL</p>
 </div>
 
@@ -228,7 +250,15 @@ on individual records.</p>
 </div>
 
 <div class="section">
-<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<h4 id="details-1">Details<a class="anchor" aria-label="anchor" href="#details-1"></a></h4>
+<p>Re-fetches this record from the database using its primary
+key, replacing the current data and relationships. Any unsaved local
+changes are discarded, and an error is raised if the record cannot be
+found.</p>
+</div>
+
+<div class="section">
+<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
 <p>The Record instance (invisibly).</p>
 </div>
 
@@ -240,7 +270,7 @@ on individual records.</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>rel_name</code></dt>
 <dd><p>The name of the relationship to query.</p></dd>
 
@@ -252,25 +282,37 @@ on individual records.</p>
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-1">Details<a class="anchor" aria-label="anchor" href="#details-1"></a></h4>
+<h4 id="details-2">Details<a class="anchor" aria-label="anchor" href="#details-2"></a></h4>
 <p>This method returns related records based on the relationship type:
 - For 'one_to_one' and 'many_to_one' relationships, it returns a single Record object or NULL.
 - For 'one_to_many' and 'many_to_many' relationships, it returns a list of Record objects.</p>
 </div>
 
 <div class="section">
-<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
+<h4 id="returns-6">Returns<a class="anchor" aria-label="anchor" href="#returns-6"></a></h4>
 <p>A single Record, a list of Records, or NULL, depending on the relationship type.</p>
 </div>
 
 </div><p></p><hr><a id="method-Record-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
-
-<div class="section">
+<p>Print a summary of the record.</p><div class="section">
 <h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Record</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+<div class="section">
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>...</code></dt>
+<dd><p>Additional arguments passed to
+other print methods.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-7">Returns<a class="anchor" aria-label="anchor" href="#returns-7"></a></h4>
+<p>The Record object, invisibly.</p>
+</div>
 
 </div><p></p><hr><a id="method-Record-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
@@ -280,7 +322,7 @@ on individual records.</p>
 </div>
 
 <div class="section">
-<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 

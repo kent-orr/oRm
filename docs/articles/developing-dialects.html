@@ -96,14 +96,14 @@ support for a new database backend.</p>
 <h2 id="dialect-dispatch">Dialect dispatch<a class="anchor" aria-label="anchor" href="#dialect-dispatch"></a>
 </h2>
 <p>Dialects are selected from the context of the object calling a
-helper. The internal <code>dispatch_method()</code> looks for a function
+helper. The internal <code><a href="../reference/dispatch_method.html">dispatch_method()</a></code> looks for a function
 with the naming pattern <code>method.dialect</code> and falls back to
 <code>method.default</code> when a dialect-specific method is not
 defined.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># simplified dispatch</span></span>
 <span><span class="va">dispatch_method</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">method</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">dialect</span> <span class="op">&lt;-</span> <span class="fu">get_dialect</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span>    <span class="va">dialect</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_dialect.html">get_dialect</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span>    <span class="va">method_name</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">method</span>, <span class="va">dialect</span>, sep <span class="op">=</span> <span class="st">'.'</span><span class="op">)</span></span>
 <span>    <span class="va">method_fn</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/exists.html" class="external-link">get0</a></span><span class="op">(</span><span class="va">method_name</span>, mode <span class="op">=</span> <span class="st">"function"</span><span class="op">)</span></span>
 <span>    <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">method_fn</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
@@ -136,9 +136,31 @@ schema on the connection.</li>
 <code>ensure_schema_exists.mydialect(x, schema)</code>: (Optional)
 Create the schema if it does not exist.</li>
 </ul>
-<p>Each function will be called through <code>dispatch_method()</code>
+<p>Each function will be called through <code><a href="../reference/dispatch_method.html">dispatch_method()</a></code>
 when working with engines, models, or records that declare your
 dialect.</p>
+</div>
+<div class="section level2">
+<h2 id="documenting-methods">Documenting methods<a class="anchor" aria-label="anchor" href="#documenting-methods"></a>
+</h2>
+<p>Default implementations should include a roxygen block with
+<code>@rdname</code> so they create the base manual page.
+Dialect-specific variants then add their notes with
+<code>@describeIn</code>, which appends a subsection to the same page
+and keeps everything discoverable via <code>?</code> or F1.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#' @rdname ensure_schema_exists</span></span>
+<span><span class="va">ensure_schema_exists.default</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="co"># ...</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co">#' @describeIn ensure_schema_exists Create schema if missing for PostgreSQL.</span></span>
+<span><span class="va">ensure_schema_exists.postgres</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="co"># ...</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p>Running <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> after adding a dialect
+updates the shared documentation so new sections appear
+automatically.</p>
 </div>
 <div class="section level2">
 <h2 id="submitting-a-dialect">Submitting a dialect<a class="anchor" aria-label="anchor" href="#submitting-a-dialect"></a>
