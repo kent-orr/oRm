@@ -8,9 +8,12 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+has_rsqlite <- rlang::is_installed("RSQLite")
+has_bslib <- rlang::is_installed("bslib")
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = has_rsqlite
 )
 ```
 
@@ -202,7 +205,7 @@ define_relationship(
 You can now traverse from `Teachers` -> `TeacherAssignments` -> `Classes` and back again. TO demonstrate that, we'll make a deck of info cards for a teacher showing each class and the students in each class.
 
 
-```{r}
+```{r, eval = has_rsqlite && has_bslib}
 teacher <- Teachers$read(id == 3, mode='get')
 
 # teacher$relationship('teacher_assignments') |>

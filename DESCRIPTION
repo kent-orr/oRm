@@ -25,7 +25,10 @@ Suggests:
     testthat (>= 3.0.0),
     stevedore (>= 0.9.6),
     charlatan,
-    htmltools
+    htmltools,
+    RSQLite,
+    bslib,
+    tibble
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Collate: 
