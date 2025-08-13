@@ -1,7 +1,7 @@
 #' @include Dialect.R
 NULL
 
-
+#' @describeIn flush SQLite implementation
 flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
 
     # Filter out NULL values like in postgres implementation
@@ -39,6 +39,7 @@ flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
 }
 
 
+#' @describeIn qualify SQLite ignores schema qualification
 qualify.sqlite <- function(x, tablename, schema) {
   if (!is.null(schema)) {
     warning("SQLite does not support schema qualification. Ignoring schema.")
@@ -46,14 +47,7 @@ qualify.sqlite <- function(x, tablename, schema) {
   tablename
 }
 
-#' Set schema for SQLite dialect
-#'
-#' SQLite does not support schemas. This method is a no-op and any supplied
-#' schema name is ignored.
-#'
-#' @param x Engine or TableModel instance used for dispatch.
-#' @param schema Character. Schema name to apply, ignored.
-#' @export
+#' @describeIn set_schema SQLite does not support schemas
 set_schema.sqlite <- function(x, schema) {
     if (!is.null(schema)) {
         warning("SQLite does not support schemas. Ignoring set_schema().")
@@ -61,8 +55,8 @@ set_schema.sqlite <- function(x, schema) {
     invisible(NULL)
 }
 
+#' @describeIn ensure_schema_exists SQLite does not support schemas
 ensure_schema_exists.sqlite <- function(x, schema) {
     invisible(NULL)
-
 }
 

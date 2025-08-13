@@ -2,8 +2,10 @@
 % Please edit documentation in R/Dialect-mysql.R, R/Dialect.R
 \name{flush.mysql}
 \alias{flush.mysql}
+
 \alias{flush}
 \alias{flush.default}
+\alias{flush.sqlite}
 \title{Flush data to database table}
 \usage{
 flush.mysql(x, table, data, con, commit = TRUE, ...)
@@ -11,6 +13,8 @@ flush.mysql(x, table, data, con, commit = TRUE, ...)
 flush(x, table, data, con, commit = TRUE, ...)
 
 flush.default(x, table, data, con, commit = TRUE, ...)
+
+flush.sqlite(x, table, data, con, commit = TRUE, ...)
 }
 \arguments{
 \item{x}{An oRm object (Engine, TableModel, or Record) used for dialect dispatch}
@@ -36,6 +40,7 @@ for Record objects.
 \section{Functions}{
 \itemize{
 \item \code{flush.mysql()}: MySQL insert returning the last generated ID.
+
 
 }}
 \keyword{internal}
