@@ -264,6 +264,7 @@ Engine <- R6::R6Class(
 #'
 #' @param engine An Engine object that manages the database connection
 #' @param expr An expression to be evaluated within the transaction
+#' @param ... Additional arguments passed to methods.
 #' @param auto_commit Logical. Whether to automatically commit if no errors occur (default: TRUE)
 #'
 #' @return The result of evaluating the expression
@@ -316,7 +317,7 @@ Engine <- R6::R6Class(
 #' }
 #'
 #' @export
-with.Engine <- function(engine, expr, auto_commit = TRUE) {
+with.Engine <- function(engine, expr, ..., auto_commit = TRUE) {
     # Open a connection
     engine$set_transaction_state(TRUE)
     conn <- engine$get_connection()
