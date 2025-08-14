@@ -130,13 +130,13 @@ test_that("TableModel$read() works with filter expressions and mode", {
   User$record(id=3, name = "Charlie", age = 17)$create()
 
   # one_or_none: should return one Record
-  result = User$read(id == 1, mode='one_or_none')
+  result = User$read(id == 1, .mode='one_or_none')
 
   expect_true(inherits(result, "Record"))
   expect_equal(result$data$name, "Alice")
 
   # all: should return list of Record objects
-  teens <- User$read(age >= 10, age < 20, mode = "all")
+  teens <- User$read(age >= 10, age < 20, .mode = "all")
   expect_type(teens, "list")
   expect_true(all(vapply(teens, inherits, logical(1), "Record")))
   expect_equal(length(teens), 1)
@@ -144,18 +144,24 @@ test_that("TableModel$read() works with filter expressions and mode", {
 
   # get: fails if multiple rows match
   expect_error(
-    User$read(age > 18, mode = "get"),
+    User$read(age > 18, .mode = "get"),
     "Expected exactly one row"
   )
 
   # one_or_none: returns NULL if no match
-  none <- User$read(name == "Nobody", mode = "one_or_none")
+  none <- User$read(name == "Nobody", .mode = "one_or_none")
   expect_null(none)
 
   # data.frame: returns collected rows
-  df <- User$read(mode = "data.frame")
+  df <- User$read(.mode = "data.frame")
   expect_true(inherits(df, "data.frame"))
   expect_equal(nrow(df), 3)
+
+    # tbl: returns lazy table
+    tbl_obj <- User$read(.mode = "tbl")
+    expect_true(inherits(tbl_obj, "tbl"))
+    filtered_tbl <- tbl_obj |> dplyr::filter(age > 20) |> dplyr::collect()
+    expect_equal(nrow(filtered_tbl), 2)
 
   engine$close()
 })
@@ -183,41 +189,41 @@ test_that("TableModel$read() supports pagination with limit and offset", {
   }
 
   # Test case 1: Basic pagination - first page (items 1-5)
-  page1 <- Item$read(mode = "all", .limit = 5, .offset = 0)
+  page1 <- Item$read(.mode = "all", .limit = 5, .offset = 0)
   expect_equal(length(page1), 5)
   expect_equal(page1[[1]]$data$id, 1)
   expect_equal(page1[[5]]$data$id, 5)
 
   # Test case 2: Second page (items 6-10)
-  page2 <- Item$read(mode = "all", .limit = 5, .offset = 5)
+  page2 <- Item$read(.mode = "all", .limit = 5, .offset = 5)
   expect_equal(length(page2), 5)
   expect_equal(page2[[1]]$data$id, 6)
   expect_equal(page2[[5]]$data$id, 10)
 
   # Test case 3: Last page with fewer items
-  page4 <- Item$read(mode = "all", .limit = 5, .offset = 15)
+  page4 <- Item$read(.mode = "all", .limit = 5, .offset = 15)
   expect_equal(length(page4), 5)
   expect_equal(page4[[1]]$data$id, 16)
   expect_equal(page4[[5]]$data$id, 20)
 
   # Test case 4: Offset beyond available data
-  empty_page <- Item$read(mode = "all", .limit = 5, .offset = 20)
+  empty_page <- Item$read(.mode = "all", .limit = 5, .offset = 20)
   expect_null(empty_page)
 
   # Test case 5: Pagination with filtering
-  filtered_page <- Item$read(position > 10, mode = "all", .limit = 5, .offset = 0)
+  filtered_page <- Item$read(position > 10, .mode = "all", .limit = 5, .offset = 0)
   expect_equal(length(filtered_page), 5)
   expect_equal(filtered_page[[1]]$data$id, 11)
   expect_equal(filtered_page[[5]]$data$id, 15)
 
   # Test case 6: Pagination with filtering and offset
-  filtered_page2 <- Item$read(position > 10, mode = "all", .limit = 5, .offset = 5)
+  filtered_page2 <- Item$read(position > 10, .mode = "all", .limit = 5, .offset = 5)
   expect_equal(length(filtered_page2), 5)
   expect_equal(filtered_page2[[1]]$data$id, 16)
   expect_equal(filtered_page2[[5]]$data$id, 20)
 
   # Test case 7: Negative limit (last N items)
-  last_items <- Item$read(mode = "all", .limit = -5)
+  last_items <- Item$read(.mode = "all", .limit = -5)
   expect_equal(length(last_items), 5)
   expect_equal(last_items[[1]]$data$id, 16)
   expect_equal(last_items[[5]]$data$id, 20)

@@ -66,7 +66,7 @@ test_that("tables remain accessible across engine connections", {
     tables2 <- DBI::dbGetQuery(conn2, "SELECT tablename FROM pg_tables WHERE schemaname = 'test'")
     expect_true("users" %in% tables2$tablename)
 
-    expect_no_error(User$read(mode = "all"))
+    expect_no_error(User$read(.mode = "all"))
 })
 
 
@@ -157,7 +157,7 @@ test_that("models can create and read records in schema", {
 
     rec_public <- UserPublic$record(name = "Alice")
     rec_public$create()
-    res_public <- UserPublic$read(mode = "all")
+    res_public <- UserPublic$read(.mode = "all")
     expect_equal(length(res_public), 1)
     expect_equal(res_public[[1]]$data$name, "Alice")
 })
@@ -236,7 +236,7 @@ test_that("models work across different schemas", {
 
     rec_audit <- UserArchive$record(name = "Bob")
     rec_audit$create()
-    res_audit <- UserArchive$read(mode = "all")
+    res_audit <- UserArchive$read(.mode = "all")
     expect_equal(length(res_audit), 1)
     expect_equal(res_audit[[1]]$data$name, "Bob")
 })

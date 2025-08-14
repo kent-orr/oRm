@@ -300,7 +300,7 @@ Record <- R6::R6Class(
       # Use do.call to construct the read call with multiple arguments
       refreshed_record <- do.call(
         self$model$read,
-        c(key_args, list(mode = 'get'))
+        c(key_args, list(.mode = 'get'))
       )
       
       if (is.null(refreshed_record)) {
@@ -352,7 +352,7 @@ Record <- R6::R6Class(
       }
       
       # Use the combined filters in the read method
-      result <- rel$related_model$read(!!filters, mode = mode)
+      result <- rel$related_model$read(!!filters, .mode = mode)
       
       # Ensure we return a list for one-to-many and many-to-many relationships
       if (mode == "all" && !is.null(result)) {

@@ -105,7 +105,7 @@ define_relationship(
 The possible types are 'one_to_many', 'one_to_one', 'many_to_many', or 'many_to_one'. The ref and backref arguments are used to define the relationship between the two models. You'll use those values to call on related records. Let's see that in action:
 
 ```{r}
-class1 = Classes$read(id == 1, mode='get')
+class1 = Classes$read(id == 1, .mode='get')
 class1_students = class1$relationship('students')
 class1_students |> sapply(\(x) paste(
     x$data$name, round(x$data$grade), sep = ': '))
@@ -203,7 +203,7 @@ You can now traverse from `Teachers` -> `TeacherAssignments` -> `Classes` and ba
 
 
 ```{r}
-teacher <- Teachers$read(id == 3, mode='get')
+teacher <- Teachers$read(id == 3, .mode='get')
 
 # teacher$relationship('teacher_assignments') |>
 #     lapply(\(x) x$relationship('class')) |>

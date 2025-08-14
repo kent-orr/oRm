@@ -44,7 +44,7 @@ test_that("postgres create operations work", {
     p2$create()
     expect_equal(p2$data$id, 2)
 
-    all_users <- TempUser$read(mode = "all")
+    all_users <- TempUser$read(.mode = "all")
     expect_equal(length(all_users), 2)
 })
 
@@ -70,7 +70,7 @@ test_that("postgres read operations work", {
 
     p1 <- TempUser$record(id = 1, name = "test_person", age = 19)
     p1$create()
-    p1_user <- TempUser$read(id == 1, mode = "get")
+    p1_user <- TempUser$read(id == 1, .mode = "get")
     expect_equal(p1, p1_user)
 })
 
@@ -129,8 +129,8 @@ test_that("postgres delete operations work", {
     p2$create()
 
     p1$delete()
-    expect_equal(length(TempUser$read(id == 1, mode = "all")), 0)
-    remaining_users <- TempUser$read(mode = "all")
+    expect_equal(length(TempUser$read(id == 1, .mode = "all")), 0)
+    remaining_users <- TempUser$read(.mode = "all")
     expect_equal(length(remaining_users), 1)
 })
 

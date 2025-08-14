@@ -26,7 +26,7 @@ test_that("SQLite dialect handles auto-increment and defaults", {
   expect_equal(rec2$data$id, 2L)
   expect_equal(rec2$data$name, "anon")
 
-  all_records <- Example$read(mode = "all")
+  all_records <- Example$read(.mode = "all")
   expect_equal(length(all_records), 2L)
   expect_equal(all_records[[1]]$data$id, 1L)
   expect_equal(all_records[[1]]$data$name, "alpha")

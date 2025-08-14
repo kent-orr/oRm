@@ -103,10 +103,10 @@ all_users <- Users$read()
 young_users <- Users$read(age < 30)
 ```
 
-The `read()` method accepts `dbplyr`-style filter conditions through `...`, allowing flexible querying using R expressions. It returns a list of `Record` objects, or a single record if `mode = "get"` is specified.
+The `read()` method accepts `dbplyr`-style filter conditions through `...`, allowing flexible querying using R expressions. It returns a list of `Record` objects, or a single record if `.mode = "get"` is specified.
 
 ```{r}
-specific_user <- Users$read(id == 1, mode = "get")
+specific_user <- Users$read(id == 1, .mode = "get")
 ```
 
 ## What Records Do
@@ -122,7 +122,7 @@ Users$record(id = 3, organization_id = 1, name = "Alice")$create()
 ### Update a record
 
 ```{r}
-alice <- Users$read(id == 3, mode = "get")
+alice <- Users$read(id == 3, .mode = "get")
 alice$data$name <- "Alicia"
 alice$update()
 ```
@@ -171,7 +171,7 @@ Organization$record(id = 1, name = "Widgets, Inc")$create()
 ```{r}
 
 Users$record(id = 3, name = 'Alice', organization_id = 1)$create()
-alice = Users$read(id == 3, mode='get')
+alice = Users$read(id == 3, .mode='get')
 alice_org <- alice$relationship('organization')
 print(alice_org$data$name)
 ```
