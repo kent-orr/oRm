@@ -80,7 +80,7 @@ User$record(id = 2L, organization_id = 1L, name = "Dylan", age = 25)$create()
 ### 5. Query Records
 
 ```r
-kent <- User$read(id == 1, mode = "get")
+kent <- User$read(id == 1, .mode = "get")
 kent$data$name
 
 org <- kent$relationship("organization")

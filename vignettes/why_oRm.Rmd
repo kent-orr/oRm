@@ -147,7 +147,7 @@ m1
 And oh, yikes. Person 2 put in the measurement wrong. let's correct it.
 
 ```{r}
-p2 = Measurement$read(observer_id == 2, mode='get')
+p2 = Measurement$read(observer_id == 2, .mode='get')
 p2$update(measurement_value = 8.15)
 p2
 ```
@@ -191,7 +191,7 @@ define_relationship(
 And after we've made that mapping, we can find all the related measurements for a specific plant.
 
 ```{r}
-p101 = Plants$read(id == 101, mode='get')
+p101 = Plants$read(id == 101, .mode='get')
 p101$relationship('measurements')
 ```
 

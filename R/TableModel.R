@@ -32,7 +32,7 @@ NULL
 #'   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
 #'   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
 #'   \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
-#'   \item{\code{read(..., mode = c("all", "one_or_none", "get"), limit = NULL)}}{Read records from the table using dynamic filters.}
+#'   \item{\code{read(..., .mode = c("all", "one_or_none", "get", "data.frame", "tbl"), .limit = NULL)}}{Read records from the table using dynamic filters.}
 #'   \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
 #'   \item{\code{print()}}{Print a formatted overview of the model, including its fields.}
 #' }
@@ -218,22 +218,27 @@ TableModel <- R6::R6Class(
     #' @description
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
-    #' @param mode One of "all", "one_or_none", "get", or "data.frame".
+    #' @param .mode One of "all", "one_or_none", "get", "data.frame", or "tbl".
     #'   "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
+    #'   "tbl" returns the uncollected dbplyr table.
     #' @param .limit Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
     #'   Positive values return the first N records, negative values return the last N records.
     #' @param .offset Integer. Offset for pagination. Default is 0.
     #' @param .order_by Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
     read = function(
-      ..., 
-      mode = c("all", "one_or_none", "get", "data.frame"),
-      .limit = 100, 
+      ...,
+      .mode = c("all", "one_or_none", "get", "data.frame", "tbl"),
+      .limit = 100,
       .offset=0,
       .order_by = list()
     ) {
-      
-      mode <- match.arg(mode)
+
+      .mode <- match.arg(.mode)
       tbl_ref <- self$tbl()
+
+      if (.mode == "tbl" && missing(.limit)) {
+        .limit <- NULL
+      }
 
       filters <- rlang::enquos(...)
       if (length(filters) > 0) {
@@ -285,17 +290,19 @@ TableModel <- R6::R6Class(
           dplyr::filter(.row_id > .offset) |>
           dplyr::select(-.row_id)
       }
-      
+
+      if (.mode == "tbl") return(tbl_ref)
+
       rows <- dplyr::collect(tbl_ref)
 
-      if (mode == "data.frame") {
+      if (.mode == "data.frame") {
         return(rows)
       }
 
       if (nrow(rows) == 0) {
-        if (mode == "get") {
+        if (.mode == "get") {
           stop("Expected exactly one row, got: 0")
-        } else if (mode == "one_or_none" || mode == "all") {
+        } else if (.mode == "one_or_none" || .mode == "all") {
           return(NULL)
         }
       }
@@ -303,18 +310,18 @@ TableModel <- R6::R6Class(
         Record$new(model = self, .data = as.list(row_data))
       }
 
-      if (mode == "get") {
+      if (.mode == "get") {
         if (nrow(rows) != 1) stop("Expected exactly one row, got: ", nrow(rows))
         return(create_record(rows[1, , drop = TRUE]))
       }
 
-      if (mode == "one_or_none") {
+      if (.mode == "one_or_none") {
         if (nrow(rows) > 1) stop("Expected zero or one row, got multiple")
         if (nrow(rows) == 1) return(create_record(rows[1, , drop = TRUE]))
         return(NULL)
       }
 
-      # mode == "all"
+      # .mode == "all"
       lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
     },
 
@@ -339,7 +346,7 @@ TableModel <- R6::R6Class(
         stop("Unknown relationship type: ", rel$type)
       )
 
-      rel$related_model$read(..., mode=mode)
+      rel$related_model$read(..., .mode = mode)
 
     },
 

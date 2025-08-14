@@ -82,12 +82,12 @@ print(length(classes))
 classes = Classes$read(subject == "Math")
 print(length(classes))
 
-Classes$read(id == 2, mode='get')
+Classes$read(id == 2, .mode='get')
 ```
 
 ## Modes
 
-There are three modes for reading data: 'get', 'one_or_none', and the default 'all'.
+There are five modes for reading data: 'get', 'one_or_none', 'all', 'data.frame', and 'tbl'.
 
 -   'get' will return a single record that should be matched by UID. If no matching record is found, it will throw an error.
 -   'one_or_none' will return a single record. If no matching record is found, it will return NULL instead of throwing an error.

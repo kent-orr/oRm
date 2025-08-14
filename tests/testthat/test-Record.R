@@ -103,7 +103,7 @@ test_that("Record$create() can take and implement a default function", {
 
   u1 = User$record(id=1)$create()
   expect_equal(u1$data$date, format(Sys.Date(), '%Y-%m-%d'))
-  u1_read = User$read(id == 1, mode='get')
+  u1_read = User$read(id == 1, .mode='get')
   expect_equal(u1_read$data$date, format(Sys.Date(), '%Y-%m-%d'))
 
 
@@ -179,7 +179,7 @@ define_relationship(
   expect_no_error(user$create())
 
   # Retrieve and test user data
-  u <- User$read(id == 1, mode = "get")
+  u <- User$read(id == 1, .mode = "get")
   expect_equal(u$data$id, 1)
   expect_equal(u$data$organization_id, 100)
 
@@ -240,14 +240,14 @@ define_relationship(
   expect_no_error(user3$create())
 
   # Test many_to_one relationship (User to Organization)
-  u1 <- User$read(id == 1, mode = "get")
+  u1 <- User$read(id == 1, .mode = "get")
   related_org <- u1$relationship('organization')
   expect_s3_class(related_org, "Record")
   expect_equal(related_org$data$id, 100)
   expect_equal(related_org$data$name, "Data Corp")
 
   # Test one_to_many relationship (Organization to Users)
-  o1 <- Organization$read(id == 100, mode = "get")
+  o1 <- Organization$read(id == 100, .mode = "get")
   related_users <- o1$relationship('users')
   expect_type(related_users, "list")
   expect_length(related_users, 2)
@@ -275,7 +275,7 @@ define_relationship(
   profile1 <- UserProfile$record(user_id = 1, bio = "Alice's bio")
   expect_no_error(profile1$create())
 
-  u1_with_profile <- User$read(id == 1, mode = "get")
+  u1_with_profile <- User$read(id == 1, .mode = "get")
   related_profile <- u1_with_profile$relationship('profile')
   expect_s3_class(related_profile, "Record")
   expect_equal(related_profile$data$bio, "Alice's bio")
