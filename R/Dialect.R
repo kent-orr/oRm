@@ -111,6 +111,10 @@ ensure_schema_exists <- function(x, schema) {
     dispatch_method(x, "ensure_schema_exists", schema)
 }
 
+#' Default method that performs no action
+#' 
+#' @rdname ensure_schema_exists
+#' @keywords internal
 ensure_schema_exists.default <- function(x, schema) {
     invisible(NULL)
 }
