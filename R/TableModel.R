@@ -27,12 +27,12 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL)}}{Constructor for creating a new TableModel instance.}
+#'   \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
 #'   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
 #'   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
 #'   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
 #'   \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
-#'   \item{\code{read(..., .mode = c("all", "one_or_none", "get", "data.frame", "tbl"), .limit = NULL)}}{Read records from the table using dynamic filters.}
+#'   \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
 #'   \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
 #'   \item{\code{print()}}{Print a formatted overview of the model, including its fields.}
 #' }
@@ -49,6 +49,7 @@ NULL
 #' @field engine Engine instance providing connections and SQL dialect.
 #' @field fields Named list of Column objects defining the table structure.
 #' @field relationships Named list of Relationship objects linking to other models.
+#' @field default_mode Default mode for reading records when `.mode` is NULL.
 #' 
 #' @export
 #' 
@@ -60,6 +61,7 @@ TableModel <- R6::R6Class(
     engine = NULL,
     fields = list(),
     relationships = list(),
+    default_mode = "all",
 
     #' @description
     #' Constructor for a new TableModel.
@@ -69,7 +71,8 @@ TableModel <- R6::R6Class(
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
     #' @param .schema Character. Schema to apply to the table name. Defaults to the engine's schema.
-    initialize = function(tablename, engine, ..., .data = list(), .schema = NULL) {
+      #' @param .default_mode Character. Default mode used when `read()` is called with `.mode` = NULL. Must be one of "all", "one_or_none", "get", "data.frame", or "tbl".
+    initialize = function(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = c("all", "one_or_none", "get", "data.frame", "tbl")) {
         if (missing(tablename) || missing(engine)) {
             stop("Both 'tablename' and 'engine' must be provided to TableModel.")
         }
@@ -82,6 +85,8 @@ TableModel <- R6::R6Class(
             self$schema <- .schema
         }
         self$tablename <- qualify(engine, tablename, schema = self$schema)
+        .default_mode <- match.arg(.default_mode)
+        self$default_mode <- .default_mode
 
         dots <- utils::modifyList(.data, rlang::list2(...))
         col_defs <- dots[vapply(dots, inherits, logical(1), "Column")]
@@ -218,7 +223,7 @@ TableModel <- R6::R6Class(
     #' @description
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
-    #' @param .mode One of "all", "one_or_none", "get", "data.frame", or "tbl".
+    #' @param .mode Mode for reading records. One of "all", "one_or_none", "get", "data.frame", or "tbl". If NULL, uses `default_mode`.
     #'   "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
     #'   "tbl" returns the uncollected dbplyr table.
     #' @param .limit Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
@@ -227,13 +232,16 @@ TableModel <- R6::R6Class(
     #' @param .order_by Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
     read = function(
       ...,
-      .mode = c("all", "one_or_none", "get", "data.frame", "tbl"),
+      .mode = NULL,
       .limit = 100,
       .offset=0,
       .order_by = list()
     ) {
 
-      .mode <- match.arg(.mode)
+      if (is.null(.mode)) {
+        .mode <- self$default_mode
+      }
+      .mode <- match.arg(.mode, c("all", "one_or_none", "get", "data.frame", "tbl"))
       tbl_ref <- self$tbl()
 
       if (.mode == "tbl" && missing(.limit)) {
