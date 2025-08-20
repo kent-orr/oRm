@@ -28,12 +28,12 @@ Key features:
 \section{Methods}{
 
 \describe{
-  \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL)}}{Constructor for creating a new TableModel instance.}
+  \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
   \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
-  \item{\code{read(..., mode = c("all", "one_or_none", "get"), limit = NULL)}}{Read records from the table using dynamic filters.}
+  \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
   \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
   \item{\code{print()}}{Print a formatted overview of the model, including its fields.}
 }
@@ -55,6 +55,8 @@ User$drop_table(ask = FALSE)
 }
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
+
+[Record$relationship()]
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -68,6 +70,8 @@ User$drop_table(ask = FALSE)
 \item{\code{fields}}{Named list of Column objects defining the table structure.}
 
 \item{\code{relationships}}{Named list of Relationship objects linking to other models.}
+
+\item{\code{default_mode}}{Default mode for reading records when `.mode` is NULL.}
 }
 \if{html}{\out{</div>}}
 }
@@ -93,7 +97,14 @@ User$drop_table(ask = FALSE)
 \subsection{Method \code{new()}}{
 Constructor for a new TableModel.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$new(tablename, engine, ..., .data = list(), .schema = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$new(
+  tablename,
+  engine,
+  ...,
+  .data = list(),
+  .schema = NULL,
+  .default_mode = c("all", "one_or_none", "get", "data.frame", "tbl")
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -108,6 +119,8 @@ Constructor for a new TableModel.
 \item{\code{.data}}{a list of Column defintions}
 
 \item{\code{.schema}}{Character. Schema to apply to the table name. Defaults to the engine's schema.}
+
+\item{\code{.default_mode}}{Character. Default mode used when `read()` is called with `.mode` = NULL. Must be one of "all", "one_or_none", "get", "data.frame", or "tbl".}
 
 \item{\code{schema}}{Optional schema name used to namespace the table.}
 }
@@ -251,7 +264,7 @@ Read records using dynamic filters and return in the specified mode.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$read(
   ...,
-  mode = c("all", "one_or_none", "get", "data.frame"),
+  .mode = NULL,
   .limit = 100,
   .offset = 0,
   .order_by = list()
@@ -263,15 +276,17 @@ Read records using dynamic filters and return in the specified mode.
 \describe{
 \item{\code{...}}{Unquoted expressions for filtering.}
 
-\item{\code{mode}}{One of "all", "one_or_none", "get", or "data.frame".
-"data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.}
+\item{\code{.mode}}{Mode for reading records. One of "all", "one_or_none", "get", "data.frame", or "tbl". If NULL, uses `default_mode`.
+"data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
+"tbl" returns the uncollected dbplyr table.}
 
 \item{\code{.limit}}{Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
 Positive values return the first N records, negative values return the last N records.}
 
 \item{\code{.offset}}{Integer. Offset for pagination. Default is 0.}
 
-\item{\code{.order_by}}{Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()}
+\item{\code{.order_by}}{Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
+Retrieve related records based on a defined relationship.}
 }
 \if{html}{\out{</div>}}
 }
@@ -280,7 +295,6 @@ Positive values return the first N records, negative values return the last N re
 \if{html}{\out{<a id="method-TableModel-relationship"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-relationship}{}}}
 \subsection{Method \code{relationship()}}{
-Query related records based on defined relationships.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$relationship(rel_name, ...)}\if{html}{\out{</div>}}
 }
@@ -294,8 +308,16 @@ Query related records based on defined relationships.
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+This method returns related records based on the relationship type:
+- For 'belongs_to', 'owns', 'one_to_one', and 'many_to_one' relationships, it returns a single Record object or NULL.
+- For 'one_to_many' and 'many_to_many' relationships, it returns a list of Record objects.
+
+For per-record filtering based on existing data, use [Record$relationship()], which applies additional constraints.
+}
+
 \subsection{Returns}{
-A list of related records or a single record, depending on the relationship type.
+A single Record, a list of Records, or NULL, depending on the relationship type.
 }
 }
 \if{html}{\out{<hr>}}

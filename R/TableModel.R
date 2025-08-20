@@ -333,11 +333,19 @@ TableModel <- R6::R6Class(
       lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
     },
 
-    #' @description
-    #' Query related records based on defined relationships.
+    #' Retrieve related records based on a defined relationship.
+    #'
+    #' @details
+    #' This method returns related records based on the relationship type:
+    #' - For 'belongs_to', 'owns', 'one_to_one', and 'many_to_one' relationships, it returns a single Record object or NULL.
+    #' - For 'one_to_many' and 'many_to_many' relationships, it returns a list of Record objects.
+    #'
+    #' For per-record filtering based on existing data, use [Record$relationship()], which applies additional constraints.
+    #'
     #' @param rel_name The name of the relationship to query.
     #' @param ... Additional arguments passed to the related model's read method.
-    #' @return A list of related records or a single record, depending on the relationship type.
+    #' @return A single Record, a list of Records, or NULL, depending on the relationship type.
+    #' @seealso [Record$relationship()]
     relationship = function(rel_name, ...) {
       if (!rel_name %in% names(self$relationships)) stop("Invalid relationship name: ", rel_name)
 
