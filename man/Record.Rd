@@ -25,6 +25,8 @@ on individual records.
 
 \seealso{
 [TableModel$relationship()]
+
+[Engine$print()], [TableModel$print()].
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -223,7 +225,8 @@ A single Record, a list of Records, or NULL, depending on the relationship type.
 \if{html}{\out{<a id="method-Record-print"></a>}}
 \if{latex}{\out{\hypertarget{method-Record-print}{}}}
 \subsection{Method \code{print()}}{
-Print a summary of the record.
+Print a concise summary of the record, including the table name and
+field values.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Record$print(...)}\if{html}{\out{</div>}}
 }
@@ -231,7 +234,7 @@ Print a summary of the record.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Additional arguments passed to 
+\item{\code{...}}{Additional arguments passed to
 other print methods.}
 }
 \if{html}{\out{</div>}}

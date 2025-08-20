@@ -35,7 +35,7 @@ Key features:
   \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
   \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
   \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
-  \item{\code{print()}}{Print a formatted overview of the model, including its fields.}
+  \item{\code{print()}}{Print a concise summary of the model, including its fields.}
 }
 }
 
@@ -56,7 +56,11 @@ User$drop_table(ask = FALSE)
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
 
+Engine::get_connection
 
+[Record$relationship()]
+
+[Engine$print()], [Record$print()].
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -326,7 +330,8 @@ A single Record, a list of Records, or NULL, depending on the relationship type.
 \if{html}{\out{<a id="method-TableModel-print"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-print}{}}}
 \subsection{Method \code{print()}}{
-Print a concise overview of the model.
+Print a concise summary of the model, including the table name and
+column names.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$print(...)}\if{html}{\out{</div>}}
 }

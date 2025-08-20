@@ -27,7 +27,7 @@ Dialects that do not implement schemas should provide a no-op.
 }
 \section{Functions}{
 \itemize{
-\item \code{ensure_schema_exists.postgres()}: Create the schema with CREATE SCHEMA IF NOT EXISTS for PostgreSQL databases.
+\item \code{ensure_schema_exists.postgres()}: Check that a schema exists for PostgreSQL and warn/fail if missing.
 
 \item \code{ensure_schema_exists.sqlite()}: SQLite does not support schemas
 
