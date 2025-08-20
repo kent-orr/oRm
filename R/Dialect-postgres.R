@@ -40,6 +40,38 @@ ensure_schema_exists.postgres <- function(x, schema) {
   invisible(NULL)
 }
 
+#' @describeIn check_schema_exists Check if a schema exists for PostgreSQL.
+check_schema_exists.postgres <- function(x, schema) {
+  if (is.null(schema)) return(TRUE)
+
+  conn <- NULL
+  if (inherits(x, "Engine")) {
+    conn <- x$conn
+    if (is.null(conn) || !DBI::dbIsValid(conn)) {
+      args <- x$conn_args
+      args$schema <- NULL
+      conn <- do.call(DBI::dbConnect, args)
+      on.exit(DBI::dbDisconnect(conn), add = TRUE)
+    }
+  } else if (inherits(x, "TableModel")) {
+    conn <- x$engine$conn
+    if (is.null(conn) || !DBI::dbIsValid(conn)) {
+      args <- x$engine$conn_args
+      args$schema <- NULL
+      conn <- do.call(DBI::dbConnect, args)
+      on.exit(DBI::dbDisconnect(conn), add = TRUE)
+    }
+  }
+
+  sql <- paste0("SELECT 1 FROM pg_namespace WHERE nspname = ", DBI::dbQuoteLiteral(conn, schema))
+  exists <- FALSE
+  try({
+    res <- DBI::dbGetQuery(conn, sql)
+    exists <- NROW(res) > 0
+  }, silent = TRUE)
+  exists
+}
+
 #' @describeIn flush Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
 flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   # Build the insert SQL
