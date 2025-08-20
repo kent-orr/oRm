@@ -236,8 +236,12 @@ Record <- R6::R6Class(
         set_clause,
         where_clause
       )
-      
-      DBI::dbExecute(con, sql)
+
+      if (identical(self$model$engine$dialect, "postgres")) {
+        suppressMessages(DBI::dbExecute(con, sql))
+      } else {
+        DBI::dbExecute(con, sql)
+      }
       invisible(self)
     },
     
@@ -271,8 +275,12 @@ Record <- R6::R6Class(
         DBI::dbQuoteIdentifier(con, self$model$tablename),
         where_clause
       )
-      
-      DBI::dbExecute(con, sql)
+
+      if (identical(self$model$engine$dialect, "postgres")) {
+        suppressMessages(DBI::dbExecute(con, sql))
+      } else {
+        DBI::dbExecute(con, sql)
+      }
       NULL
     },
     

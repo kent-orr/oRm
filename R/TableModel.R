@@ -148,7 +148,11 @@ TableModel <- R6::R6Class(
             if (verbose) {
                 cat(drop_sql, "\n")
             } else {
-                DBI::dbExecute(conn, drop_sql)
+                if (identical(self$engine$dialect, "postgres")) {
+                    suppressMessages(DBI::dbExecute(conn, drop_sql))
+                } else {
+                    DBI::dbExecute(conn, drop_sql)
+                }
             }
         }
         fields_sql = c()
@@ -177,7 +181,11 @@ TableModel <- R6::R6Class(
         return(sql)
       }
 
-      DBI::dbExecute(conn, sql)
+      if (identical(self$engine$dialect, "postgres")) {
+        suppressMessages(DBI::dbExecute(conn, sql))
+      } else {
+        DBI::dbExecute(conn, sql)
+      }
       return(self)
     },
 
@@ -209,7 +217,11 @@ TableModel <- R6::R6Class(
       }
 
       if (grepl('y', resp, ignore.case = TRUE)) {
-        DBI::dbExecute(con, drop_sql)
+        if (identical(self$engine$dialect, "postgres")) {
+          suppressMessages(DBI::dbExecute(con, drop_sql))
+        } else {
+          DBI::dbExecute(con, drop_sql)
+        }
       } else {
         message("Table not dropped.")
         return(invisible(NULL))

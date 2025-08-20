@@ -79,7 +79,7 @@ Engine <- R6::R6Class(
 
             if (!is.null(self$schema) && identical(self$dialect, "postgres")) {
                 sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(self$conn, self$schema))
-                DBI::dbExecute(self$conn, sql)
+                suppressMessages(DBI::dbExecute(self$conn, sql))
             }
 
             self$conn
@@ -123,7 +123,12 @@ Engine <- R6::R6Class(
         #' @return The number of rows affected
         execute = function(sql) {
             on.exit(if (private$exit_check()) self$close())
-            DBI::dbExecute(self$get_connection(), sql)
+            con <- self$get_connection()
+            if (identical(self$dialect, "postgres")) {
+                suppressMessages(DBI::dbExecute(con, sql))
+            } else {
+                DBI::dbExecute(con, sql)
+            }
         },
 
         #' @description
