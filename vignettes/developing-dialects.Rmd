@@ -42,7 +42,7 @@ To register a new dialect, create a file like `R/Dialect-mydialect.R` and implem
 - `flush.mydialect(x, table, data, con, commit = TRUE, ...)`: Insert a row and return inserted data or identifiers.
 - `qualify.mydialect(x, tablename, schema)`: Qualify a table name with its schema if supported.
 - `set_schema.mydialect(x, schema)`: Switch the current schema on the connection.
-- `ensure_schema_exists.mydialect(x, schema)`: (Optional) Create the schema if it does not exist.
+- `check_schema_exists.mydialect(x, schema)`: (Optional) Check whether a schema exists.
 
 Each function will be called through `dispatch_method()` when working with engines, models, or records that declare your dialect.
 
@@ -53,13 +53,13 @@ variants then add their notes with `@describeIn`, which appends a subsection to 
 via `?` or F1.
 
 ```r
-#' @rdname ensure_schema_exists
-ensure_schema_exists.default <- function(x, schema) {
+#' @rdname check_schema_exists
+check_schema_exists.default <- function(x, schema) {
     # ...
 }
 
-#' @describeIn ensure_schema_exists Create schema if missing for PostgreSQL.
-ensure_schema_exists.postgres <- function(x, schema) {
+#' @describeIn check_schema_exists Check if a schema exists for PostgreSQL.
+check_schema_exists.postgres <- function(x, schema) {
     # ...
 }
 ```

@@ -55,11 +55,6 @@ set_schema.sqlite <- function(x, schema) {
     invisible(NULL)
 }
 
-#' @describeIn ensure_schema_exists SQLite does not support schemas
-ensure_schema_exists.sqlite <- function(x, schema) {
-    invisible(NULL)
-}
-
 #' @describeIn create_schema SQLite does not support schemas
 create_schema.sqlite <- function(x, schema) {
     if (!is.null(schema)) {

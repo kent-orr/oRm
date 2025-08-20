@@ -133,7 +133,15 @@ TableModel <- R6::R6Class(
         conn <- self$get_connection()
 
         if (!is.null(self$schema)) {
-            ensure_schema_exists(self$engine, self$schema)
+            if (!check_schema_exists(self$engine, self$schema)) {
+                stop(
+                    sprintf(
+                        "Schema '%s' does not exist. Create it using engine$create_schema('%s') before proceeding.",
+                        self$schema, self$schema
+                    ),
+                    call. = FALSE
+                )
+            }
         }
 
         if (overwrite) {

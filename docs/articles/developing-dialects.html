@@ -133,8 +133,8 @@ table name with its schema if supported.</li>
 <code>set_schema.mydialect(x, schema)</code>: Switch the current
 schema on the connection.</li>
 <li>
-<code>ensure_schema_exists.mydialect(x, schema)</code>: (Optional)
-Create the schema if it does not exist.</li>
+<code>check_schema_exists.mydialect(x, schema)</code>: (Optional)
+Check whether a schema exists.</li>
 </ul>
 <p>Each function will be called through <code><a href="../reference/dispatch_method.html">dispatch_method()</a></code>
 when working with engines, models, or records that declare your
@@ -149,13 +149,13 @@ Dialect-specific variants then add their notes with
 <code>@describeIn</code>, which appends a subsection to the same page
 and keeps everything discoverable via <code>?</code> or F1.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#' @rdname ensure_schema_exists</span></span>
-<span><span class="va">ensure_schema_exists.default</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="co">#' @rdname check_schema_exists</span></span>
+<span><span class="va">check_schema_exists.default</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="co"># ...</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="co">#' @describeIn ensure_schema_exists Create schema if missing for PostgreSQL.</span></span>
-<span><span class="va">ensure_schema_exists.postgres</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="co">#' @describeIn check_schema_exists Check if a schema exists for PostgreSQL.</span></span>
+<span><span class="va">check_schema_exists.postgres</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="co"># ...</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Running <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> after adding a dialect
