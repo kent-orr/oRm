@@ -127,40 +127,51 @@ TableModel <- R6::R6Class(
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
-    #'
+    #' @return The TableModel object invisibly, or NULL if creation is aborted.
+    #' @note Warns and aborts if the table's schema does not exist.
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
-      ensure_schema_exists(self$engine, self$schema)
-      conn <- self$get_connection()
+        conn <- self$get_connection()
 
-      if (overwrite) {
-        drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(conn, self$tablename))
-        if (verbose) {
-          cat(drop_sql, "\n")
-        } else {
-          DBI::dbExecute(conn, drop_sql)
+        if (!is.null(self$schema)) {
+            schema_exists <- tryCatch({
+                ensure_schema_exists(self$engine, self$schema)
+                TRUE
+            }, error = function(e) {
+                warning(conditionMessage(e))
+                FALSE
+            })
+            if (!schema_exists) return(invisible(NULL))
         }
-      }
-      fields_sql = c()
-      constraints_sql = c()
-      for (i in seq_along(self$fields)) {
-        field_name = names(self$fields)[i]
-        field = self$fields[[i]]
-        fields_sql = c(fields_sql, render_field(field, conn))
-        constraints_sql = c(constraints_sql, render_constraint(field, conn))
-      }
 
-      create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
-      sql <- paste0(
-        create_clause, " ",
-        self$engine$format_tablename(self$tablename), 
-        " (\n  ", paste(fields_sql, collapse = ',\n'), 
-        if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
-          paste0(",\n  ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n  "))
-        } else {
-          ""
-        },
-        "\n);\n"
-      )
+        if (overwrite) {
+            drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(conn, self$tablename))
+            if (verbose) {
+                cat(drop_sql, "\n")
+            } else {
+                DBI::dbExecute(conn, drop_sql)
+            }
+        }
+        fields_sql = c()
+        constraints_sql = c()
+        for (i in seq_along(self$fields)) {
+            field_name = names(self$fields)[i]
+            field = self$fields[[i]]
+            fields_sql = c(fields_sql, render_field(field, conn))
+            constraints_sql = c(constraints_sql, render_constraint(field, conn))
+        }
+
+        create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
+        sql <- paste0(
+            create_clause, " ",
+            self$engine$format_tablename(self$tablename), 
+              " (\n  ", paste(fields_sql, collapse = ',\n'), 
+              if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
+                paste0(",\n  ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n  "))
+              } else {
+                ""
+            },
+          "\n);\n"
+        )
 
       if (verbose) {
         return(sql)
