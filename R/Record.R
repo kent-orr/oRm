@@ -324,6 +324,7 @@ Record <- R6::R6Class(
     #' @param ... Additional arguments passed to the related model's read method.
     #'
     #' @return A single Record, a list of Records, or NULL, depending on the relationship type.
+    #' @seealso [TableModel$relationship()]
     relationship = function(rel_name, ...) {
       if (!rel_name %in% names(self$relationships)) stop("Invalid relationship name: ", rel_name)
       
@@ -366,11 +367,13 @@ Record <- R6::R6Class(
     
     
     #' @description
-    #' Print a summary of the record.
+    #' Print a concise summary of the record, including the table name and
+    #' field values.
     #'
-    #' @param ... Additional arguments passed to 
+    #' @param ... Additional arguments passed to
     #'   other print methods.
     #' @return The Record object, invisibly.
+    #' @seealso [Engine$print()], [TableModel$print()].
     print = function(...) {
       cat("<Record>: '", self$model$tablename, "'\n", sep = '')
       cat(paste(names(self$data), self$data, sep = ": ", collapse = "\n"), "\n")

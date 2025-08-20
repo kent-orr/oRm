@@ -23,6 +23,9 @@ on individual records.
 }
 }
 
+\seealso{
+[TableModel$relationship()]
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{

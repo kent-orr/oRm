@@ -1,42 +1,4 @@
-#' @describeIn flush Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
-flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
-  # Build the insert SQL
-  data <- data[!vapply(data, is.null, logical(1))]
-  tbl_expr <- dbplyr::ident_q(table)
-  fields <- names(data)
-
-  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, sapply(data, `[`)), collapse = ", "), ")")
-  field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
-
-  sql <- paste0(
-    "INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql,
-    " RETURNING *"
-  )
-
-  # Just execute the query and return the result
-  # Let the caller handle transaction management
-  result <- DBI::dbGetQuery(con, sql)
-  
-  return(result)
-}
-
-
-#' @describeIn qualify Add the schema prefix to unqualified table names for PostgreSQL.
-qualify.postgres <- function(x, tablename, schema) {
-  if (!grepl("\\.", tablename) && !is.null(schema)) {
-    paste(schema, tablename, sep = ".")
-  } else {
-    tablename
-  }
-}
-
-#' @describeIn set_schema PostgreSQL applies schema via search_path; updates occur during connection retrieval.
-set_schema.postgres <- function(x, schema) {
-    # Schema updates are handled during connection retrieval
-    invisible(NULL)
-}
-
-#' @describeIn ensure_schema_exists Create the schema with CREATE SCHEMA IF NOT EXISTS for PostgreSQL databases.
+#' @describeIn ensure_schema_exists Check that a schema exists for PostgreSQL and warn/fail if missing.
 ensure_schema_exists.postgres <- function(x, schema) {
   if (is.null(schema)) return(invisible(NULL))
 
@@ -59,9 +21,73 @@ ensure_schema_exists.postgres <- function(x, schema) {
     }
   }
 
-  sql <- paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(conn, schema))
-  DBI::dbExecute(conn, sql)
+  # Check for existence
+  sql <- paste0("SELECT 1 FROM pg_namespace WHERE nspname = ", DBI::dbQuoteLiteral(conn, schema))
+  exists <- FALSE
+  try({
+    res <- DBI::dbGetQuery(conn, sql)
+    exists <- NROW(res) > 0
+  }, silent = TRUE)
+  if (!exists) {
+    stop(
+      sprintf(
+        "Schema '%s' does not exist. Create it using engine$create_schema('%s') before proceeding.", 
+        schema, schema
+      ),
+      call. = FALSE
+    )
+  }
   invisible(NULL)
 }
 
+#' @describeIn flush Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
+flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
+  # Build the insert SQL
+  data <- data[!vapply(data, is.null, logical(1))]
+  tbl_expr <- dbplyr::ident_q(table)
+  fields <- names(data)
+
+  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, sapply(data, `[`)), collapse = ", "), ")")
+  field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
+
+  sql <- paste0(
+    "INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql,
+    " RETURNING *"
+  )
+
+  # Just execute the query and return the result
+  # Let the caller handle transaction management
+  result <- DBI::dbGetQuery(con, sql)
+  
+  return(result)
+}
+
+#' @describeIn qualify Add the schema prefix to unqualified table names for PostgreSQL.
+qualify.postgres <- function(x, tablename, schema) {
+  if (!grepl("\\.", tablename) && !is.null(schema)) {
+    paste(schema, tablename, sep = ".")
+  } else {
+    tablename
+  }
+}
+
+#' @describeIn set_schema PostgreSQL applies schema via search_path; updates occur during connection retrieval.
+set_schema.postgres <- function(x, schema) {
+    # Schema updates are handled during connection retrieval
+    invisible(NULL)
+}
+
+#' @describeIn create_schema Create the schema for PostgreSQL.
+create_schema.postgres <- function(x, schema) {
+  if (is.null(schema)) stop("Must supply a schema name.", call. = FALSE)
+  conn <- NULL
+  if (inherits(x, "Engine")) {
+    conn <- x$get_connection()
+  } else if (inherits(x, "TableModel")) {
+    conn <- x$engine$get_connection()
+  }
+  sql <- paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(conn, schema))
+  DBI::dbExecute(conn, sql)
+  invisible(TRUE)
+}
 

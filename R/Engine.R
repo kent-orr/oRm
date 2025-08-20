@@ -137,6 +137,13 @@ Engine <- R6::R6Class(
             return(self)
         },
         
+        #' @description
+        #' Explicitly create a schema in the database
+        #' @param schema Character. The schema name to create
+        #' @return TRUE (invisible) if schema created/existed
+        create_schema = function(schema) {
+            create_schema(self, schema)
+        },
         
         #' @description
         #' Create a new TableModel object for the specified table
@@ -194,9 +201,11 @@ Engine <- R6::R6Class(
         },
 
         #' @description
-        #' Print a concise summary of the engine.
+        #' Print a concise summary of the engine, including the SQL dialect,
+        #' default schema, and connection status.
         #' @param ... Unused, present for compatibility.
         #' @return The Engine object, invisibly.
+        #' @seealso [TableModel$print()], [Record$print()].
         print = function(...) {
             connected <- FALSE
             if (!is.null(self$conn)) {
@@ -378,3 +387,4 @@ with.Engine <- function(engine, expr, auto_commit = TRUE) {
         engine$set_transaction_state(FALSE)
     })
 }
+

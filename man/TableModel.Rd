@@ -56,7 +56,7 @@ User$drop_table(ask = FALSE)
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
 
-Engine::get_connection
+
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -287,7 +287,8 @@ Positive values return the first N records, negative values return the last N re
 
 \item{\code{.offset}}{Integer. Offset for pagination. Default is 0.}
 
-\item{\code{.order_by}}{Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()}
+\item{\code{.order_by}}{Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
+Retrieve related records based on a defined relationship.}
 }
 \if{html}{\out{</div>}}
 }
@@ -296,7 +297,6 @@ Positive values return the first N records, negative values return the last N re
 \if{html}{\out{<a id="method-TableModel-relationship"></a>}}
 \if{latex}{\out{\hypertarget{method-TableModel-relationship}{}}}
 \subsection{Method \code{relationship()}}{
-Query related records based on defined relationships.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$relationship(rel_name, ...)}\if{html}{\out{</div>}}
 }
@@ -310,8 +310,16 @@ Query related records based on defined relationships.
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+This method returns related records based on the relationship type:
+- For 'belongs_to', 'owns', 'one_to_one', and 'many_to_one' relationships, it returns a single Record object or NULL.
+- For 'one_to_many' and 'many_to_many' relationships, it returns a list of Record objects.
+
+For per-record filtering based on existing data, use [Record$relationship()], which applies additional constraints.
+}
+
 \subsection{Returns}{
-A list of related records or a single record, depending on the relationship type.
+A single Record, a list of Records, or NULL, depending on the relationship type.
 }
 }
 \if{html}{\out{<hr>}}
