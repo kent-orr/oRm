@@ -17,6 +17,21 @@ Key features:
   \item Supports persistent connections for improved performance
 }
 }
+\examples{
+
+## ------------------------------------------------
+## Method `Engine$model`
+## ------------------------------------------------
+
+engine$model(
+    "users",
+    Column$new("id", "integer"),
+    Column$new("name", "text")
+)
+}
+\seealso{
+[TableModel::new()]
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -206,9 +221,11 @@ Create a new TableModel object for the specified table
 \describe{
 \item{\code{tablename}}{Name of the table}
 
-\item{\code{...}}{Additional arguments passed to the TableModel constructor}
+\item{\code{...}}{Additional arguments passed to the TableModel constructor.
+Include `Column` objects here to define the table structure.}
 
-\item{\code{.data}}{A named list of the arguments for the TableModel constructor}
+\item{\code{.data}}{A named list of the arguments for the TableModel constructor.
+`Column` objects in this list also define table structure.}
 
 \item{\code{.schema}}{Character. The default schema to apply to the TableModel object}
 
@@ -219,6 +236,18 @@ Create a new TableModel object for the specified table
 \subsection{Returns}{
 A new TableModel object
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{engine$model(
+    "users",
+    Column$new("id", "integer"),
+    Column$new("name", "text")
+)
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-set_transaction_state"></a>}}
