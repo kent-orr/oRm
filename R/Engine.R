@@ -128,29 +128,29 @@ Engine <- R6::R6Class(
 
         #' @description
         #' Set the default schema for the engine and active connection
-        #' @param schema Character. Schema name to apply
+        #' @param .schema Character. Schema name to apply
         #' @return The Engine object
-        set_schema = function(schema) {
+        set_schema = function(.schema) {
             on.exit(if (private$exit_check()) self$close())
-            self$schema <- schema
-            set_schema(self, schema)
+            self$schema <- .schema
+            set_schema(self, .schema)
             return(self)
         },
         
         #' @description
         #' Explicitly create a schema in the database
-        #' @param schema Character. The schema name to create
+        #' @param .schema Character. The schema name to create
         #' @return TRUE (invisible) if schema created/existed
-        create_schema = function(schema) {
-            create_schema(self, schema)
+        create_schema = function(.schema) {
+            create_schema(self, .schema)
         },
 
         #' @description
         #' Check if a schema exists in the database
-        #' @param schema Character. The schema name to check
+        #' @param .schema Character. The schema name to check
         #' @return TRUE if schema exists, otherwise FALSE
-        check_schema_exists = function(schema) {
-            check_schema_exists(self, schema)
+        check_schema_exists = function(.schema) {
+            check_schema_exists(self, .schema)
         },
 
         #' @description
@@ -172,7 +172,7 @@ Engine <- R6::R6Class(
         #' )
         model = function(tablename, ..., .data = list(), .schema = NULL, .default_mode = "all") {
             if (is.null(.schema)) .schema <- self$schema
-            tablename <- qualify(self, tablename, schema = .schema)
+            tablename <- qualify(self, tablename, .schema = .schema)
             TableModel$new(tablename = tablename, engine = self, ..., .data = .data, .schema = .schema, .default_mode = .default_mode)
         },
         
@@ -198,7 +198,7 @@ Engine <- R6::R6Class(
         #' @param .schema Character. Schema name to prepend
         #' @return A fully qualified table name
         qualify = function(tablename, .schema = self$schema) {
-            qualify(self, tablename, schema = .schema)
+            qualify(self, tablename, .schema = .schema)
         },
 
 

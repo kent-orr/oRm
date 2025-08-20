@@ -27,7 +27,7 @@ NULL
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
+#'   \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
 #'   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
 #'   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
 #'   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
@@ -67,7 +67,6 @@ TableModel <- R6::R6Class(
     #' Constructor for a new TableModel.
     #' @param tablename The name of the database table.
     #' @param engine The Engine object for database connection.
-    #' @param schema Optional schema name used to namespace the table.
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
     #' @param .schema Character. Schema to apply to the table name. Defaults to the engine's schema.
@@ -84,7 +83,7 @@ TableModel <- R6::R6Class(
         } else {
             self$schema <- .schema
         }
-        self$tablename <- qualify(engine, tablename, schema = self$schema)
+        self$tablename <- qualify(engine, tablename, .schema = self$schema)
         .default_mode <- match.arg(.default_mode)
         self$default_mode <- .default_mode
 
@@ -112,13 +111,13 @@ TableModel <- R6::R6Class(
 
     #' @description
     #' Update the schema for this model and re-qualify the table name.
-    #' @param schema Character. New schema name to apply.
+    #' @param .schema Character. New schema name to apply.
     #' @return The TableModel object.
-    set_schema = function(schema) {
-      self$schema <- schema
+    set_schema = function(.schema) {
+      self$schema <- .schema
       base_name <- strsplit(self$tablename, "\\.")[[1]]
       base_name <- base_name[length(base_name)]
-      self$tablename <- qualify(self$engine, base_name, schema = schema)
+      self$tablename <- qualify(self$engine, base_name, .schema = .schema)
       self
     },
 

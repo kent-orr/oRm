@@ -73,9 +73,9 @@ Record <- R6::R6Class(
 
     #' @description
     #' Update the schema for the underlying model.
-    #' @param schema Character. New schema name to apply.
-    set_schema = function(schema) {
-      self$model$set_schema(schema)
+    #' @param .schema Character. New schema name to apply.
+    set_schema = function(.schema) {
+      self$model$set_schema(.schema)
       self
     },
 

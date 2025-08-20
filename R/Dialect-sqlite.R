@@ -40,32 +40,32 @@ flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
 
 
 #' @describeIn qualify SQLite ignores schema qualification
-qualify.sqlite <- function(x, tablename, schema) {
-  if (!is.null(schema)) {
+qualify.sqlite <- function(x, tablename, .schema) {
+  if (!is.null(.schema)) {
     warning("SQLite does not support schema qualification. Ignoring schema.")
   }
   tablename
 }
 
 #' @describeIn set_schema SQLite does not support schemas
-set_schema.sqlite <- function(x, schema) {
-    if (!is.null(schema)) {
+set_schema.sqlite <- function(x, .schema) {
+    if (!is.null(.schema)) {
         warning("SQLite does not support schemas. Ignoring set_schema().")
     }
     invisible(NULL)
 }
 
 #' @describeIn create_schema SQLite does not support schemas
-create_schema.sqlite <- function(x, schema) {
-    if (!is.null(schema)) {
+create_schema.sqlite <- function(x, .schema) {
+    if (!is.null(.schema)) {
         warning("SQLite does not support schemas. Ignoring create_schema().")
     }
     invisible(TRUE)
 }
 
 #' @describeIn check_schema_exists SQLite does not support schemas; always returns TRUE
-check_schema_exists.sqlite <- function(x, schema) {
-    if (!is.null(schema)) {
+check_schema_exists.sqlite <- function(x, .schema) {
+    if (!is.null(.schema)) {
         warning("SQLite does not support schemas. check_schema_exists() returning TRUE.")
     }
     TRUE

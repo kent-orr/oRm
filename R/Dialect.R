@@ -57,19 +57,19 @@ dispatch_method <- function(x, method, ...) {
 #'
 #' @param x An oRm object (Engine, TableModel, or Record) used for dialect dispatch
 #' @param tablename Character string of the table name to qualify
-#' @param schema Character string of the schema name, or NULL
+#' @param .schema Character string of the schema name, or NULL
 #'
 #' @return Character string of the qualified table name
 #' @keywords internal
-qualify <- function(x, tablename, schema) {
-    dispatch_method(x, "qualify", tablename, schema)
+qualify <- function(x, tablename, .schema) {
+    dispatch_method(x, "qualify", tablename, .schema)
 }
 
 #' @rdname qualify
 #' @keywords internal
-qualify.default <- function(x, tablename, schema) {
-    if (!grepl("\\.", tablename) && !is.null(schema)) {
-        paste(schema, tablename, sep = ".")
+qualify.default <- function(x, tablename, .schema) {
+    if (!grepl("\\.", tablename) && !is.null(.schema)) {
+        paste(.schema, tablename, sep = ".")
     } else {
         tablename
     }
@@ -85,17 +85,17 @@ qualify.default <- function(x, tablename, schema) {
 #' using dialect-specific logic for different database systems.
 #'
 #' @param x An oRm object (Engine, TableModel, or Record) used for dialect dispatch
-#' @param schema Character string of the schema name to set
+#' @param .schema Character string of the schema name to set
 #'
 #' @return Invisible NULL (called for side effects)
 #' @keywords internal
-set_schema <- function(x, schema) {
-    dispatch_method(x, "set_schema", schema)
+set_schema <- function(x, .schema) {
+    dispatch_method(x, "set_schema", .schema)
 }
 
 #' @rdname set_schema
 #' @keywords internal
-set_schema.default <- function(x, schema) {
+set_schema.default <- function(x, .schema) {
     invisible(NULL)
 }
 
@@ -104,15 +104,15 @@ set_schema.default <- function(x, schema) {
 #' Dialects that do not implement schemas should return TRUE.
 #'
 #' @param x Engine or TableModel instance used for dispatch.
-#' @param schema Character. Name of the schema to check.
+#' @param .schema Character. Name of the schema to check.
 #' @keywords internal
-check_schema_exists <- function(x, schema) {
-    dispatch_method(x, "check_schema_exists", schema)
+check_schema_exists <- function(x, .schema) {
+    dispatch_method(x, "check_schema_exists", .schema)
 }
 
 #' @rdname check_schema_exists
 #' @keywords internal
-check_schema_exists.default <- function(x, schema) {
+check_schema_exists.default <- function(x, .schema) {
     stop("check_schema_exists() is not implemented for this database dialect.", call. = FALSE)
 }
 
@@ -121,15 +121,15 @@ check_schema_exists.default <- function(x, schema) {
 #' By default, this is a no-op. Implement dialect-specific ones as needed.
 #'
 #' @param x An Engine or TableModel instance used for dispatch.
-#' @param schema Character. Name of the schema to create.
+#' @param .schema Character. Name of the schema to create.
 #' @keywords internal
-create_schema <- function(x, schema) {
-    dispatch_method(x, "create_schema", schema)
+create_schema <- function(x, .schema) {
+    dispatch_method(x, "create_schema", .schema)
 }
 
 #' @rdname create_schema
 #' @keywords internal
-create_schema.default <- function(x, schema) {
+create_schema.default <- function(x, .schema) {
     stop("create_schema() is not implemented for this database dialect.", call. = FALSE)
 }
 
