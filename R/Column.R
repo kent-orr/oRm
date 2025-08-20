@@ -1,7 +1,7 @@
 #' Define a basic column for a database table
 #'
 #' @param type SQL data type (e.g. "INTEGER", "TEXT", "DATE")
-#' @param default Optional default value. No SQL default if NULL, def set by string, if given a function that fun will be called by the Record on generation
+#' @param default Optional default value. No SQL default if NULL. Use a string for a literal default, a function for a computed default at record generation, or an unquoted SQL expression via `dbplyr::sql()`.
 #' @param primary_key Logical, whether this is part of the primary key. NULL (default) means unspecified.
 #' @param nullable Logical, whether NULLs are allowed. NULL (default) means unspecified.
 #' @param unique Logical, whether the column has a UNIQUE constraint. NULL (default) means unspecified.
@@ -20,6 +20,9 @@
 #'
 #' # Define a text column with a default value
 #' name_col <- Column("TEXT", default = "Unnamed", nullable = FALSE)
+#'
+#' # Define a timestamp column with an SQL function default
+#' created_col <- Column("TIMESTAMP", default = dbplyr::sql("now()"))
 #'
 #' # Define a unique email column
 #' email_col <- Column("TEXT", unique = TRUE, nullable = FALSE)

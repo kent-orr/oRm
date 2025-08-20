@@ -17,6 +17,9 @@ Key features:
   \item Supports persistent connections for improved performance
 }
 }
+\seealso{
+[TableModel$print()], [Record$print()].
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -44,6 +47,7 @@ Key features:
 \item \href{#method-Engine-get_query}{\code{Engine$get_query()}}
 \item \href{#method-Engine-execute}{\code{Engine$execute()}}
 \item \href{#method-Engine-set_schema}{\code{Engine$set_schema()}}
+\item \href{#method-Engine-create_schema}{\code{Engine$create_schema()}}
 \item \href{#method-Engine-model}{\code{Engine$model()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
@@ -187,6 +191,26 @@ The Engine object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-create_schema"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-create_schema}{}}}
+\subsection{Method \code{create_schema()}}{
+Explicitly create a schema in the database
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$create_schema(schema)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{schema}}{Character. The schema name to create}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+TRUE (invisible) if schema created/existed
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Engine-model"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-model}{}}}
 \subsection{Method \code{model()}}{
@@ -299,7 +323,8 @@ A quoted table name
 \if{html}{\out{<a id="method-Engine-print"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-print}{}}}
 \subsection{Method \code{print()}}{
-Print a concise summary of the engine.
+Print a concise summary of the engine, including the SQL dialect,
+default schema, and connection status.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$print(...)}\if{html}{\out{</div>}}
 }

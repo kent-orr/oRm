@@ -61,12 +61,23 @@ TableModels can be created in two ways. The first is by calling the `TableModel`
 
 ```{r}
 Users <- TableModel$new(
-  "users", 
-  engine, 
+  "users",
+  engine,
   id = Column("INTEGER", primary_key = TRUE),
   organization_id = ForeignKey("INTEGER", references = 'organizations.id'),
   name = Column("TEXT"),
   age = Column('INTEGER', default = 18)
+)
+```
+
+You can also set a column default using an SQL expression by wrapping it in `dbplyr::sql()`, which prevents the value from being quoted as a string:
+
+```{r}
+Users <- TableModel$new(
+    "users",
+    engine,
+    id = Column("INTEGER", primary_key = TRUE),
+    created_at = Column("TIMESTAMP", default = dbplyr::sql("now()"))
 )
 ```
 
