@@ -66,33 +66,6 @@ test_that("create_table fails if schema does not exist, succeeds after explicit 
     expect_true("users" %in% res_table$table_name)
 })
 
-test_that("model create_table creates missing schema and table", {
-    conn_info <- tryCatch({
-        c(setup_postgres_test_db(), .schema = "test")
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    engine <- do.call(Engine$new, conn_info)
-    withr::defer(engine$close())
-
-    User <- engine$model(
-        "users",
-        id = Column("SERIAL", primary_key = TRUE),
-        name = Column("TEXT", nullable = FALSE)
-    )
-    # Instead of just creating the table, test create_table() also creates schema if missing
-    # Explicitly drop schema if exists to test creation
-    conn <- engine$get_connection()
-    DBI::dbExecute(conn, "DROP SCHEMA IF EXISTS test CASCADE")
-    User$create_table(overwrite = TRUE)
-
-    res_schema <- DBI::dbGetQuery(conn, "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'test'")
-    expect_equal(nrow(res_schema), 1)
-    res_table <- DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'test'")
-    expect_true("users" %in% res_table$table_name)
-})
-
 test_that("tables remain accessible across engine connections", {
     conn_info <- tryCatch({
         c(setup_postgres_test_db(), .schema = "test")
@@ -102,6 +75,7 @@ test_that("tables remain accessible across engine connections", {
     withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
+    engine$create_schema("test")
 
     User <- engine$model(
         "users",
@@ -120,31 +94,6 @@ test_that("tables remain accessible across engine connections", {
     expect_true("users" %in% tables2$tablename)
 
     expect_no_error(User$read(.mode = "all"))
-})
-
-test_that('create_table creates schema when model schema changes', {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        skip(paste("Could not set up PostgreSQL container:", e$message))
-        NULL
-    })
-    if (is.null(conn_info)) {
-        skip("PostgreSQL container setup failed")
-    }
-    engine <- do.call(Engine$new, conn_info)
-
-    model <- engine$model("users", id = Column("SERIAL", primary_key = TRUE))
-    model$set_schema("audit")
-    model$create_table(overwrite = TRUE)
-
-    conn <- engine$get_connection()
-    res_schema <- DBI::dbGetQuery(conn, "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'audit'")
-    expect_equal(nrow(res_schema), 1)
-    res_table <- DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'audit'")
-    expect_true("users" %in% res_table$table_name)
-
-    cleanup_postgres_test_db()
 })
 
 test_that("engine creates models with default schema", {
@@ -194,6 +143,7 @@ test_that("models can create and read records in schema", {
     withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
+    engine$create_schema("test")
 
     UserPublic <- engine$model(
         "users",
@@ -233,6 +183,7 @@ test_that("engine set_schema changes search path", {
     withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
+    engine$create_schema("test")
 
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
     engine$set_schema("audit")
@@ -250,10 +201,11 @@ test_that("model set_schema updates tablename", {
     withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
+    engine$create_schema("test")
 
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
     engine$set_schema("audit")
-    
+
     UserArchive <- engine$model("users", .schema = "archive")
     UserArchive$set_schema(engine$schema)
     expect_equal(UserArchive$tablename, "audit.users")
@@ -268,10 +220,11 @@ test_that("models work across different schemas", {
     withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
+    engine$create_schema("test")
 
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
     engine$set_schema("audit")
-    
+
     UserArchive <- engine$model(
         "users",
         id = Column("SERIAL", primary_key = TRUE),
@@ -297,10 +250,11 @@ test_that("record set_schema updates model tablename", {
     withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
+    engine$create_schema("test")
 
     DBI::dbExecute(engine$get_connection(), "CREATE SCHEMA IF NOT EXISTS audit")
     engine$set_schema("audit")
-    
+
     UserArchive <- engine$model(
         "users",
         id = Column("SERIAL", primary_key = TRUE),
