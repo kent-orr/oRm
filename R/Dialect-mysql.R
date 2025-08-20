@@ -23,9 +23,9 @@ flush.mysql <- function(x, table, data, con, commit = TRUE, ...) {
 
 
 #' @describeIn qualify MySQL-specific table qualification with optional schema.
-qualify.mysql <- function(x, tablename, schema) {
-    if (!grepl("\\.", tablename) && !is.null(schema)) {
-        paste(schema, tablename, sep = ".")
+qualify.mysql <- function(x, tablename, .schema) {
+    if (!grepl("\\.", tablename) && !is.null(.schema)) {
+        paste(.schema, tablename, sep = ".")
     } else {
         tablename
     }
@@ -33,16 +33,16 @@ qualify.mysql <- function(x, tablename, schema) {
 
 
 #' @describeIn set_schema Change the active schema using MySQL's USE statement.
-set_schema.mysql <- function(x, schema) {
+set_schema.mysql <- function(x, .schema) {
     conn <- if (inherits(x, "Engine")) x$get_connection() else x$engine$get_connection()
-    sql <- paste0("USE ", DBI::dbQuoteIdentifier(conn, schema))
+    sql <- paste0("USE ", DBI::dbQuoteIdentifier(conn, .schema))
     DBI::dbExecute(conn, sql)
     invisible(NULL)
 }
 
 #' @describeIn check_schema_exists Check if a schema exists for MySQL.
-check_schema_exists.mysql <- function(x, schema) {
-    if (is.null(schema)) return(TRUE)
+check_schema_exists.mysql <- function(x, .schema) {
+    if (is.null(.schema)) return(TRUE)
 
     conn <- NULL
     if (inherits(x, "Engine")) {
@@ -65,7 +65,7 @@ check_schema_exists.mysql <- function(x, schema) {
 
     sql <- paste0(
         "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ",
-        DBI::dbQuoteLiteral(conn, schema)
+        DBI::dbQuoteLiteral(conn, .schema)
     )
     exists <- FALSE
     try({
