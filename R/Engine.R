@@ -137,6 +137,13 @@ Engine <- R6::R6Class(
             return(self)
         },
         
+        #' @description
+        #' Explicitly create a schema in the database
+        #' @param schema Character. The schema name to create
+        #' @return TRUE (invisible) if schema created/existed
+        create_schema = function(schema) {
+            create_schema(self, schema)
+        },
         
         #' @description
         #' Create a new TableModel object for the specified table
@@ -380,3 +387,4 @@ with.Engine <- function(engine, expr, auto_commit = TRUE) {
         engine$set_transaction_state(FALSE)
     })
 }
+

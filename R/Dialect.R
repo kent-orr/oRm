@@ -119,6 +119,23 @@ ensure_schema_exists.default <- function(x, schema) {
     invisible(NULL)
 }
 
+#' Create a schema for the current dialect
+#'
+#' By default, this is a no-op. Implement dialect-specific ones as needed.
+#'
+#' @param x An Engine or TableModel instance used for dispatch.
+#' @param schema Character. Name of the schema to create.
+#' @keywords internal
+create_schema <- function(x, schema) {
+    dispatch_method(x, "create_schema", schema)
+}
+
+#' @rdname create_schema
+#' @keywords internal
+create_schema.default <- function(x, schema) {
+    stop("create_schema() is not implemented for this database dialect.", call. = FALSE)
+}
+
 
 # Render -----------------------------------------------------------------
 
@@ -289,3 +306,4 @@ flush.default <- local({
         invisible(NULL)
     }
 })
+

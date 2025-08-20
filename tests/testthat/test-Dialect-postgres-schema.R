@@ -16,6 +16,56 @@ test_that("engine schema can be set on initialization", {
     expect_equal(engine$conn_args$user, "tester")
 })
 
+test_that("engine$create_schema works and is idempotent", {
+    conn_info <- tryCatch({
+        setup_postgres_test_db()
+    }, error = function(e) skip(paste("Could not set up PostgreSQL container: ", e$message)))
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+
+    expect_silent(engine$create_schema("somenew"))
+    expect_silent(engine$create_schema("somenew")) # Should not error if schema already exists
+    stats <- DBI::dbGetQuery(engine$get_connection(),
+        "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'somenew'")
+    expect_equal(nrow(stats), 1)
+})
+
+test_that("create_table fails if schema does not exist, succeeds after explicit engine$create_schema", {
+    conn_info <- tryCatch({
+        setup_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, c(conn_info, .schema = "not_exist"))
+    withr::defer(engine$close())
+
+    user_model <- engine$model(
+        "users",
+        id = Column("SERIAL", primary_key = TRUE),
+        name = Column("TEXT", nullable = FALSE)
+    )
+
+    # Should error on create_table since schema does not exist
+    expect_error(
+        user_model$create_table(),
+        "Schema 'not_exist' does not exist. Create it using engine\\$create_schema\\('not_exist'\\) before proceeding\\."
+    )
+
+    # Now explicitly create the schema
+    expect_silent(engine$create_schema("not_exist"))
+
+    # Now create_table should work
+    expect_no_error(user_model$create_table(overwrite = TRUE))
+    # And the table is now present in that schema
+    conn <- engine$get_connection()
+    res_table <- DBI::dbGetQuery(
+        conn,
+        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'not_exist'"
+    )
+    expect_true("users" %in% res_table$table_name)
+})
+
 test_that("model create_table creates missing schema and table", {
     conn_info <- tryCatch({
         c(setup_postgres_test_db(), .schema = "test")
@@ -31,9 +81,12 @@ test_that("model create_table creates missing schema and table", {
         id = Column("SERIAL", primary_key = TRUE),
         name = Column("TEXT", nullable = FALSE)
     )
+    # Instead of just creating the table, test create_table() also creates schema if missing
+    # Explicitly drop schema if exists to test creation
+    conn <- engine$get_connection()
+    DBI::dbExecute(conn, "DROP SCHEMA IF EXISTS test CASCADE")
     User$create_table(overwrite = TRUE)
 
-    conn <- engine$get_connection()
     res_schema <- DBI::dbGetQuery(conn, "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'test'")
     expect_equal(nrow(res_schema), 1)
     res_table <- DBI::dbGetQuery(conn, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'test'")
@@ -69,8 +122,6 @@ test_that("tables remain accessible across engine connections", {
     expect_no_error(User$read(.mode = "all"))
 })
 
-
-
 test_that('create_table creates schema when model schema changes', {
     conn_info <- tryCatch({
         setup_postgres_test_db()
@@ -81,7 +132,6 @@ test_that('create_table creates schema when model schema changes', {
     if (is.null(conn_info)) {
         skip("PostgreSQL container setup failed")
     }
-
     engine <- do.call(Engine$new, conn_info)
 
     model <- engine$model("users", id = Column("SERIAL", primary_key = TRUE))
@@ -97,7 +147,6 @@ test_that('create_table creates schema when model schema changes', {
     cleanup_postgres_test_db()
 })
 
-
 test_that("engine creates models with default schema", {
     conn_info <- tryCatch({
         setup_postgres_test_db()
@@ -107,7 +156,6 @@ test_that("engine creates models with default schema", {
     withr::defer(cleanup_postgres_test_db())
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
-
     UserPublic <- engine$model(
         "users",
         id = Column("SERIAL", primary_key = TRUE),
@@ -154,7 +202,6 @@ test_that("models can create and read records in schema", {
     )
     UserPublic$create_table(overwrite = TRUE)
     withr::defer(UserPublic$drop_table(ask = FALSE))
-
     rec_public <- UserPublic$record(name = "Alice")
     rec_public$create()
     res_public <- UserPublic$read(.mode = "all")
