@@ -4,12 +4,15 @@
 \name{ensure_schema_exists.postgres}
 \alias{ensure_schema_exists.postgres}
 \alias{ensure_schema_exists}
+\alias{ensure_schema_exists.default}
 \alias{ensure_schema_exists.sqlite}
 \title{Ensure that a schema exists for the current dialect}
 \usage{
 ensure_schema_exists.postgres(x, schema)
 
 ensure_schema_exists(x, schema)
+
+ensure_schema_exists.default(x, schema)
 
 ensure_schema_exists.sqlite(x, schema)
 }
