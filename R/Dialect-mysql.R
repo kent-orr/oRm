@@ -39,3 +39,38 @@ set_schema.mysql <- function(x, schema) {
     DBI::dbExecute(conn, sql)
     invisible(NULL)
 }
+
+#' @describeIn check_schema_exists Check if a schema exists for MySQL.
+check_schema_exists.mysql <- function(x, schema) {
+    if (is.null(schema)) return(TRUE)
+
+    conn <- NULL
+    if (inherits(x, "Engine")) {
+        conn <- x$conn
+        if (is.null(conn) || !DBI::dbIsValid(conn)) {
+            args <- x$conn_args
+            args$dbname <- NULL
+            conn <- do.call(DBI::dbConnect, args)
+            on.exit(DBI::dbDisconnect(conn), add = TRUE)
+        }
+    } else if (inherits(x, "TableModel")) {
+        conn <- x$engine$conn
+        if (is.null(conn) || !DBI::dbIsValid(conn)) {
+            args <- x$engine$conn_args
+            args$dbname <- NULL
+            conn <- do.call(DBI::dbConnect, args)
+            on.exit(DBI::dbDisconnect(conn), add = TRUE)
+        }
+    }
+
+    sql <- paste0(
+        "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ",
+        DBI::dbQuoteLiteral(conn, schema)
+    )
+    exists <- FALSE
+    try({
+        res <- DBI::dbGetQuery(conn, sql)
+        exists <- NROW(res) > 0
+    }, silent = TRUE)
+    exists
+}
