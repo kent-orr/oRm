@@ -33,10 +33,16 @@ test_that("SQLite dialect handles auto-increment and defaults", {
   expect_equal(all_records[[2]]$data$id, 2L)
   expect_equal(all_records[[2]]$data$name, "anon")
 
-  flush_res <- oRm:::flush(engine, Example$tablename, list(name = "beta"), engine$get_connection())
-  expect_equal(flush_res$name, "beta")
-  expect_equal(flush_res$id, 3L)
+    flush_res <- oRm:::flush(engine, Example$tablename, list(name = "beta"), engine$get_connection())
+    expect_equal(flush_res$name, "beta")
+    expect_equal(flush_res$id, 3L)
 
-  Example$drop_table(ask = FALSE)
-  engine$close()
+    expect_warning(
+        schema_res <- engine$check_schema_exists("ignored"),
+        "SQLite does not support schemas"
+    )
+    expect_true(schema_res)
+
+    Example$drop_table(ask = FALSE)
+    engine$close()
 })

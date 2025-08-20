@@ -30,6 +30,22 @@ test_that("engine$create_schema works and is idempotent", {
     expect_equal(nrow(stats), 1)
 })
 
+test_that("check_schema_exists validates schemas", {
+    conn_info <- tryCatch({
+        setup_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+    })
+    withr::defer(cleanup_postgres_test_db())
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+    withr::defer(DBI::dbExecute(engine$get_connection(), "DROP SCHEMA IF EXISTS missing_schema CASCADE"))
+
+    expect_false(engine$check_schema_exists("missing_schema"))
+    expect_silent(engine$create_schema("missing_schema"))
+    expect_true(engine$check_schema_exists("missing_schema"))
+})
+
 test_that("create_table fails if schema does not exist, succeeds after explicit engine$create_schema", {
     conn_info <- tryCatch({
         setup_postgres_test_db()
