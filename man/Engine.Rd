@@ -192,7 +192,13 @@ The Engine object
 \subsection{Method \code{model()}}{
 Create a new TableModel object for the specified table
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list(), .schema = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$model(
+  tablename,
+  ...,
+  .data = list(),
+  .schema = NULL,
+  .default_mode = "all"
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -205,6 +211,8 @@ Create a new TableModel object for the specified table
 \item{\code{.data}}{A named list of the arguments for the TableModel constructor}
 
 \item{\code{.schema}}{Character. The default schema to apply to the TableModel object}
+
+\item{\code{.default_mode}}{Character. Default read mode for the TableModel.}
 }
 \if{html}{\out{</div>}}
 }

@@ -100,8 +100,11 @@ TableModel <- R6::R6Class(
 
     #' @description
     #' Retrieve the active database connection from the engine.
+    #' Delegates to the associated engine and respects schema and
+    #' pooling settings.
     #' @param ... Additional arguments passed to the engine's
     #'   `get_connection` method.
+    #' @seealso Engine::get_connection
     get_connection = function(...) {
       self$engine$get_connection(...)
     },
