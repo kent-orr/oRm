@@ -56,7 +56,7 @@ User$drop_table(ask = FALSE)
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
 
-[Record$relationship()]
+
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -132,6 +132,8 @@ Constructor for a new TableModel.
 \if{latex}{\out{\hypertarget{method-TableModel-get_connection}{}}}
 \subsection{Method \code{get_connection()}}{
 Retrieve the active database connection from the engine.
+Delegates to the associated engine and respects schema and
+pooling settings.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$get_connection(...)}\if{html}{\out{</div>}}
 }
