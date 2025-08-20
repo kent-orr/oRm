@@ -148,14 +148,22 @@ Engine <- R6::R6Class(
         #' @description
         #' Create a new TableModel object for the specified table
         #' @param tablename Name of the table
-        #' @param ... Additional arguments passed to the TableModel constructor
-        #' @param .data A named list of the arguments for the TableModel constructor
+        #' @param ... Additional arguments passed to the TableModel constructor.
+        #'   Include `Column` objects here to define the table structure.
+        #' @param .data A named list of the arguments for the TableModel constructor.
+        #'   `Column` objects in this list also define table structure.
         #' @param .schema Character. The default schema to apply to the TableModel object
         #' @param .default_mode Character. Default read mode for the TableModel.
         #' @return A new TableModel object
+        #' @seealso [TableModel::new()]
+        #' @examples
+        #' engine$model(
+        #'     "users",
+        #'     Column$new("id", "integer"),
+        #'     Column$new("name", "text")
+        #' )
         model = function(tablename, ..., .data = list(), .schema = NULL, .default_mode = "all") {
             if (is.null(.schema)) .schema <- self$schema
-            if (!is.null(.schema)) ensure_schema_exists(self, .schema)
             tablename <- qualify(self, tablename, schema = .schema)
             TableModel$new(tablename = tablename, engine = self, ..., .data = .data, .schema = .schema, .default_mode = .default_mode)
         },
