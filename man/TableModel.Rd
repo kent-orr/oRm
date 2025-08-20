@@ -25,6 +25,9 @@ Key features:
   \item Record creation and retrieval
 }
 }
+\note{
+Errors if the table's schema does not exist.
+}
 \section{Methods}{
 
 \describe{
@@ -194,6 +197,9 @@ Create the associated table in the database.
 \item{\code{verbose}}{Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The TableModel object invisibly.
 }
 }
 \if{html}{\out{<hr>}}

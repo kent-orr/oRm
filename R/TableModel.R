@@ -127,20 +127,13 @@ TableModel <- R6::R6Class(
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
-    #' @return The TableModel object invisibly, or NULL if creation is aborted.
-    #' @note Warns and aborts if the table's schema does not exist.
+    #' @return The TableModel object invisibly.
+    #' @note Errors if the table's schema does not exist.
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
         conn <- self$get_connection()
 
         if (!is.null(self$schema)) {
-            schema_exists <- tryCatch({
-                ensure_schema_exists(self$engine, self$schema)
-                TRUE
-            }, error = function(e) {
-                warning(conditionMessage(e))
-                FALSE
-            })
-            if (!schema_exists) return(invisible(NULL))
+            ensure_schema_exists(self$engine, self$schema)
         }
 
         if (overwrite) {
