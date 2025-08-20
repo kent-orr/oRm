@@ -78,16 +78,17 @@ set_schema.postgres <- function(x, schema) {
 }
 
 #' @describeIn create_schema Create the schema for PostgreSQL.
+#'   Suppresses notices when the schema already exists.
 create_schema.postgres <- function(x, schema) {
-  if (is.null(schema)) stop("Must supply a schema name.", call. = FALSE)
-  conn <- NULL
-  if (inherits(x, "Engine")) {
-    conn <- x$get_connection()
-  } else if (inherits(x, "TableModel")) {
-    conn <- x$engine$get_connection()
-  }
-  sql <- paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(conn, schema))
-  DBI::dbExecute(conn, sql)
-  invisible(TRUE)
+    if (is.null(schema)) stop("Must supply a schema name.", call. = FALSE)
+    conn <- NULL
+    if (inherits(x, "Engine")) {
+        conn <- x$get_connection()
+    } else if (inherits(x, "TableModel")) {
+        conn <- x$engine$get_connection()
+    }
+    sql <- paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(conn, schema))
+    suppressMessages(DBI::dbExecute(conn, sql))
+    invisible(TRUE)
 }
 
