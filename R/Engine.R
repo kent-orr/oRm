@@ -144,7 +144,15 @@ Engine <- R6::R6Class(
         create_schema = function(schema) {
             create_schema(self, schema)
         },
-        
+
+        #' @description
+        #' Check if a schema exists in the database
+        #' @param schema Character. The schema name to check
+        #' @return TRUE if schema exists, otherwise FALSE
+        check_schema_exists = function(schema) {
+            check_schema_exists(self, schema)
+        },
+
         #' @description
         #' Create a new TableModel object for the specified table
         #' @param tablename Name of the table
