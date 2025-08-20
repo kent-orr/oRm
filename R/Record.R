@@ -366,11 +366,13 @@ Record <- R6::R6Class(
     
     
     #' @description
-    #' Print a summary of the record.
+    #' Print a concise summary of the record, including the table name and
+    #' field values.
     #'
-    #' @param ... Additional arguments passed to 
+    #' @param ... Additional arguments passed to
     #'   other print methods.
     #' @return The Record object, invisibly.
+    #' @seealso [Engine$print()], [TableModel$print()].
     print = function(...) {
       cat("<Record>: '", self$model$tablename, "'\n", sep = '')
       cat(paste(names(self$data), self$data, sep = ": ", collapse = "\n"), "\n")

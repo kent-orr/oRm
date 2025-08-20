@@ -194,9 +194,11 @@ Engine <- R6::R6Class(
         },
 
         #' @description
-        #' Print a concise summary of the engine.
+        #' Print a concise summary of the engine, including the SQL dialect,
+        #' default schema, and connection status.
         #' @param ... Unused, present for compatibility.
         #' @return The Engine object, invisibly.
+        #' @seealso [TableModel$print()], [Record$print()].
         print = function(...) {
             connected <- FALSE
             if (!is.null(self$conn)) {
