@@ -23,6 +23,9 @@ on individual records.
 }
 }
 
+\seealso{
+\code{\link[=Engine]{Engine$set_schema}}, \code{\link[=TableModel]{TableModel$set_schema}}
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -78,6 +81,8 @@ A new Record instance.
 \if{latex}{\out{\hypertarget{method-Record-set_schema}{}}}
 \subsection{Method \code{set_schema()}}{
 Update the schema for the underlying model.
+This re-qualifies the model's table name but leaves the engine's default
+schema and active connection unchanged.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Record$set_schema(schema)}\if{html}{\out{</div>}}
 }
@@ -88,6 +93,9 @@ Update the schema for the underlying model.
 \item{\code{schema}}{Character. New schema name to apply.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The Record object.
 }
 }
 \if{html}{\out{<hr>}}

@@ -127,9 +127,13 @@ Engine <- R6::R6Class(
         },
 
         #' @description
-        #' Set the default schema for the engine and active connection
-        #' @param schema Character. Schema name to apply
-        #' @return The Engine object
+        #' Set the default schema for the engine.
+        #' Applies the schema to the active connection so future queries use the
+        #' new default. Existing TableModel or Record objects are not
+        #' re-qualified.
+        #' @param schema Character. Schema name to apply.
+        #' @return The Engine object.
+        #' @seealso \code{\link[=TableModel]{TableModel$set_schema}}, \code{\link[=Record]{Record$set_schema}}
         set_schema = function(schema) {
             on.exit(if (private$exit_check()) self$close())
             self$schema <- schema

@@ -73,7 +73,11 @@ Record <- R6::R6Class(
 
     #' @description
     #' Update the schema for the underlying model.
+    #' This re-qualifies the model's table name but leaves the engine's default
+    #' schema and active connection unchanged.
     #' @param schema Character. New schema name to apply.
+    #' @return The Record object.
+    #' @seealso \code{\link[=Engine]{Engine$set_schema}}, \code{\link[=TableModel]{TableModel$set_schema}}
     set_schema = function(schema) {
       self$model$set_schema(schema)
       self

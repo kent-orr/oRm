@@ -108,9 +108,12 @@ TableModel <- R6::R6Class(
 
 
     #' @description
-    #' Update the schema for this model and re-qualify the table name.
+    #' Update the schema for this model.
+    #' The table name is re-qualified with the new schema, but the engine's
+    #' active connection and default schema are unchanged.
     #' @param schema Character. New schema name to apply.
     #' @return The TableModel object.
+    #' @seealso \code{\link[=Engine]{Engine$set_schema}}, \code{\link[=Record]{Record$set_schema}}
     set_schema = function(schema) {
       self$schema <- schema
       base_name <- strsplit(self$tablename, "\\.")[[1]]

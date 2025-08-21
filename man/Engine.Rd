@@ -17,6 +17,9 @@ Key features:
   \item Supports persistent connections for improved performance
 }
 }
+\seealso{
+\code{\link[=TableModel]{TableModel$set_schema}}, \code{\link[=Record]{Record$set_schema}}
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -170,7 +173,10 @@ The number of rows affected
 \if{html}{\out{<a id="method-Engine-set_schema"></a>}}
 \if{latex}{\out{\hypertarget{method-Engine-set_schema}{}}}
 \subsection{Method \code{set_schema()}}{
-Set the default schema for the engine and active connection
+Set the default schema for the engine.
+Applies the schema to the active connection so future queries use the
+new default. Existing TableModel or Record objects are not
+re-qualified.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$set_schema(schema)}\if{html}{\out{</div>}}
 }
@@ -178,12 +184,12 @@ Set the default schema for the engine and active connection
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{schema}}{Character. Schema name to apply}
+\item{\code{schema}}{Character. Schema name to apply.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-The Engine object
+The Engine object.
 }
 }
 \if{html}{\out{<hr>}}
@@ -192,7 +198,13 @@ The Engine object
 \subsection{Method \code{model()}}{
 Create a new TableModel object for the specified table
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$model(tablename, ..., .data = list(), .schema = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$model(
+  tablename,
+  ...,
+  .data = list(),
+  .schema = NULL,
+  .default_mode = "all"
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -205,6 +217,8 @@ Create a new TableModel object for the specified table
 \item{\code{.data}}{A named list of the arguments for the TableModel constructor}
 
 \item{\code{.schema}}{Character. The default schema to apply to the TableModel object}
+
+\item{\code{.default_mode}}{Character. Default read mode for the TableModel.}
 }
 \if{html}{\out{</div>}}
 }
