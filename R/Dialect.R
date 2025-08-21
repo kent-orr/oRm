@@ -1,4 +1,5 @@
 #' @include Dialect-mysql.R Dialect-postgres.R Dialect-sqlite.R
+#' @importFrom DBI dbExecute
 NULL
 
 
@@ -131,6 +132,27 @@ create_schema <- function(x, .schema) {
 #' @keywords internal
 create_schema.default <- function(x, .schema) {
     stop("create_schema() is not implemented for this database dialect.", call. = FALSE)
+}
+
+
+# Execute SQL -------------------------------------------------------------
+
+#' Execute a SQL statement
+#'
+#' This internal function executes SQL commands using dialect-specific logic.
+#'
+#' @param x An oRm object (Engine, TableModel, or Record) used for dialect dispatch
+#' @param con DBI connection object
+#' @param sql Character string of the SQL statement to execute
+#' @keywords internal
+execute_sql <- function(x, con, sql) {
+    dispatch_method(x, "execute_sql", con, sql)
+}
+
+#' @rdname execute_sql
+#' @keywords internal
+execute_sql.default <- function(x, con, sql) {
+    DBI::dbExecute(con, sql)
 }
 
 

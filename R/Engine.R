@@ -26,7 +26,7 @@ NULL
 #' @field schema Default schema applied to tables
 #'
 #' @importFrom pool dbPool poolClose
-#' @importFrom DBI dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery dbExecute
+#' @importFrom DBI dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery
 #' @importFrom utils modifyList
 #' @importFrom rlang list2
 #' 
@@ -77,9 +77,8 @@ Engine <- R6::R6Class(
                 }
             }
 
-            if (!is.null(self$schema) && identical(self$dialect, "postgres")) {
-                sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(self$conn, self$schema))
-                DBI::dbExecute(self$conn, sql)
+            if (!is.null(self$schema)) {
+                set_schema(self, self$schema)
             }
 
             self$conn
@@ -123,7 +122,8 @@ Engine <- R6::R6Class(
         #' @return The number of rows affected
         execute = function(sql) {
             on.exit(if (private$exit_check()) self$close())
-            DBI::dbExecute(self$get_connection(), sql)
+            con <- self$get_connection()
+            execute_sql(self, con, sql)
         },
 
         #' @description
