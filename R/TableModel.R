@@ -42,7 +42,7 @@ NULL
 #' @importFrom R6 R6Class
 #' @importFrom dplyr tbl filter slice_head slice_tail collect
 #' @importFrom rlang enquos
-#' @importFrom DBI dbQuoteIdentifier dbQuoteLiteral dbExecute
+#' @importFrom DBI dbQuoteIdentifier dbQuoteLiteral
 #'
 #' @field tablename Fully qualified name of the table in the database.
 #' @field schema Schema that namespaces the table; defaults to the engine's schema.
@@ -148,11 +148,7 @@ TableModel <- R6::R6Class(
             if (verbose) {
                 cat(drop_sql, "\n")
             } else {
-                if (identical(self$engine$dialect, "postgres")) {
-                    suppressMessages(DBI::dbExecute(conn, drop_sql))
-                } else {
-                    DBI::dbExecute(conn, drop_sql)
-                }
+                self$engine$execute(drop_sql)
             }
         }
         fields_sql = c()
@@ -181,11 +177,7 @@ TableModel <- R6::R6Class(
         return(sql)
       }
 
-      if (identical(self$engine$dialect, "postgres")) {
-        suppressMessages(DBI::dbExecute(conn, sql))
-      } else {
-        DBI::dbExecute(conn, sql)
-      }
+      self$engine$execute(sql)
       return(self)
     },
 
@@ -208,7 +200,6 @@ TableModel <- R6::R6Class(
     #' User$drop_table(ask = FALSE)
     #' }
     drop_table = function(ask = interactive()) {
-      con <- self$get_connection()
       drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
 
       resp <- 'y'
@@ -217,11 +208,7 @@ TableModel <- R6::R6Class(
       }
 
       if (grepl('y', resp, ignore.case = TRUE)) {
-        if (identical(self$engine$dialect, "postgres")) {
-          suppressMessages(DBI::dbExecute(con, drop_sql))
-        } else {
-          DBI::dbExecute(con, drop_sql)
-        }
+        self$engine$execute(drop_sql)
       } else {
         message("Table not dropped.")
         return(invisible(NULL))

@@ -23,7 +23,7 @@
 #'   \item{\code{delete()}}{Deletes this record from the database.}
 #' }
 #'
-#' @importFrom DBI dbQuoteLiteral dbQuoteIdentifier dbExecute dbAppendTable
+#' @importFrom DBI dbQuoteLiteral dbQuoteIdentifier dbAppendTable
 #' 
 #' @export
 Record <- R6::R6Class(
@@ -237,11 +237,7 @@ Record <- R6::R6Class(
         where_clause
       )
 
-      if (identical(self$model$engine$dialect, "postgres")) {
-        suppressMessages(DBI::dbExecute(con, sql))
-      } else {
-        DBI::dbExecute(con, sql)
-      }
+      self$model$engine$execute(sql)
       invisible(self)
     },
     
@@ -276,11 +272,7 @@ Record <- R6::R6Class(
         where_clause
       )
 
-      if (identical(self$model$engine$dialect, "postgres")) {
-        suppressMessages(DBI::dbExecute(con, sql))
-      } else {
-        DBI::dbExecute(con, sql)
-      }
+      self$model$engine$execute(sql)
       NULL
     },
     

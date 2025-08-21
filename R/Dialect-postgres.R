@@ -61,9 +61,19 @@ qualify.postgres <- function(x, tablename, .schema) {
   }
 }
 
-#' @describeIn set_schema PostgreSQL applies schema via search_path; updates occur during connection retrieval.
+#' @describeIn set_schema PostgreSQL applies schema via search_path.
 set_schema.postgres <- function(x, .schema) {
-    # Schema updates are handled during connection retrieval
+    if (is.null(.schema)) return(invisible(NULL))
+    conn <- NULL
+    if (inherits(x, "Engine")) {
+        conn <- x$conn
+    } else if (inherits(x, "TableModel")) {
+        conn <- x$engine$conn
+    }
+    if (!is.null(conn) && DBI::dbIsValid(conn)) {
+        sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(conn, .schema))
+        execute_sql(x, conn, sql)
+    }
     invisible(NULL)
 }
 
@@ -80,5 +90,10 @@ create_schema.postgres <- function(x, .schema) {
     sql <- paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(conn, .schema))
     suppressMessages(DBI::dbExecute(conn, sql))
     invisible(TRUE)
+}
+
+#' @describeIn execute_sql Suppress PostgreSQL messages when executing SQL commands.
+execute_sql.postgres <- function(x, con, sql) {
+    suppressMessages(DBI::dbExecute(con, sql))
 }
 
