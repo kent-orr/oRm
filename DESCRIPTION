@@ -4,40 +4,24 @@ Title: Lightweight Object-Relational Mapper for R
 Version: 0.3.0.9001
 Author: Kent Orr
 Maintainer: Kent Orr <orr.kent@pawpawanalytics.com>
-Description: oRm is a lightweight Object-Relational Mapper (ORM) for R. 
-    It simplifies database interactions by allowing users to define table models, 
-    insert and query records, and establish relationships between models without 
-    writing raw SQL. oRm uses a combination of DBI, dbplyr, and R6 to provide 
-    compatibility with most database dialects.
+Description: A lightweight Object-Relational Mapper (ORM) that simplifies 
+    database interactions by allowing users to define table models, insert and 
+    query records, and establish relationships between models without writing 
+    raw SQL. Uses a combination of DBI, dbplyr, and R6 to provide compatibility 
+    with most database dialects including PostgreSQL, MySQL, and SQLite.
 License: MIT + file LICENSE
 Depends: R (>= 4.1.0)
 Encoding: UTF-8
-Imports:
-    DBI,
-    dbplyr,
-    dplyr,
-    pool,
-    R6,
-    rlang,
-Suggests:
-    knitr,
-    rmarkdown,
-    testthat (>= 3.0.0),
-    stevedore (>= 0.9.6),
-    charlatan,
-    htmltools
+Imports: DBI, dbplyr, dplyr, pool, R6, rlang,
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0), stevedore (>= 0.9.6),
+        RSQLite, RPostgres, withr, htmltools
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
-Collate: 
-    'Column.R'
-    'Dialect-mysql.R'
-    'Dialect-postgres.R'
-    'Dialect.R'
-    'Dialect-sqlite.R'
-    'TableModel.R'
-    'Engine.R'
-    'Record.R'
-    'Relationship.R'
+Collate: 'Column.R' 'Dialect-mysql.R' 'Dialect-postgres.R' 'Dialect.R'
+        'Dialect-sqlite.R' 'TableModel.R' 'Engine.R' 'Record.R'
+        'Relationship.R'
 URL: https://kent-orr.github.io/oRm/, https://github.com/kent-orr/oRm
 VignetteBuilder: knitr
 BugReports: https://github.com/kent-orr/oRm/issues
+NeedsCompilation: no
+Packaged: 2025-08-22 15:20:09 UTC; kent
