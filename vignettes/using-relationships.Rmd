@@ -48,7 +48,7 @@ set.seed(100)
 Students <- engine$model(
     tablename = "students", 
     id = Column('INTEGER', primary_key = TRUE),
-    name = Column('TEXT', default = charlatan::ch_name),
+    name = Column('TEXT'),
     class_id = ForeignKey('INTEGER', references = 'classes.id'),
     grade = Column('NUMBER', default = \(x) round(rnorm(1, 85, 5)))
 )
@@ -64,9 +64,11 @@ for (i in 1:10) {
 }
 Classes$read(.limit = 3)
 
+student_names <- c("Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace", "Henry", "Ivy", "Jack")
 for (i in 1:100) {
     Students$record(
         id = i, 
+        name = paste(sample(student_names, 1), i),
         class_id = sample(1:10, 1)
     )$create()
 }
@@ -143,7 +145,7 @@ set.seed(100)
 Teachers <- engine$model(
     tablename = "teachers", 
     id = Column('INTEGER', primary_key = TRUE),
-    name = Column('TEXT', default = charlatan::ch_name)
+    name = Column('TEXT')
 )
 Teachers$create_table(overwrite=T)
 

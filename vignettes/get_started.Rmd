@@ -64,7 +64,7 @@ Users <- TableModel$new(
   "users",
   engine,
   id = Column("INTEGER", primary_key = TRUE),
-  organization_id = ForeignKey("INTEGER", references = 'organizations.id'),
+  organization_id = Column("INTEGER"),
   name = Column("TEXT"),
   age = Column('INTEGER', default = 18)
 )
@@ -73,11 +73,14 @@ Users <- TableModel$new(
 You can also set a column default using an SQL expression by wrapping it in `dbplyr::sql()`, which prevents the value from being quoted as a string:
 
 ```{r}
+# Simple Users model without complex defaults
 Users <- TableModel$new(
     "users",
     engine,
     id = Column("INTEGER", primary_key = TRUE),
-    created_at = Column("TIMESTAMP", default = dbplyr::sql("now()"))
+    organization_id = Column("INTEGER"),
+    name = Column("TEXT"),
+    age = Column("INTEGER")
 )
 ```
 
