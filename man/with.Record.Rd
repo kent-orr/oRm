@@ -4,12 +4,14 @@
 \alias{with.Record}
 \title{Evaluate an expression within a Record's data.}
 \usage{
-\method{with}{Record}(record, expr)
+\method{with}{Record}(data, expr, ...)
 }
 \arguments{
-\item{record}{A Record object.}
+\item{data}{A Record object.}
 
 \item{expr}{Expression to evaluate within the record.}
+
+\item{...}{Additional arguments (ignored)}
 }
 \value{
 The result of the evaluated expression.

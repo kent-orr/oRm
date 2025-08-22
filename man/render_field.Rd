@@ -12,8 +12,6 @@ render_field(field, conn, ...)
 \item{conn}{a DBI connection object}
 
 \item{...}{Ignored}
-
-\item{field_name}{the name of the column}
 }
 \value{
 A character SQL fragment

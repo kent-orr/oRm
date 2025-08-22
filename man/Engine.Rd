@@ -17,7 +17,24 @@ Key features:
   \item Supports persistent connections for improved performance
 }
 }
+\examples{
 
+## ------------------------------------------------
+## Method `Engine$model`
+## ------------------------------------------------
+
+\dontrun{
+engine$model(
+    "users",
+    Column$new("id", "integer"),
+    Column$new("name", "text")
+)
+}
+}
+\seealso{
+[TableModel::new()]
+
+[TableModel$print()], [Record$print()].
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -246,11 +263,13 @@ A new TableModel object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{engine$model(
+\preformatted{\dontrun{
+engine$model(
     "users",
     Column$new("id", "integer"),
     Column$new("name", "text")
 )
+}
 }
 \if{html}{\out{</div>}}
 

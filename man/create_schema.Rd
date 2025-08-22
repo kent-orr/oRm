@@ -23,6 +23,7 @@ By default, this is a no-op. Implement dialect-specific ones as needed.
 \section{Functions}{
 \itemize{
 \item \code{create_schema.postgres()}: Create the schema for PostgreSQL.
+Suppresses notices when the schema already exists.
 
 }}
 \keyword{internal}

@@ -4,14 +4,16 @@
 \alias{with.Engine}
 \title{Transaction Function}
 \usage{
-\method{with}{Engine}(engine, expr, auto_commit = TRUE)
+\method{with}{Engine}(data, expr, auto_commit = TRUE, ...)
 }
 \arguments{
-\item{engine}{An Engine object that manages the database connection}
+\item{data}{An Engine object that manages the database connection}
 
 \item{expr}{An expression to be evaluated within the transaction}
 
 \item{auto_commit}{Logical. Whether to automatically commit if no errors occur (default: TRUE)}
+
+\item{...}{Additional arguments (ignored)}
 }
 \value{
 The result of evaluating the expression

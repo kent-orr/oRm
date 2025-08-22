@@ -26,7 +26,7 @@ Key features:
 }
 }
 \note{
-Errors if the table's schema does not exist.
+Warns and aborts if the table's schema does not exist.
 }
 \section{Methods}{
 
@@ -199,7 +199,7 @@ Create the associated table in the database.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-The TableModel object invisibly.
+The TableModel object invisibly, or NULL if creation is aborted.
 }
 }
 \if{html}{\out{<hr>}}
