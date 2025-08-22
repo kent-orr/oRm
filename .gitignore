@@ -6,3 +6,12 @@ inst/doc
 /doc/
 /Meta/
 .aider*
+
+# Claude AI and development files
+CLAUDE.md
+.vscode/
+build/
+..Rcheck/
+NEWS.md
+LICENSE
+TESTING_CHECKLIST.md
