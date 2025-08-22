@@ -1,7 +1,9 @@
 #' @include Dialect.R
 NULL
 
-#' @describeIn flush SQLite implementation
+#' @rdname flush
+#' @usage \method{flush}{sqlite}(x, table, data, con, commit = TRUE, ...)
+#' @description SQLite implementation
 flush.sqlite <- function(x, table, data, con, commit = TRUE, ...) {
 
     # Filter out NULL values like in postgres implementation

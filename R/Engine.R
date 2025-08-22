@@ -165,11 +165,13 @@ Engine <- R6::R6Class(
         #' @return A new TableModel object
         #' @seealso [TableModel::new()]
         #' @examples
+        #' \dontrun{
         #' engine$model(
         #'     "users",
         #'     Column$new("id", "integer"),
         #'     Column$new("name", "text")
         #' )
+        #' }
         model = function(tablename, ..., .data = list(), .schema = NULL, .default_mode = "all") {
             if (is.null(.schema)) .schema <- self$schema
             tablename <- qualify(self, tablename, .schema = .schema)
@@ -288,9 +290,10 @@ Engine <- R6::R6Class(
 #' your changes. If neither \code{commit()} nor \code{rollback()} is called, the transaction will be
 #' rolled back by default and a warning will be issued.
 #'
-#' @param engine An Engine object that manages the database connection
+#' @param data An Engine object that manages the database connection
 #' @param expr An expression to be evaluated within the transaction
 #' @param auto_commit Logical. Whether to automatically commit if no errors occur (default: TRUE)
+#' @param ... Additional arguments (ignored)
 #'
 #' @return The result of evaluating the expression
 #'
@@ -342,7 +345,8 @@ Engine <- R6::R6Class(
 #' }
 #'
 #' @export
-with.Engine <- function(engine, expr, auto_commit = TRUE) {
+with.Engine <- function(data, expr, auto_commit = TRUE, ...) {
+    engine <- data
     # Open a connection
     engine$set_transaction_state(TRUE)
     conn <- engine$get_connection()

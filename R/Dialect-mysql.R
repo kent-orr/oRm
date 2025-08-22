@@ -1,4 +1,6 @@
-#' @describeIn flush MySQL insert returning the last generated ID.
+#' @rdname flush
+#' @usage \method{flush}{mysql}(x, table, data, con, commit = TRUE, ...)
+#' @description MySQL insert returning the last generated ID.
 flush.mysql <- function(x, table, data, con, commit = TRUE, ...) {
     tbl_expr <- dbplyr::ident_q(table)
     fields <- names(data)

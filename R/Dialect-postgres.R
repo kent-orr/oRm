@@ -30,7 +30,9 @@ check_schema_exists.postgres <- function(x, .schema) {
   exists
 }
 
-#' @describeIn flush Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
+#' @rdname flush  
+#' @usage \method{flush}{postgres}(x, table, data, con, commit = TRUE, ...)
+#' @description Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
 flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   # Build the insert SQL
   data <- data[!vapply(data, is.null, logical(1))]
