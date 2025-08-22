@@ -163,7 +163,6 @@ execute_sql.default <- function(x, con, sql) {
 #' Render a column field to SQL
 #'
 #' @param field A Column object
-#' @param field_name the name of the column
 #' @param conn a DBI connection object
 #' @param ... Ignored
 #' @return A character SQL fragment
@@ -296,6 +295,7 @@ flush <- function(x, table, data, con, commit = TRUE, ...) {
 }
 
 #' @rdname flush
+#' @method flush default
 #' @keywords internal
 flush.default <- local({
     warned <- FALSE

@@ -9,15 +9,15 @@
 \alias{flush.sqlite}
 \title{Flush data to database table}
 \usage{
-flush.mysql(x, table, data, con, commit = TRUE, ...)
+\method{flush}{mysql}(x, table, data, con, commit = TRUE, ...)
 
-flush.postgres(x, table, data, con, commit = TRUE, ...)
+\method{flush}{postgres}(x, table, data, con, commit = TRUE, ...)
 
 flush(x, table, data, con, commit = TRUE, ...)
 
-flush.default(x, table, data, con, commit = TRUE, ...)
+\method{flush}{default}(x, table, data, con, commit = TRUE, ...)
 
-flush.sqlite(x, table, data, con, commit = TRUE, ...)
+\method{flush}{sqlite}(x, table, data, con, commit = TRUE, ...)
 }
 \arguments{
 \item{x}{An oRm object (Engine, TableModel, or Record) used for dialect dispatch}
@@ -36,17 +36,14 @@ flush.sqlite(x, table, data, con, commit = TRUE, ...)
 Invisible NULL or dialect-specific return value
 }
 \description{
+MySQL insert returning the last generated ID.
+
+Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
+
 This internal function inserts data into a database table using dialect-specific
 logic for different database systems. It handles the actual database write operation
 for Record objects.
+
+SQLite implementation
 }
-\section{Functions}{
-\itemize{
-\item \code{flush.mysql()}: MySQL insert returning the last generated ID.
-
-\item \code{flush.postgres()}: Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
-
-\item \code{flush.sqlite()}: SQLite implementation
-
-}}
 \keyword{internal}
