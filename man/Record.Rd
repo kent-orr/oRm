@@ -84,13 +84,13 @@ A new Record instance.
 \subsection{Method \code{set_schema()}}{
 Update the schema for the underlying model.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Record$set_schema(schema)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Record$set_schema(.schema)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{schema}}{Character. New schema name to apply.}
+\item{\code{.schema}}{Character. New schema name to apply.}
 }
 \if{html}{\out{</div>}}
 }

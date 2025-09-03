@@ -26,12 +26,12 @@ Key features:
 }
 }
 \note{
-Warns and aborts if the table's schema does not exist.
+Errors if the table's schema does not exist.
 }
 \section{Methods}{
 
 \describe{
-  \item{\code{initialize(tablename, engine, ..., .data = list(), schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
+  \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
@@ -128,8 +128,6 @@ Constructor for a new TableModel.
 \item{\code{.schema}}{Character. Schema to apply to the table name. Defaults to the engine's schema.}
 
 \item{\code{.default_mode}}{Character. Default mode used when `read()` is called with `.mode` = NULL. Must be one of "all", "one_or_none", "get", "data.frame", or "tbl".}
-
-\item{\code{schema}}{Optional schema name used to namespace the table.}
 }
 \if{html}{\out{</div>}}
 }
@@ -160,13 +158,13 @@ pooling settings.
 \subsection{Method \code{set_schema()}}{
 Update the schema for this model and re-qualify the table name.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$set_schema(schema)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$set_schema(.schema)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{schema}}{Character. New schema name to apply.}
+\item{\code{.schema}}{Character. New schema name to apply.}
 }
 \if{html}{\out{</div>}}
 }
@@ -199,7 +197,7 @@ Create the associated table in the database.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-The TableModel object invisibly, or NULL if creation is aborted.
+The TableModel object invisibly.
 }
 }
 \if{html}{\out{<hr>}}

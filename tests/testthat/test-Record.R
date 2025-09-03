@@ -1,7 +1,8 @@
 test_that("Record$create() inserts a row into the database", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
-    dbname = ":memory:"
+    dbname = ":memory:",
+    persist = TRUE
   )
 
   User <- engine$model(
@@ -32,7 +33,8 @@ test_that("Record$create() inserts a row into the database", {
 test_that("Record$update() modifies an existing row", {
     engine <- Engine$new(
         drv = RSQLite::SQLite(),
-        dbname = ":memory:"
+        dbname = ":memory:",
+        persist = TRUE
     )
 
     User <- engine$model(
@@ -61,7 +63,8 @@ test_that("Record$update() modifies an existing row", {
 test_that("Record$delete() removes a row from the database", {
     engine <- Engine$new(
         drv = RSQLite::SQLite(),
-        dbname = ":memory:"
+        dbname = ":memory:",
+        persist = TRUE
     )
 
     User <- engine$model(
@@ -90,7 +93,8 @@ test_that("Record$delete() removes a row from the database", {
 test_that("Record$create() can take and implement a default function", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
-    dbname = ":memory:"
+    dbname = ":memory:",
+    persist = TRUE
   )
 
   User <- engine$model(
@@ -112,7 +116,8 @@ test_that("Record$create() can take and implement a default function", {
 test_that("Record$update() modifies existing rows and requires primary key", {
   engine <- Engine$new(
     drv = RSQLite::SQLite(),
-    dbname = ":memory:"
+    dbname = ":memory:",
+    persist = TRUE
   )
 
   User <- engine$model(

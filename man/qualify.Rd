@@ -9,22 +9,22 @@
 \alias{qualify.sqlite}
 \title{Qualify table name with schema}
 \usage{
-qualify.mysql(x, tablename, schema)
+qualify.mysql(x, tablename, .schema)
 
-qualify.postgres(x, tablename, schema)
+qualify.postgres(x, tablename, .schema)
 
-qualify(x, tablename, schema)
+qualify(x, tablename, .schema)
 
-qualify.default(x, tablename, schema)
+qualify.default(x, tablename, .schema)
 
-qualify.sqlite(x, tablename, schema)
+qualify.sqlite(x, tablename, .schema)
 }
 \arguments{
 \item{x}{An oRm object (Engine, TableModel, or Record) used for dialect dispatch}
 
 \item{tablename}{Character string of the table name to qualify}
 
-\item{schema}{Character string of the schema name, or NULL}
+\item{.schema}{Character string of the schema name, or NULL}
 }
 \value{
 Character string of the qualified table name
