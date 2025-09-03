@@ -64,6 +64,7 @@ engine$model(
 \item \href{#method-Engine-execute}{\code{Engine$execute()}}
 \item \href{#method-Engine-set_schema}{\code{Engine$set_schema()}}
 \item \href{#method-Engine-create_schema}{\code{Engine$create_schema()}}
+\item \href{#method-Engine-check_schema_exists}{\code{Engine$check_schema_exists()}}
 \item \href{#method-Engine-model}{\code{Engine$model()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
@@ -192,13 +193,13 @@ The number of rows affected
 \subsection{Method \code{set_schema()}}{
 Set the default schema for the engine and active connection
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$set_schema(schema)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$set_schema(.schema)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{schema}}{Character. Schema name to apply}
+\item{\code{.schema}}{Character. Schema name to apply}
 }
 \if{html}{\out{</div>}}
 }
@@ -212,18 +213,38 @@ The Engine object
 \subsection{Method \code{create_schema()}}{
 Explicitly create a schema in the database
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$create_schema(schema)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Engine$create_schema(.schema)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{schema}}{Character. The schema name to create}
+\item{\code{.schema}}{Character. The schema name to create}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 TRUE (invisible) if schema created/existed
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-check_schema_exists"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-check_schema_exists}{}}}
+\subsection{Method \code{check_schema_exists()}}{
+Check if a schema exists in the database
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$check_schema_exists(.schema)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.schema}}{Character. The schema name to check}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+TRUE if schema exists, otherwise FALSE
 }
 }
 \if{html}{\out{<hr>}}

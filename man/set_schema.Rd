@@ -9,20 +9,20 @@
 \alias{set_schema.sqlite}
 \title{Set schema for database operations}
 \usage{
-set_schema.mysql(x, schema)
+set_schema.mysql(x, .schema)
 
-set_schema.postgres(x, schema)
+set_schema.postgres(x, .schema)
 
-set_schema(x, schema)
+set_schema(x, .schema)
 
-set_schema.default(x, schema)
+set_schema.default(x, .schema)
 
-set_schema.sqlite(x, schema)
+set_schema.sqlite(x, .schema)
 }
 \arguments{
 \item{x}{An oRm object (Engine, TableModel, or Record) used for dialect dispatch}
 
-\item{schema}{Character string of the schema name to set}
+\item{.schema}{Character string of the schema name to set}
 }
 \value{
 Invisible NULL (called for side effects)
@@ -35,7 +35,7 @@ using dialect-specific logic for different database systems.
 \itemize{
 \item \code{set_schema.mysql()}: Change the active schema using MySQL's USE statement.
 
-\item \code{set_schema.postgres()}: PostgreSQL applies schema via search_path; updates occur during connection retrieval.
+\item \code{set_schema.postgres()}: PostgreSQL applies schema via search_path.
 
 \item \code{set_schema.sqlite()}: SQLite does not support schemas
 
