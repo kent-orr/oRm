@@ -131,75 +131,8 @@ test_that("create_schema.postgres fails with NULL schema", {
     )
 })
 
-test_that("ensure_schema_exists.postgres validates schema existence", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    engine <- do.call(Engine$new, conn_info)
-    withr::defer(engine$close())
-    
-    # Test with NULL schema (should return invisible NULL)
-    expect_invisible(oRm:::ensure_schema_exists.postgres(engine, NULL))
-    
-    # Test with existing schema (public should exist)
-    expect_invisible(oRm:::ensure_schema_exists.postgres(engine, "public"))
-    
-    # Test with non-existing schema
-    expect_error(
-        oRm:::ensure_schema_exists.postgres(engine, "nonexistent_schema"),
-        "Schema 'nonexistent_schema' does not exist. Create it using engine\\$create_schema\\('nonexistent_schema'\\) before proceeding\\."
-    )
-    
-    # Create schema and test again
-    oRm:::create_schema.postgres(engine, "test_exists")
-    expect_invisible(oRm:::ensure_schema_exists.postgres(engine, "test_exists"))
-})
 
-test_that("ensure_schema_exists.postgres works with TableModel", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    engine <- do.call(Engine$new, conn_info)
-    withr::defer(engine$close())
-    
-    # Create a table model
-    TestModel <- engine$model(
-        "test_table",
-        id = Column("SERIAL", primary_key = TRUE),
-        name = Column("TEXT")
-    )
-    
-    # Test ensure_schema_exists with TableModel and existing schema
-    expect_invisible(oRm:::ensure_schema_exists.postgres(TestModel, "public"))
-    
-    # Test with non-existing schema
-    expect_error(
-        oRm:::ensure_schema_exists.postgres(TestModel, "nonexistent_from_model"),
-        "Schema 'nonexistent_from_model' does not exist"
-    )
-})
 
-test_that("ensure_schema_exists.postgres handles connection properly", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    engine <- do.call(Engine$new, conn_info)
-    
-    # Close the connection to test connection handling
-    engine$close()
-    
-    # ensure_schema_exists should handle creating its own connection
-    expect_invisible(oRm:::ensure_schema_exists.postgres(engine, "public"))
-})
 
 test_that("PostgreSQL dialect method dispatch works correctly", {
     conn_info <- tryCatch({
@@ -225,8 +158,7 @@ test_that("PostgreSQL dialect method dispatch works correctly", {
     # Test create_schema dispatch
     expect_silent(oRm:::create_schema(engine, "dispatch_test"))
     
-    # Test ensure_schema_exists dispatch
-    expect_invisible(oRm:::ensure_schema_exists(engine, "dispatch_test"))
+    # (removed ensure_schema_exists dispatch test as function was removed)
 })
 
 test_that("PostgreSQL dialect handles special characters in data", {

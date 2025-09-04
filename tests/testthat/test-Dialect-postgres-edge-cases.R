@@ -107,47 +107,6 @@ test_that("qualify.postgres handles edge cases in table names", {
     expect_equal(special_schema, "my-schema.users")
 })
 
-test_that("ensure_schema_exists.postgres handles connection failures", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    
-    # Create engine with bad connection info for testing error handling
-    bad_engine <- Engine$new(
-        drv = RPostgres::Postgres(),
-        dbname = "nonexistent",
-        host = "nonexistent_host",
-        user = "nonexistent",
-        password = "wrong"
-    )
-    
-    # This should handle the connection error gracefully
-    expect_error(
-        oRm:::ensure_schema_exists.postgres(bad_engine, "test_schema"),
-        "could not connect|Connection refused|timeout"
-    )
-})
-
-test_that("ensure_schema_exists.postgres handles malformed SQL gracefully", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    engine <- do.call(Engine$new, conn_info)
-    withr::defer(engine$close())
-    
-    # Test with schema name that could cause SQL issues
-    # The function should handle this through proper quoting
-    expect_error(
-        oRm:::ensure_schema_exists.postgres(engine, "'; DROP SCHEMA public; --"),
-        "does not exist"
-    )
-})
 
 test_that("create_schema.postgres handles invalid schema names", {
     conn_info <- tryCatch({
@@ -186,7 +145,7 @@ test_that("PostgreSQL dialect functions work with disconnected engine", {
     expect_null(set_result)
     
     # Functions requiring connection should handle reconnection
-    expect_invisible(oRm:::ensure_schema_exists.postgres(engine, "public"))
+    # (removed ensure_schema_exists test as function was removed)
 })
 
 test_that("flush.postgres handles concurrent access scenarios", {
