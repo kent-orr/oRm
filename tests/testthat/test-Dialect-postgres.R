@@ -1,12 +1,25 @@
 testthat::source_test_helpers()
 
+# Suite-level setup
+tryCatch({
+    setup_postgres_test_db()
+}, error = function(e) {
+    testthat::skip(paste("Could not set up PostgreSQL container for suite:", e$message))
+})
+
+# Suite-level cleanup
+withr::defer({
+    cleanup_postgres_test_db()
+}, testthat::teardown_env())
+
 test_that("postgres engine initializes and closes", {
     conn_info <- tryCatch({
-        setup_postgres_test_db()
+        use_postgres_test_db()
     }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
-    withr::defer(cleanup_postgres_test_db())
+    withr::defer(clear_postgres_test_tables())
+    
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
@@ -17,13 +30,12 @@ test_that("postgres engine initializes and closes", {
 
 test_that("postgres create operations work", {
     conn_info <- tryCatch({
-        setup_postgres_test_db()
+        use_postgres_test_db()
     }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
-    withr::defer(cleanup_postgres_test_db())
-    engine <- do.call(Engine$new, conn_info)
-    withr::defer(engine$close())
+    
+    engine <- Engine$new(conn_args = conn_info)
 
     TempUser <- engine$model(
         "temp_users",
@@ -33,7 +45,6 @@ test_that("postgres create operations work", {
     )
 
     TempUser$create_table(overwrite = TRUE)
-    withr::defer(TempUser$drop_table(ask = FALSE))
     expect_true("temp_users" %in% engine$list_tables())
 
     p1 <- TempUser$record(name = "John", age = 18)
@@ -50,11 +61,12 @@ test_that("postgres create operations work", {
 
 test_that("postgres read operations work", {
     conn_info <- tryCatch({
-        setup_postgres_test_db()
+        use_postgres_test_db()
     }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
-    withr::defer(cleanup_postgres_test_db())
+    withr::defer(clear_postgres_test_tables())
+    
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
@@ -76,11 +88,12 @@ test_that("postgres read operations work", {
 
 test_that("postgres update/refresh works", {
     conn_info <- tryCatch({
-        setup_postgres_test_db()
+        use_postgres_test_db()
     }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
-    withr::defer(cleanup_postgres_test_db())
+    withr::defer(clear_postgres_test_tables())
+    
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
@@ -105,11 +118,12 @@ test_that("postgres update/refresh works", {
 
 test_that("postgres delete operations work", {
     conn_info <- tryCatch({
-        setup_postgres_test_db()
+        use_postgres_test_db()
     }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
-    withr::defer(cleanup_postgres_test_db())
+    withr::defer(clear_postgres_test_tables())
+    
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
@@ -136,11 +150,12 @@ test_that("postgres delete operations work", {
 
 test_that("postgres schema switching works", {
     conn_info <- tryCatch({
-        setup_postgres_test_db()
+        use_postgres_test_db()
     }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
-    withr::defer(cleanup_postgres_test_db())
+    withr::defer(clear_postgres_test_tables())
+    
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
