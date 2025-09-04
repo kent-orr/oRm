@@ -11,7 +11,7 @@ test_that("engine schema can be set on initialization", {
     withr::defer(engine$close())
 
     expect_equal(engine$schema, "test")
-    expect_equal(engine$conn_args$dbname, "test")
+    expect_equal(engine$conn_args$dbname, "tests")
     expect_equal(engine$conn_args$host, "localhost")
     expect_equal(engine$conn_args$user, "tester")
 })

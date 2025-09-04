@@ -1,3 +1,4 @@
+
 #' @rdname flush
 #' @usage \method{flush}{mysql}(x, table, data, con, commit = TRUE, ...)
 #' @description MySQL insert returning the last generated ID.
@@ -36,7 +37,7 @@ qualify.mysql <- function(x, tablename, .schema) {
 
 #' @describeIn set_schema Change the active schema using MySQL's USE statement.
 set_schema.mysql <- function(x, .schema) {
-    conn <- if (inherits(x, "Engine")) x$get_connection() else x$engine$get_connection()
+    conn <- if (inherits(x, "Engine")) x$conn else x$engine$conn
     sql <- paste0("USE ", DBI::dbQuoteIdentifier(conn, .schema))
     DBI::dbExecute(conn, sql)
     invisible(NULL)
@@ -49,20 +50,12 @@ check_schema_exists.mysql <- function(x, .schema) {
     conn <- NULL
     if (inherits(x, "Engine")) {
         conn <- x$conn
-        if (is.null(conn) || !DBI::dbIsValid(conn)) {
-            args <- x$conn_args
-            args$dbname <- NULL
-            conn <- do.call(DBI::dbConnect, args)
-            on.exit(DBI::dbDisconnect(conn), add = TRUE)
-        }
     } else if (inherits(x, "TableModel")) {
         conn <- x$engine$conn
-        if (is.null(conn) || !DBI::dbIsValid(conn)) {
-            args <- x$engine$conn_args
-            args$dbname <- NULL
-            conn <- do.call(DBI::dbConnect, args)
-            on.exit(DBI::dbDisconnect(conn), add = TRUE)
-        }
+    }
+
+    if (is.null(conn) || !DBI::dbIsValid(conn)) {
+        return(FALSE)
     }
 
     sql <- paste0(

@@ -4,21 +4,13 @@ check_schema_exists.postgres <- function(x, .schema) {
 
   conn <- NULL
   if (inherits(x, "Engine")) {
-    conn <- x$conn
-    if (is.null(conn) || !DBI::dbIsValid(conn)) {
-      args <- x$conn_args
-      args$schema <- NULL
-      conn <- do.call(DBI::dbConnect, args)
-      on.exit(DBI::dbDisconnect(conn), add = TRUE)
-    }
+    conn <- x$get_connection()
   } else if (inherits(x, "TableModel")) {
-    conn <- x$engine$conn
-    if (is.null(conn) || !DBI::dbIsValid(conn)) {
-      args <- x$engine$conn_args
-      args$schema <- NULL
-      conn <- do.call(DBI::dbConnect, args)
-      on.exit(DBI::dbDisconnect(conn), add = TRUE)
-    }
+    conn <- x$engine$get_connection()
+  }
+
+  if (is.null(conn) || !DBI::dbIsValid(conn)) {
+    return(FALSE)
   }
 
   sql <- paste0("SELECT 1 FROM pg_namespace WHERE nspname = ", DBI::dbQuoteLiteral(conn, .schema))
@@ -83,10 +75,12 @@ set_schema.postgres <- function(x, .schema) {
     } else if (inherits(x, "TableModel")) {
         conn <- x$engine$conn
     }
-    if (!is.null(conn) && DBI::dbIsValid(conn)) {
-        sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(conn, .schema))
-        execute_sql(x, conn, sql)
-    }
+ 
+    stopifnot("invalid connection in set_schema.postgres" = !is.null(conn) && DBI::dbIsValid(conn)) 
+    
+    sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(conn, .schema))
+    execute_sql(x, conn, sql)
+    
     invisible(NULL)
 }
 
@@ -94,12 +88,18 @@ set_schema.postgres <- function(x, .schema) {
 #'   Suppresses notices when the schema already exists.
 create_schema.postgres <- function(x, .schema) {
     if (is.null(.schema)) stop("Must supply a schema name.", call. = FALSE)
+    
+    # Get a direct connection without triggering schema setting
     conn <- NULL
-    if (inherits(x, "Engine")) {
-        conn <- x$get_connection()
-    } else if (inherits(x, "TableModel")) {
-        conn <- x$engine$get_connection()
+    engine <- if (inherits(x, "Engine")) x else x$engine
+    
+    if (is.null(engine$conn) || !DBI::dbIsValid(engine$conn)) {
+        conn <- do.call(DBI::dbConnect, engine$conn_args)
+        on.exit(DBI::dbDisconnect(conn), add = TRUE)
+    } else {
+        conn <- engine$conn
     }
+    
     sql <- paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(conn, .schema))
     suppressMessages(DBI::dbExecute(conn, sql))
     invisible(TRUE)

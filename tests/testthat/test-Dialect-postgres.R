@@ -92,11 +92,10 @@ test_that("postgres update/refresh works", {
     }, error = function(e) {
         testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
-    withr::defer(clear_postgres_test_tables())
+    clear_postgres_test_tables()
     
     engine <- do.call(Engine$new, conn_info)
-    withr::defer(engine$close())
-
+    
     TempUser <- engine$model(
         "temp_users",
         id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
@@ -105,7 +104,6 @@ test_that("postgres update/refresh works", {
     )
 
     TempUser$create_table(overwrite = TRUE)
-    withr::defer(TempUser$drop_table(ask = FALSE))
 
     p1 <- TempUser$record(name = "John", age = 18)
     p1$create()

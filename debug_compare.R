@@ -37,3 +37,7 @@ tryCatch({
 }, error = function(e) {
     cat("Table creation failed with Method 1:", e$message, "\n")
 })
+
+  DBI::dbGetQuery(engine2$get_connection(),
+    "SELECT table_name FROM information_schema.tables 
+     WHERE table_schema = 'alternate_schema'")
