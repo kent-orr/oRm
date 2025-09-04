@@ -39,7 +39,18 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   tbl_expr <- dbplyr::ident_q(table)
   fields <- names(data)
 
-  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, sapply(data, `[`)), collapse = ", "), ")")
+  # Convert data values to proper format for SQL, handling Date/POSIXct objects
+  formatted_values <- sapply(data, function(x) {
+    if (inherits(x, "Date")) {
+      as.character(x)
+    } else if (inherits(x, "POSIXt")) {
+      format(x, "%Y-%m-%d %H:%M:%S")
+    } else {
+      x
+    }
+  })
+  
+  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, formatted_values), collapse = ", "), ")")
   field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
 
   sql <- paste0(
