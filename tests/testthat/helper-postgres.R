@@ -15,13 +15,15 @@ setup_postgres_test_db <- function() {
     docker$image$pull("postgres:14-alpine")
 
     docker <- stevedore::docker_client()
+    # Clean up any existing container
     tryCatch({
         existing_container <- docker$container$get(container_name)
         message("Stopping existing container...")
-        existing_container$stop()
+        existing_container$stop(t = 10)  # 10 second timeout
         existing_container$remove(force = TRUE)
+        Sys.sleep(2)  # Brief pause after cleanup
     }, error = function(e) {
-        # Container does not exist
+        # Container does not exist or already stopped
     })
 
     container <- docker$container$create(
@@ -36,8 +38,39 @@ setup_postgres_test_db <- function() {
     )
 
     container$start()
+    
+    # Health check with retry logic
     message("Waiting for PostgreSQL to start...")
-    Sys.sleep(5)
+    max_attempts <- 30
+    attempt <- 1
+    connected <- FALSE
+    
+    while (attempt <= max_attempts && !connected) {
+        tryCatch({
+            test_con <- DBI::dbConnect(
+                RPostgres::Postgres(),
+                dbname = "test",
+                host = "localhost",
+                user = "tester",
+                password = "tester",
+                port = 5432,
+                connect_timeout = 5
+            )
+            DBI::dbExecute(test_con, "SELECT 1")
+            DBI::dbDisconnect(test_con)
+            connected <- TRUE
+            message("PostgreSQL is ready!")
+        }, error = function(e) {
+            if (attempt == max_attempts) {
+                stop("PostgreSQL failed to start after ", max_attempts, " attempts: ", e$message)
+            }
+            if (attempt %% 5 == 0) {
+                message("Attempt ", attempt, "/", max_attempts, " - still waiting...")
+            }
+            Sys.sleep(2)
+            attempt <<- attempt + 1
+        })
+    }
 
     list(
         drv = RPostgres::Postgres(),
@@ -59,9 +92,17 @@ cleanup_postgres_test_db <- function() {
 
     tryCatch({
         container <- docker$container$get(container_name)
-        container$stop()
-        container$remove()
-    }, error = function(e) invisible(NULL))
+        # Force stop with timeout, then force remove
+        container$stop(t = 5)
+        Sys.sleep(1)
+        container$remove(force = TRUE)
+        message("PostgreSQL test container cleaned up")
+    }, error = function(e) {
+        # Try to remove any orphaned containers by name
+        tryCatch({
+            docker$container$remove(container_name, force = TRUE)
+        }, error = function(e2) invisible(NULL))
+    })
 }
 
 reg.finalizer(environment(), function(e) {
