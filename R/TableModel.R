@@ -129,8 +129,6 @@ TableModel <- R6::R6Class(
     #' @return The TableModel object invisibly.
     #' @note Errors if the table's schema does not exist.
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
-        conn <- self$get_connection()
-
         if (!is.null(self$schema)) {
             if (!check_schema_exists(self$engine, self$schema)) {
                 stop(
@@ -144,6 +142,7 @@ TableModel <- R6::R6Class(
         }
 
         if (overwrite) {
+            conn <- self$get_connection()
             drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(conn, self$tablename))
             if (verbose) {
                 cat(drop_sql, "\n")
@@ -151,6 +150,9 @@ TableModel <- R6::R6Class(
                 self$engine$execute(drop_sql)
             }
         }
+        
+        # Get fresh connection after potential execute() call that may close it
+        conn <- self$get_connection()
         fields_sql = c()
         constraints_sql = c()
         for (i in seq_along(self$fields)) {
