@@ -22,3 +22,5 @@
 ^\.vscode$
 ^\.git$
 ^\..*$
+^CRAN-SUBMISSION$
+^cran-comments\.md$
