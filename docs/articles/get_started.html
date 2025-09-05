@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@
     <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -149,15 +150,28 @@ unless persist = TRUE or use_pool = TRUE.</p>
 <code>TableModel</code> constructor directly:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/TableModel.html">TableModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
-<span>  <span class="st">"users"</span>, </span>
-<span>  <span class="va">engine</span>, </span>
+<span>  <span class="st">"users"</span>,</span>
+<span>  <span class="va">engine</span>,</span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>  organization_id <span class="op">=</span> <span class="fu"><a href="../reference/ForeignKey.html">ForeignKey</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, references <span class="op">=</span> <span class="st">'organizations.id'</span><span class="op">)</span>,</span>
+<span>  organization_id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span>,</span>
 <span>  age <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'INTEGER'</span>, default <span class="op">=</span> <span class="fl">18</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Or, more commonly, you define a model through the engine itself:</p>
+<p>You can also set a column default using an SQL expression by wrapping
+it in <code><a href="https://dbplyr.tidyverse.org/reference/sql.html" class="external-link">dbplyr::sql()</a></code>, which prevents the value from being
+quoted as a string:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Simple Users model without complex defaults</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/TableModel.html">TableModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>    <span class="st">"users"</span>,</span>
+<span>    <span class="va">engine</span>,</span>
+<span>    id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    organization_id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span><span class="op">)</span>,</span>
+<span>    name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span>,</span>
+<span>    age <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Or, more commonly, you define a model through the engine itself:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Organization</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>  <span class="st">"organizations"</span>,</span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -174,7 +188,7 @@ operations on your table:</p>
 <div class="section level3">
 <h3 id="create-the-table-in-your-database">Create the table in your database<a class="anchor" aria-label="anchor" href="#create-the-table-in-your-database"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt; Table: users</span></span>
@@ -187,15 +201,15 @@ already exist.</p>
 <div class="section level3">
 <h3 id="read-rows-from-the-table">Read rows from the table<a class="anchor" aria-label="anchor" href="#read-rows-from-the-table"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">all_users</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">young_users</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">age</span> <span class="op">&lt;</span> <span class="fl">30</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>read()</code> method accepts <code>dbplyr</code>-style
 filter conditions through <code>...</code>, allowing flexible querying
 using R expressions. It returns a list of <code>Record</code> objects,
-or a single record if <code>mode = "get"</code> is specified.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">specific_user</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span></code></pre></div>
+or a single record if <code>.mode = "get"</code> is specified.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">specific_user</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, .mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -207,28 +221,28 @@ individual rows.</p>
 <div class="section level3">
 <h3 id="create-a-new-record">Create a new record<a class="anchor" aria-label="anchor" href="#create-a-new-record"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3</span>, organization_id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Alice"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="update-a-record">Update a record<a class="anchor" aria-label="anchor" href="#update-a-record"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">alice</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">alice</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, .mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span>
 <span><span class="va">alice</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span> <span class="op">&lt;-</span> <span class="st">"Alicia"</span></span>
 <span><span class="va">alice</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="delete-a-record">Delete a record<a class="anchor" aria-label="anchor" href="#delete-a-record"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">alice</span><span class="op">$</span><span class="fu">delete</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="access-record-data">Access record data<a class="anchor" aria-label="anchor" href="#access-record-data"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">alice</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Alicia"</span></span></code></pre></div>
 </div>
@@ -241,7 +255,7 @@ navigation between related records.</p>
 <div class="section level3">
 <h3 id="define-a-relationship">Define a relationship<a class="anchor" aria-label="anchor" href="#define-a-relationship"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/define_relationship.html">define_relationship</a></span><span class="op">(</span></span>
 <span>  <span class="va">Users</span>,</span>
 <span>  local_key <span class="op">=</span> <span class="st">"organization_id"</span>,</span>
@@ -264,16 +278,16 @@ access all related <code>Users</code>.</p>
 <p>We defined the Organization earlier, but the table itself was nevver
 created. Let’s create our table and give it an Organization to work
 with.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Organization</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt; Table: organizations</span></span>
 <span><span class="co">#&gt; Columns: id, name</span></span>
 <span><span class="va">Organization</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Widgets, Inc"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3</span>, name <span class="op">=</span> <span class="st">'Alice'</span>, organization_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">alice</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
+<span><span class="va">alice</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, .mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">alice_org</span> <span class="op">&lt;-</span> <span class="va">alice</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'organization'</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">alice_org</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Widgets, Inc"</span></span></code></pre></div>
@@ -281,22 +295,10 @@ with.</p>
 <div class="section level3">
 <h3 id="accessing-relationships-through-a-tablemodel">Accessing relationships through a TableModel<a class="anchor" aria-label="anchor" href="#accessing-relationships-through-a-tablemodel"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">young_orgs</span> <span class="op">&lt;-</span> <span class="va">Organization</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">"users"</span>, <span class="va">age</span> <span class="op">&lt;</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="va">young_orgs</span></span>
-<span><span class="co">#&gt; [[1]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
-<span><span class="co">#&gt; age: 18</span></span>
-<span><span class="co">#&gt; id: 1</span></span>
-<span><span class="co">#&gt; organization_id: NA</span></span>
-<span><span class="co">#&gt; name: John </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]]</span></span>
-<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
-<span><span class="co">#&gt; age: 18</span></span>
-<span><span class="co">#&gt; id: 3</span></span>
-<span><span class="co">#&gt; organization_id: 1</span></span>
-<span><span class="co">#&gt; name: Alice</span></span></code></pre></div>
+<span><span class="co">#&gt; NULL</span></span></code></pre></div>
 <p>This returns a list of user records with <code>age &lt; 30</code>
 that belong to each organization.</p>
 </div>

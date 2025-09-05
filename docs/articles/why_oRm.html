@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@
     <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -253,7 +254,7 @@ to define our table schema and enter our first few observations.</p>
 <p>And oh, yikes. Person 2 put in the measurement wrong. let’s correct
 it.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">p2</span> <span class="op">=</span> <span class="va">Measurement</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">observer_id</span> <span class="op">==</span> <span class="fl">2</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">p2</span> <span class="op">=</span> <span class="va">Measurement</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">observer_id</span> <span class="op">==</span> <span class="fl">2</span>, .mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">p2</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span>measurement_value <span class="op">=</span> <span class="fl">8.15</span><span class="op">)</span></span>
 <span><span class="va">p2</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'measurements'</span></span>
@@ -313,7 +314,7 @@ tables which oRm <strong>objects</strong> will use.</p>
 <p>And after we’ve made that mapping, we can find all the related
 measurements for a specific plant.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">p101</span> <span class="op">=</span> <span class="va">Plants</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">101</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">p101</span> <span class="op">=</span> <span class="va">Plants</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">101</span>, .mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">p101</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'measurements'</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'measurements'</span></span>

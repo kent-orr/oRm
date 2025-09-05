@@ -1,7 +1,10 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://kent-orr.github.io/oRm/404.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/AGENTS.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/CLAUDE.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/LICENSE-text.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/LICENSE.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/TESTING_CHECKLIST.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/developing-dialects.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/get_started.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/index.html</loc></url>
@@ -13,6 +16,7 @@
 <url><loc>https://kent-orr.github.io/oRm/articles/with_shiny.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/authors.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/index.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/news/index.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Column.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Engine.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/ForeignKey.html</loc></url>
@@ -21,8 +25,11 @@
 <url><loc>https://kent-orr.github.io/oRm/reference/TableModel.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/add_extras.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/add_part.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/check_schema_exists.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/create_schema.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/define_relationship.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/dispatch_method.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/execute_sql.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/flush.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/get_dialect.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/index.html</loc></url>

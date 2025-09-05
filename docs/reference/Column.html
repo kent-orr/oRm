@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,7 @@
     <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
     <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/kent-orr/oRm/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -83,7 +84,7 @@
 
 
 <dt id="arg-default">default<a class="anchor" aria-label="anchor" href="#arg-default"></a></dt>
-<dd><p>Optional default value. No SQL default if NULL, def set by string, if given a function that fun will be called by the Record on generation</p></dd>
+<dd><p>Optional default value. No SQL default if NULL. Use a string for a literal default, a function for a computed default at record generation, or an unquoted SQL expression via `dbplyr::sql()`.</p></dd>
 
 
 <dt id="arg-primary-key">primary_key<a class="anchor" aria-label="anchor" href="#arg-primary-key"></a></dt>
@@ -115,6 +116,9 @@ or determined by higher-level functions. This allows for flexible column definit
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Define a text column with a default value</span></span></span>
 <span class="r-in"><span><span class="va">name_col</span> <span class="op">&lt;-</span> <span class="fu">Column</span><span class="op">(</span><span class="st">"TEXT"</span>, default <span class="op">=</span> <span class="st">"Unnamed"</span>, nullable <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Define a timestamp column with an SQL function default</span></span></span>
+<span class="r-in"><span><span class="va">created_col</span> <span class="op">&lt;-</span> <span class="fu">Column</span><span class="op">(</span><span class="st">"TIMESTAMP"</span>, default <span class="op">=</span> <span class="fu">dbplyr</span><span class="fu">::</span><span class="fu"><a href="https://dbplyr.tidyverse.org/reference/sql.html" class="external-link">sql</a></span><span class="op">(</span><span class="st">"now()"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Define a unique email column</span></span></span>
 <span class="r-in"><span><span class="va">email_col</span> <span class="op">&lt;-</span> <span class="fu">Column</span><span class="op">(</span><span class="st">"TEXT"</span>, unique <span class="op">=</span> <span class="cn">TRUE</span>, nullable <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@
     <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -127,7 +128,7 @@ and populate them with some dummy data.</p>
 <span><span class="va">Students</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>    tablename <span class="op">=</span> <span class="st">"students"</span>, </span>
 <span>    id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'INTEGER'</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>    name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'TEXT'</span>, default <span class="op">=</span> <span class="fu">charlatan</span><span class="fu">::</span><span class="va"><a href="https://docs.ropensci.org/charlatan/reference/ch_name.html" class="external-link">ch_name</a></span><span class="op">)</span>,</span>
+<span>    name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'TEXT'</span><span class="op">)</span>,</span>
 <span>    class_id <span class="op">=</span> <span class="fu"><a href="../reference/ForeignKey.html">ForeignKey</a></span><span class="op">(</span><span class="st">'INTEGER'</span>, references <span class="op">=</span> <span class="st">'classes.id'</span><span class="op">)</span>,</span>
 <span>    grade <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'NUMBER'</span>, default <span class="op">=</span> \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">85</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -163,33 +164,35 @@ and populate them with some dummy data.</p>
 <span><span class="co">#&gt; subject: Science</span></span>
 <span><span class="co">#&gt; teacher_id: 2</span></span>
 <span></span>
+<span><span class="va">student_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Alice"</span>, <span class="st">"Bob"</span>, <span class="st">"Charlie"</span>, <span class="st">"Diana"</span>, <span class="st">"Eve"</span>, <span class="st">"Frank"</span>, <span class="st">"Grace"</span>, <span class="st">"Henry"</span>, <span class="st">"Ivy"</span>, <span class="st">"Jack"</span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">Students</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span></span>
 <span>        id <span class="op">=</span> <span class="va">i</span>, </span>
+<span>        name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">student_names</span>, <span class="fl">1</span><span class="op">)</span>, <span class="va">i</span><span class="op">)</span>,</span>
 <span>        class_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span>    <span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="va">Students</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.limit <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Tonja Zulauf-Kemmer</span></span>
 <span><span class="co">#&gt; grade: 86</span></span>
 <span><span class="co">#&gt; id: 1</span></span>
-<span><span class="co">#&gt; class_id: 10 </span></span>
+<span><span class="co">#&gt; name: Jack 1</span></span>
+<span><span class="co">#&gt; class_id: 7 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[2]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Helen O'Kon-Pfeffer</span></span>
-<span><span class="co">#&gt; grade: 81</span></span>
+<span><span class="co">#&gt; grade: 89</span></span>
 <span><span class="co">#&gt; id: 2</span></span>
-<span><span class="co">#&gt; class_id: 6 </span></span>
+<span><span class="co">#&gt; name: Charlie 2</span></span>
+<span><span class="co">#&gt; class_id: 9 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[3]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Infant Wyman</span></span>
-<span><span class="co">#&gt; grade: 88</span></span>
+<span><span class="co">#&gt; grade: 82</span></span>
 <span><span class="co">#&gt; id: 3</span></span>
-<span><span class="co">#&gt; class_id: 7</span></span></code></pre></div>
+<span><span class="co">#&gt; name: Grace 3</span></span>
+<span><span class="co">#&gt; class_id: 6</span></span></code></pre></div>
 <p>Okay, so in the old days, before <code>oRm</code> you might use dplyr
 to view related fields between tables via joins. We’ll look at all the
 students in class with id=1</p>
@@ -200,19 +203,16 @@ students in class with id=1</p>
 <span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">class_tbl</span>, <span class="va">student_tbl</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>id <span class="op">=</span> <span class="st">"class_id"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 6</span></span></span>
-<span><span class="co">#&gt;       id subject teacher_id  id.y name                    grade</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>     1 Science          2     9 Ms. Celeste Spencer PhD    87</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>     1 Science          2    43 Debby Goldner              84</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>     1 Science          2    54 Mr. Drew Schuster MD       80</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>     1 Science          2    63 Gorge Predovic             85</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>     1 Science          2    64 Mr. Felipe Hudson          86</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>     1 Science          2    73 Theta Rau                  85</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>     1 Science          2    74 Phebe Kuvalis-Ziemann      87</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>     1 Science          2    79 Korey Rice                 88</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>     1 Science          2    90 Mayo Hickle                83</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>     1 Science          2    96 Clinton Collins MD         89</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 6</span></span></span>
+<span><span class="co">#&gt;      id subject teacher_id  id.y name       grade</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     1 Science          2    11 Grace 11      82</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     1 Science          2    30 Henry 30      86</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     1 Science          2    41 Bob 41        82</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>     1 Science          2    61 Grace 61      84</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>     1 Science          2    64 Charlie 64    92</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>     1 Science          2    81 Charlie 81    87</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span>     1 Science          2    89 Diana 89      83</span></span></code></pre></div>
 <p>That is a beutiful join that finds all students in class 1. Ready for
 all kinds of analysis now. But what if you’re not trying to read and
 analyze the data, but make a change? What if we need to apply a curve to
@@ -237,15 +237,12 @@ or ‘many_to_one’. The ref and backref arguments are used to define the
 relationship between the two models. You’ll use those values to call on
 related records. Let’s see that in action:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">class1</span> <span class="op">=</span> <span class="va">Classes</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">class1</span> <span class="op">=</span> <span class="va">Classes</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, .mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span><span class="va">class1_students</span> <span class="op">=</span> <span class="va">class1</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'students'</span><span class="op">)</span></span>
 <span><span class="va">class1_students</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
 <span>    <span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">grade</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">': '</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "Ms. Celeste Spencer PhD: 87" "Debby Goldner: 84"          </span></span>
-<span><span class="co">#&gt;  [3] "Mr. Drew Schuster MD: 80"    "Gorge Predovic: 85"         </span></span>
-<span><span class="co">#&gt;  [5] "Mr. Felipe Hudson: 86"       "Theta Rau: 85"              </span></span>
-<span><span class="co">#&gt;  [7] "Phebe Kuvalis-Ziemann: 87"   "Korey Rice: 88"             </span></span>
-<span><span class="co">#&gt;  [9] "Mayo Hickle: 83"             "Clinton Collins MD: 89"</span></span>
+<span><span class="co">#&gt; [1] "Grace 11: 82"   "Henry 30: 86"   "Bob 41: 82"     "Grace 61: 84"  </span></span>
+<span><span class="co">#&gt; [5] "Charlie 64: 92" "Charlie 81: 87" "Diana 89: 83"</span></span>
 <span></span>
 <span><span class="co"># let's go ahead and apply that curve to the grades</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">student</span> <span class="kw">in</span> <span class="va">class1_students</span><span class="op">)</span> <span class="op">{</span></span>
@@ -255,11 +252,8 @@ related records. Let’s see that in action:</p>
 <span></span>
 <span><span class="va">class1_students</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
 <span>    <span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">grade</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">': '</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "Ms. Celeste Spencer PhD: 90" "Debby Goldner: 87"          </span></span>
-<span><span class="co">#&gt;  [3] "Mr. Drew Schuster MD: 83"    "Gorge Predovic: 88"         </span></span>
-<span><span class="co">#&gt;  [5] "Mr. Felipe Hudson: 89"       "Theta Rau: 88"              </span></span>
-<span><span class="co">#&gt;  [7] "Phebe Kuvalis-Ziemann: 90"   "Korey Rice: 91"             </span></span>
-<span><span class="co">#&gt;  [9] "Mayo Hickle: 86"             "Clinton Collins MD: 92"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "Grace 11: 85"   "Henry 30: 89"   "Bob 41: 85"     "Grace 61: 87"  </span></span>
+<span><span class="co">#&gt; [5] "Charlie 64: 95" "Charlie 81: 90" "Diana 89: 86"</span></span></code></pre></div>
 <p>And if we look at that in reverse:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">class1_students</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'class'</span><span class="op">)</span></span>
@@ -272,16 +266,23 @@ related records. Let’s see that in action:</p>
 <code class="sourceCode R"><span><span class="va">class1</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'students'</span>, <span class="va">grade</span> <span class="op">&lt;</span> <span class="fl">87</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Mr. Drew Schuster MD</span></span>
-<span><span class="co">#&gt; grade: 83</span></span>
-<span><span class="co">#&gt; id: 54</span></span>
+<span><span class="co">#&gt; grade: 85</span></span>
+<span><span class="co">#&gt; id: 11</span></span>
+<span><span class="co">#&gt; name: Grace 11</span></span>
 <span><span class="co">#&gt; class_id: 1 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; [[2]]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
-<span><span class="co">#&gt; name: Mayo Hickle</span></span>
+<span><span class="co">#&gt; grade: 85</span></span>
+<span><span class="co">#&gt; id: 41</span></span>
+<span><span class="co">#&gt; name: Bob 41</span></span>
+<span><span class="co">#&gt; class_id: 1 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [[3]]</span></span>
+<span><span class="co">#&gt; &lt;Record&gt;: 'students'</span></span>
 <span><span class="co">#&gt; grade: 86</span></span>
-<span><span class="co">#&gt; id: 90</span></span>
+<span><span class="co">#&gt; id: 89</span></span>
+<span><span class="co">#&gt; name: Diana 89</span></span>
 <span><span class="co">#&gt; class_id: 1</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -295,7 +296,7 @@ to take care of, so we’ll assign teachers to multiple classes.</p>
 <span><span class="va">Teachers</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>    tablename <span class="op">=</span> <span class="st">"teachers"</span>, </span>
 <span>    id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'INTEGER'</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>    name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'TEXT'</span>, default <span class="op">=</span> <span class="fu">charlatan</span><span class="fu">::</span><span class="va"><a href="https://docs.ropensci.org/charlatan/reference/ch_name.html" class="external-link">ch_name</a></span><span class="op">)</span></span>
+<span>    name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'TEXT'</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">Teachers</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span>overwrite<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
@@ -307,8 +308,8 @@ to take care of, so we’ll assign teachers to multiple classes.</p>
 <span><span class="op">}</span></span>
 <span><span class="va">Teachers</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt; &lt;Record&gt;: 'teachers'</span></span>
-<span><span class="co">#&gt; name: Carrie Roob</span></span>
 <span><span class="co">#&gt; id: 1</span></span>
+<span><span class="co">#&gt; name: NA</span></span>
 <span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span></span>
@@ -370,7 +371,7 @@ TeacherAssignments to Classes.</p>
 again. TO demonstrate that, we’ll make a deck of info cards for a
 teacher showing each class and the students in each class.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">teacher</span> <span class="op">&lt;-</span> <span class="va">Teachers</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">teacher</span> <span class="op">&lt;-</span> <span class="va">Teachers</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, .mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># teacher$relationship('teacher_assignments') |&gt;</span></span>
 <span><span class="co">#     lapply(\(x) x$relationship('class')) |&gt;</span></span>
@@ -395,7 +396,7 @@ teacher showing each class and the students in each class.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5">
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
-<h5>Theophile Zemlak</h5>
+<h5>NA</h5>
 </div>
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
 <div class="card bslib-card bslib-mb-spacing html-fill-item html-fill-container" data-bslib-card-init data-require-bs-caller="card()" data-require-bs-version="5" style="max-height:800px;">
@@ -403,13 +404,16 @@ teacher showing each class and the students in each class.</p>
 <h5>Math</h5>
 </div>
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
-<p>Renada Corwin DDS 92</p>
-<p>Dion Orn 87</p>
-<p>Metta Mohr 87</p>
-<p>Hamp Koch II 83</p>
-<p>Elvia Kuhlman 89</p>
-<p>Shanae Hudson MD 86</p>
-<p>Annabella Beatty MD 86</p>
+<p>Diana 10 89</p>
+<p>Alice 37 79</p>
+<p>Diana 40 78</p>
+<p>Diana 45 90</p>
+<p>Grace 46 88</p>
+<p>Bob 65 82</p>
+<p>Grace 71 94</p>
+<p>Henry 74 87</p>
+<p>Alice 79 80</p>
+<p>Alice 87 82</p>
 </div>
 <script data-bslib-card-init>bslib.Card.initializeAllCards();</script>
 </div>
@@ -418,17 +422,13 @@ teacher showing each class and the students in each class.</p>
 <h5>Math</h5>
 </div>
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
-<p>Dr. Bob Heller 91</p>
-<p>Kathey Dietrich 81</p>
-<p>Tory Boyle 81</p>
-<p>Drury Funk 79</p>
-<p>Dr. Jagger Hoppe Sr. 88</p>
-<p>Dr. Palmer Morissette PhD 87</p>
-<p>Everett Medhurst DVM 86</p>
-<p>Luis Kub 86</p>
-<p>Kareem Schimmel 88</p>
-<p>Mekhi Bednar 82</p>
-<p>Arvilla Langworth-Stamm 91</p>
+<p>Diana 8 88</p>
+<p>Charlie 33 84</p>
+<p>Jack 44 78</p>
+<p>Charlie 51 89</p>
+<p>Diana 56 88</p>
+<p>Alice 57 79</p>
+<p>Jack 75 83</p>
 </div>
 <script data-bslib-card-init>bslib.Card.initializeAllCards();</script>
 </div>
@@ -437,17 +437,13 @@ teacher showing each class and the students in each class.</p>
 <h5>Math</h5>
 </div>
 <div class="card-body bslib-gap-spacing html-fill-item html-fill-container" style="margin-top:auto;margin-bottom:auto;flex:1 1 auto;">
-<p>Kacie Torphy 86</p>
-<p>Steve Prohaska-Konopelski 90</p>
-<p>Perry Harris 94</p>
-<p>Miss Danna Stroman DVM 88</p>
-<p>Cecily Gleichner 76</p>
-<p>Ms. Theda Dare 84</p>
-<p>Mr. Marvin Zboncak 88</p>
-<p>Ananias Walter 91</p>
-<p>Dr. Montrell Renner 92</p>
-<p>Jorja Grant 79</p>
-<p>Murdock Nader 90</p>
+<p>Frank 13 84</p>
+<p>Bob 27 87</p>
+<p>Ivy 72 84</p>
+<p>Eve 80 80</p>
+<p>Bob 82 78</p>
+<p>Bob 92 89</p>
+<p>Diana 98 84</p>
 </div>
 <script data-bslib-card-init>bslib.Card.initializeAllCards();</script>
 </div>

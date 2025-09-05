@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@
     <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -127,13 +128,13 @@ needed:</p>
 <code>flush.mydialect(x, table, data, con, commit = TRUE, ...)</code>:
 Insert a row and return inserted data or identifiers.</li>
 <li>
-<code>qualify.mydialect(x, tablename, schema)</code>: Qualify a
+<code>qualify.mydialect(x, tablename, .schema)</code>: Qualify a
 table name with its schema if supported.</li>
 <li>
-<code>set_schema.mydialect(x, schema)</code>: Switch the current
+<code>set_schema.mydialect(x, .schema)</code>: Switch the current
 schema on the connection.</li>
 <li>
-<code>check_schema_exists.mydialect(x, schema)</code>: (Optional)
+<code>check_schema_exists.mydialect(x, .schema)</code>: (Optional)
 Check whether a schema exists.</li>
 </ul>
 <p>Each function will be called through <code><a href="../reference/dispatch_method.html">dispatch_method()</a></code>
@@ -150,12 +151,12 @@ Dialect-specific variants then add their notes with
 and keeps everything discoverable via <code>?</code> or F1.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#' @rdname check_schema_exists</span></span>
-<span><span class="va">check_schema_exists.default</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="va">check_schema_exists.default</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">.schema</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="co"># ...</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co">#' @describeIn check_schema_exists Check if a schema exists for PostgreSQL.</span></span>
-<span><span class="va">check_schema_exists.postgres</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">schema</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="va">check_schema_exists.postgres</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">.schema</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="co"># ...</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Running <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> after adding a dialect
