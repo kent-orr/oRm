@@ -6,6 +6,8 @@ inst/doc
 /doc/
 /Meta/
 .aider*
+oRm.Rcheck/
+
 
 # Claude AI and development files
 CLAUDE.md
