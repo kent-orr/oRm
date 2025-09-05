@@ -7,7 +7,7 @@ Maintainer: Kent Orr <orr.kent@pawpawanalytics.com>
 Description: A lightweight Object-Relational Mapper (ORM) that simplifies 
     database interactions by allowing users to define table models, insert and 
     query records, and establish relationships between models without writing 
-    raw SQL. Uses a combination of DBI, dbplyr, and R6 to provide compatibility 
+    raw SQL. Uses a combination of `DBI`, `dbplyr`, and `R6` to provide compatibility 
     with most database dialects including PostgreSQL, MySQL, and SQLite.
 License: MIT + file LICENSE
 Depends: R (>= 4.1.0)
