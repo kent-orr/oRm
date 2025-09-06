@@ -11,30 +11,30 @@ NULL
 #' @details
 #' TableModel is a core component of the oRm framework, responsible for:
 #' \itemize{
-#'   \item Defining table structure with columns and relationships
-#'   \item Creating and managing database tables
-#'   \item Providing an interface for CRUD operations on table records
-#'   \item Managing relationships between different tables
+#'     \item Defining table structure with columns and relationships
+#'     \item Creating and managing database tables
+#'     \item Providing an interface for CRUD operations on table records
+#'     \item Managing relationships between different tables
 #' }
 #'
 #' Key features:
 #' \itemize{
-#'   \item Dynamic table creation and management
-#'   \item Support for various column types and constraints
-#'   \item Relationship definitions and querying
-#'   \item Record creation and retrieval
+#'     \item Dynamic table creation and management
+#'     \item Support for various column types and constraints
+#'     \item Relationship definitions and querying
+#'     \item Record creation and retrieval
 #' }
 #'
 #' @section Methods:
 #' \describe{
-#'   \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
-#'   \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
-#'   \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
-#'   \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
-#'   \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
-#'   \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
-#'   \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
-#'   \item{\code{print()}}{Print a concise summary of the model, including its fields.}
+#'     \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
+#'     \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
+#'     \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
+#'     \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
+#'     \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
+#'     \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
+#'     \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
+#'     \item{\code{print()}}{Print a concise summary of the model, including its fields.}
 #' }
 #'
 #' @seealso \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
@@ -54,8 +54,8 @@ NULL
 #' @export
 #' 
 TableModel <- R6::R6Class(
-  "TableModel",
-  public = list(
+    "TableModel",
+    public = list(
     tablename = NULL,
     schema = NULL,
     engine = NULL,
@@ -70,7 +70,7 @@ TableModel <- R6::R6Class(
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
     #' @param .schema Character. Schema to apply to the table name. Defaults to the engine's schema.
-      #' @param .default_mode Character. Default mode used when `read()` is called with `.mode` = NULL. Must be one of "all", "one_or_none", "get", "data.frame", or "tbl".
+        #' @param .default_mode Character. Default mode used when `read()` is called with `.mode` = NULL. Must be one of "all", "one_or_none", "get", "data.frame", or "tbl".
     initialize = function(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = c("all", "one_or_none", "get", "data.frame", "tbl")) {
         if (missing(tablename) || missing(engine)) {
             stop("Both 'tablename' and 'engine' must be provided to TableModel.")
@@ -102,10 +102,10 @@ TableModel <- R6::R6Class(
     #' Delegates to the associated engine and respects schema and
     #' pooling settings.
     #' @param ... Additional arguments passed to the engine's
-    #'   `get_connection` method.
+    #'     `get_connection` method.
     #' @seealso Engine::get_connection
     get_connection = function(...) {
-      self$engine$get_connection(...)
+        self$engine$get_connection(...)
     },
 
 
@@ -114,11 +114,11 @@ TableModel <- R6::R6Class(
     #' @param .schema Character. New schema name to apply.
     #' @return The TableModel object.
     set_schema = function(.schema) {
-      self$schema <- .schema
-      base_name <- strsplit(self$tablename, "\\.")[[1]]
-      base_name <- base_name[length(base_name)]
-      self$tablename <- qualify(self$engine, base_name, .schema = .schema)
-      self
+        self$schema <- .schema
+        base_name <- strsplit(self$tablename, "\\.")[[1]]
+        base_name <- base_name[length(base_name)]
+        self$tablename <- qualify(self$engine, base_name, .schema = .schema)
+        self
     },
 
     #' @description
@@ -166,21 +166,21 @@ TableModel <- R6::R6Class(
         sql <- paste0(
             create_clause, " ",
             self$engine$format_tablename(self$tablename), 
-              " (\n  ", paste(fields_sql, collapse = ',\n'), 
-              if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
-                paste0(",\n  ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n  "))
-              } else {
+                " (\n    ", paste(fields_sql, collapse = ',\n'), 
+                if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
+                paste0(",\n    ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n    "))
+                } else {
                 ""
             },
-          "\n);\n"
+            "\n);\n"
         )
 
-      if (verbose) {
+        if (verbose) {
         return(sql)
-      }
+        }
 
-      self$engine$execute(sql)
-      return(self)
+        self$engine$execute(sql)
+        return(self)
     },
 
     #' @description
@@ -202,19 +202,19 @@ TableModel <- R6::R6Class(
     #' User$drop_table(ask = FALSE)
     #' }
     drop_table = function(ask = interactive()) {
-      drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
+        drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
 
-      resp <- 'y'
-      if (ask) {
+        resp <- 'y'
+        if (ask) {
         resp <- readline(paste0("Are you sure you want to drop ", self$tablename, "? [y/N] "))
-      }
+        }
 
-      if (grepl('y', resp, ignore.case = TRUE)) {
+        if (grepl('y', resp, ignore.case = TRUE)) {
         self$engine$execute(drop_sql)
-      } else {
+        } else {
         message("Table not dropped.")
         return(invisible(NULL))
-      }
+        }
     },
 
 
@@ -224,129 +224,195 @@ TableModel <- R6::R6Class(
     #' @param .data a named list of field values.
     #'
     record = function(..., .data = list()) {
-      Record$new(self, ..., .data = .data)
+        Record$new(self, ..., .data = .data)
     },
 
     #' @description
     #' Generate a dbplyr tbl() object to be consumed by the model.
     tbl = function() {
-      con = self$get_connection()
-      formatted_name <- self$engine$format_tablename(self$tablename)
-      dplyr::tbl(con, I(formatted_name))
+        con = self$get_connection()
+        formatted_name <- self$engine$format_tablename(self$tablename)
+        dplyr::tbl(con, I(formatted_name))
     },
 
     #' @description
     #' Read records using dynamic filters and return in the specified mode.
     #' @param ... Unquoted expressions for filtering.
     #' @param .mode Mode for reading records. One of "all", "one_or_none", "get", "data.frame", or "tbl". If NULL, uses `default_mode`.
-    #'   "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
-    #'   "tbl" returns the uncollected dbplyr table.
+    #'     "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
+    #'     "tbl" returns the uncollected dbplyr table.
     #' @param .limit Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
-    #'   Positive values return the first N records, negative values return the last N records.
+    #'     Positive values return the first N records, negative values return the last N records.
     #' @param .offset Integer. Offset for pagination. Default is 0.
     #' @param .order_by Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
     read = function(
-      ...,
-      .mode = NULL,
-      .limit = 100,
-      .offset=0,
-      .order_by = list()
+        ...,
+        .mode = NULL,
+        .limit = 100,
+        .offset=0,
+        .order_by = list()
     ) {
 
-      if (is.null(.mode)) {
+        if (is.null(.mode)) {
         .mode <- self$default_mode
-      }
-      .mode <- match.arg(.mode, c("all", "one_or_none", "get", "data.frame", "tbl"))
-      tbl_ref <- self$tbl()
+        }
+        .mode <- match.arg(.mode, c("all", "one_or_none", "get", "data.frame", "tbl"))
+        tbl_ref <- self$tbl()
 
-      if (.mode == "tbl" && missing(.limit)) {
+        if (.mode == "tbl" && missing(.limit)) {
         .limit <- NULL
-      }
+        }
 
-      filters <- rlang::enquos(...)
-      if (length(filters) > 0) {
+        filters <- rlang::enquos(...)
+        if (length(filters) > 0) {
         tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
-      }
+        }
 
-      # Apply ordering (only if user provided .order_by)
-      if (!missing(.order_by)) {
+        # Apply ordering (only if user provided .order_by)
+        if (!missing(.order_by)) {
         order_exprs <- rlang::enexpr(.order_by)
-      
+        
         # Handle .order_by = c(x, desc(y)) vs .order_by = x
         if (rlang::is_call(order_exprs, "c")) {
-          order_exprs <- as.list(order_exprs)[-1]  # Drop the "c" call
+            order_exprs <- as.list(order_exprs)[-1]    # Drop the "c" call
         } else {
-          order_exprs <- list(order_exprs)
+            order_exprs <- list(order_exprs)
         }
-      
+        
         tbl_ref <- dplyr::arrange(tbl_ref, !!!order_exprs)
-      }
+        }
 
-      # Apply pagination using SQL-compatible operations
-      if (!is.null(.limit) && is.numeric(.limit) && .limit != 0) {
+        # Apply pagination using SQL-compatible operations
+        if (!is.null(.limit) && is.numeric(.limit) && .limit != 0) {
         if (.limit > 0) {
-          # For positive limits with offset
-          if (.offset > 0) {
+            # For positive limits with offset
+            if (.offset > 0) {
             # SQL databases support LIMIT and OFFSET directly
             tbl_ref <- tbl_ref |> 
-              dplyr::mutate(.row_id = dplyr::row_number()) |>
-              dplyr::filter(.row_id > .offset & .row_id <= .offset + .limit) |>
-              dplyr::select(-.row_id)
-          } else {
+                dplyr::mutate(.row_id = dplyr::row_number()) |>
+                dplyr::filter(.row_id > .offset & .row_id <= .offset + .limit) |>
+                dplyr::select(-.row_id)
+            } else {
             # Just limit without offset
             tbl_ref <- tbl_ref |>
-              dplyr::mutate(.row_id = dplyr::row_number()) |>
-              dplyr::filter(.row_id <= .limit) |>
-              dplyr::select(-.row_id)
-          }
+                dplyr::mutate(.row_id = dplyr::row_number()) |>
+                dplyr::filter(.row_id <= .limit) |>
+                dplyr::select(-.row_id)
+            }
         } else {
-          # For negative limits (last N rows)
-          tbl_ref <- tbl_ref |>
+            # For negative limits (last N rows)
+            tbl_ref <- tbl_ref |>
             dplyr::mutate(.row_id = dplyr::row_number()) |>
             dplyr::filter(.row_id > dplyr::n() - abs(.limit)) |>
             dplyr::select(-.row_id)
         }
-      } else if (.offset > 0) {
+        } else if (.offset > 0) {
         # Just offset without limit
         tbl_ref <- tbl_ref |>
-          dplyr::mutate(.row_id = dplyr::row_number()) |>
-          dplyr::filter(.row_id > .offset) |>
-          dplyr::select(-.row_id)
-      }
-
-      if (.mode == "tbl") return(tbl_ref)
-
-      rows <- dplyr::collect(tbl_ref)
-
-      if (.mode == "data.frame") {
-        return(rows)
-      }
-
-      if (nrow(rows) == 0) {
-        if (.mode == "get") {
-          stop("Expected exactly one row, got: 0")
-        } else if (.mode == "one_or_none" || .mode == "all") {
-          return(NULL)
+            dplyr::mutate(.row_id = dplyr::row_number()) |>
+            dplyr::filter(.row_id > .offset) |>
+            dplyr::select(-.row_id)
         }
-      }
-      create_record <- function(row_data) {
-        Record$new(model = self, .data = as.list(row_data))
-      }
 
-      if (.mode == "get") {
+        if (.mode == "tbl") return(tbl_ref)
+
+        rows <- dplyr::collect(tbl_ref)
+
+        if (.mode == "data.frame") {
+        return(rows)
+        }
+
+        if (nrow(rows) == 0) {
+        if (.mode == "get") {
+            stop("Expected exactly one row, got: 0")
+        } else if (.mode == "one_or_none") {
+            return(NULL)
+        } else if (.mode == "all") {
+            return(list())
+        }
+        }
+        create_record <- function(row_data) {
+            Record$new(model = self, .data = as.list(row_data))
+        }
+
+        if (.mode == "get") {
         if (nrow(rows) != 1) stop("Expected exactly one row, got: ", nrow(rows))
         return(create_record(rows[1, , drop = TRUE]))
-      }
+        }
 
-      if (.mode == "one_or_none") {
+        if (.mode == "one_or_none") {
         if (nrow(rows) > 1) stop("Expected zero or one row, got multiple")
         if (nrow(rows) == 1) return(create_record(rows[1, , drop = TRUE]))
         return(NULL)
-      }
+        }
 
-      # .mode == "all"
-      lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
+        # .mode == "all"
+        lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
     },
+
+    #' @description
+    #' Shortcut for retrieving a single record. Expects exactly one matching record.
+    #' @param ... Unquoted expressions for filtering. For models with a single primary key, 
+    #'     the first unnamed argument can be the primary key value.
+    #' @return A Record object if exactly one record is found.
+    #' @note Throws an error if zero or multiple records are found.
+    #' @examples
+    #' \dontrun{
+    #' # Get by primary key value (if single primary key exists)
+    #' user <- User$get(123)
+    #' 
+    #' # Get by named filter
+    #' user <- User$get(email == "user@example.com")
+    #' 
+    #' # Get with multiple filters
+    #' user <- User$get(name == "John", active == 1)
+    #' }
+    get = function(...) {
+        self$read(...,.mode = "get")
+    },    
+
+    #' @description
+    #' Retrieve all records matching the given filters.
+    #' @param ... Unquoted expressions for filtering.
+    #' @return A list of Record objects, or NULL if no records are found.
+    #' @examples
+    #' \dontrun{
+    #' # Get all users
+    #' users <- User$all()
+    #' 
+    #' # Get all active users
+    #' active_users <- User$all(active == 1)
+    #' 
+    #' # Get users with specific criteria
+    #' admin_users <- User$all(role == "admin", active == 1)
+    #' }
+    all = function(...) {
+        self$read(...,.mode = "all")
+    },
+
+    #' @description
+    #' Retrieve zero or one record matching the given filters.
+    #' @param ... Unquoted expressions for filtering.
+    #' @return A Record object if exactly one record is found, NULL if no records are found.
+    #' @note Throws an error if multiple records are found.
+    #' @examples
+    #' \dontrun{
+    #' # Get user by email (expects 0 or 1 result)
+    #' user <- User$one_or_none(email == "user@example.com")
+    #' 
+    #' # Returns NULL if no match
+    #' user <- User$one_or_none(id == 999)
+    #' 
+    #' # Errors if multiple matches
+    #' user <- User$one_or_none(status == "active")  # Error if multiple active users
+    #' }
+    one_or_none = function(...) {
+        self$read(...,.mode = "one_or_none")
+    },
+
+    
+      
+
 
     #' Retrieve related records based on a defined relationship.
     #'
@@ -362,12 +428,12 @@ TableModel <- R6::R6Class(
     #' @return A single Record, a list of Records, or NULL, depending on the relationship type.
     #' @seealso [Record$relationship()]
     relationship = function(rel_name, ...) {
-      if (!rel_name %in% names(self$relationships)) stop("Invalid relationship name: ", rel_name)
+        if (!rel_name %in% names(self$relationships)) stop("Invalid relationship name: ", rel_name)
 
-      rel <- self$relationships[[rel_name]]
-      if (!inherits(rel, "Relationship")) stop("Invalid relationship: ", rel_name)
+        rel <- self$relationships[[rel_name]]
+        if (!inherits(rel, "Relationship")) stop("Invalid relationship: ", rel_name)
 
-      mode <- switch(rel$type,
+        mode <- switch(rel$type,
         "belongs_to" = "one_or_none",
         "owns" = "one_or_none",
         "one_to_one" = "one_or_none",
@@ -375,9 +441,9 @@ TableModel <- R6::R6Class(
         "many_to_many" = "all",
         "many_to_one" = "one_or_none",
         stop("Unknown relationship type: ", rel$type)
-      )
+        )
 
-      rel$related_model$read(..., .mode = mode)
+        rel$related_model$read(..., .mode = mode)
 
     },
 
@@ -395,5 +461,5 @@ TableModel <- R6::R6Class(
         invisible(self)
     }
 
-  )
+    )
 )
