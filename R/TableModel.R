@@ -194,7 +194,7 @@ TableModel <- R6::R6Class(
     #' or `NULL` if the operation is canceled or skipped.
     #'
     #' @examples
-    #' \dontrun{
+    #' \donttest{
     #' # Drop the "users" table after confirmation
     #' User$drop_table()
     #'
@@ -357,7 +357,7 @@ TableModel <- R6::R6Class(
     #' @return A Record object if exactly one record is found.
     #' @note Throws an error if zero or multiple records are found.
     #' @examples
-    #' \dontrun{
+    #' \donttest{
     #' # Get by primary key value (if single primary key exists)
     #' user <- User$get(123)
     #' 
@@ -376,7 +376,7 @@ TableModel <- R6::R6Class(
     #' @param ... Unquoted expressions for filtering.
     #' @return A list of Record objects, or NULL if no records are found.
     #' @examples
-    #' \dontrun{
+    #' \donttest{
     #' # Get all users
     #' users <- User$all()
     #' 
@@ -396,7 +396,7 @@ TableModel <- R6::R6Class(
     #' @return A Record object if exactly one record is found, NULL if no records are found.
     #' @note Throws an error if multiple records are found.
     #' @examples
-    #' \dontrun{
+    #' \donttest{
     #' # Get user by email (expects 0 or 1 result)
     #' user <- User$one_or_none(email == "user@example.com")
     #' 
