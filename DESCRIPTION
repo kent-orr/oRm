@@ -1,15 +1,11 @@
 Package: oRm
 Type: Package
 Title: Lightweight Object-Relational Mapper for R
-Version: 0.3.1
+Version: 0.3.2
 Author: Kent Orr [aut, cre]
 Authors@R: c(person("Kent", "Orr", email = "orr.kent@pawpawanalytics.com", role = c("aut", "cre")))
 Maintainer: Kent Orr <orr.kent@pawpawanalytics.com>
-Description: A lightweight Object-Relational Mapper ('ORM') that simplifies 
-    database interactions by allowing users to define table models, insert and 
-    query records, and establish relationships between models without writing 
-    raw SQL. Uses a combination of 'DBI', 'dbplyr', and 'R6' to provide compatibility 
-    with most database dialects including PostgreSQL, MySQL, and SQLite.
+Description: A lightweight Object-Relational Mapper (ORM) that simplifies database interactions by allowing users to define table models, insert and query records, and establish relationships between models without writing raw 'SQL'. Uses a combination of 'DBI', 'dbplyr', and 'R6' to provide compatibility with most database dialects including 'PostgreSQL', 'MySQL', and 'SQLite'.
 License: MIT + file LICENSE
 Depends: R (>= 4.1.0)
 Encoding: UTF-8

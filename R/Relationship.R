@@ -75,7 +75,7 @@ Relationship = R6::R6Class(
 #' @return Invisibly returns the local_model (although the model is modified in place).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Set up models
 #' User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
 #' Post <- engine$model("posts", 

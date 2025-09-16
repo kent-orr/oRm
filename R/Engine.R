@@ -165,7 +165,7 @@ Engine <- R6::R6Class(
         #' @return A new TableModel object
         #' @seealso [TableModel::new()]
         #' @examples
-        #' \dontrun{
+        #' \donttest{
         #' engine$model(
         #'     "users",
         #'     Column$new("id", "integer"),
@@ -298,7 +298,7 @@ Engine <- R6::R6Class(
 #' @return The result of evaluating the expression
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # With auto-commit (default)
 #' with.Engine(engine, {
 #'   User$record(name = "Alice")$create()
