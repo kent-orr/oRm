@@ -55,6 +55,16 @@ Record <- R6::R6Class(
       
       self$model <- model
       self$relationships = model$relationships
+
+      # Inject record-targeted methods
+      for (i in seq_along(model$methods)) {
+        method <- model$methods[[i]]
+        if (method$target == "record") {
+          method_name <- method$name
+          self[[method_name]] <- method$fn
+        }
+      }
+
       field_names <- names(model$fields)
       for (i in seq_along(model$fields)) {
         field <- model$fields[[i]]
