@@ -208,7 +208,7 @@ test_that("TableModel$read() supports pagination with limit and offset", {
 
   # Test case 4: Offset beyond available data
   empty_page <- Item$read(.mode = "all", .limit = 5, .offset = 20)
-  expect_true(empty_page == list())
+  expect_equal(empty_page, list())
 
   # Test case 5: Pagination with filtering
   filtered_page <- Item$read(position > 10, .mode = "all", .limit = 5, .offset = 0)

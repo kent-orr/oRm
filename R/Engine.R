@@ -133,7 +133,9 @@ Engine <- R6::R6Class(
         set_schema = function(.schema) {
             on.exit(if (private$exit_check()) self$close())
             self$schema <- .schema
-            set_schema(self, .schema)
+            # Ensure we have a valid connection and apply the schema
+            # get_connection() will automatically call set_schema(self, self$schema)
+            self$get_connection()
             return(self)
         },
         
@@ -209,10 +211,12 @@ Engine <- R6::R6Class(
         #' @param tablename Character. Table name to format
         #' @return A quoted table name
         format_tablename = function(tablename) {
+            # Ensure we have a valid connection before quoting identifiers
+            conn <- self$get_connection()
             parts <- strsplit(tablename, "\\.")[[1]]
             quoted <- vapply(
                 parts,
-                function(x) DBI::dbQuoteIdentifier(self$conn, x),
+                function(x) DBI::dbQuoteIdentifier(conn, x),
                 character(1)
             )
             paste(quoted, collapse = ".")

@@ -355,7 +355,7 @@ TableModel <- R6::R6Class(
                         }
                         # Parse JSON string back to R object
                         tryCatch({
-                            jsonlite::fromJSON(val, simplifyVector = TRUE)
+                            jsonlite::fromJSON(val, simplifyVector = TRUE, simplifyDataFrame = FALSE)
                         }, error = function(e) {
                             # If parsing fails, return original value
                             val

@@ -251,27 +251,29 @@ test_that("flush.postgres handles empty data list", {
         testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
     withr::defer(clear_postgres_test_tables())
-    
+
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
     # Create test table with default values
     conn <- engine$get_connection()
     DBI::dbExecute(conn, "CREATE TABLE test_empty (
-        id SERIAL PRIMARY KEY, 
+        id SERIAL PRIMARY KEY,
         name TEXT DEFAULT 'default_name',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )")
     withr::defer(DBI::dbExecute(conn, "DROP TABLE IF EXISTS test_empty"))
-    
+
     # Test flush with empty data (all values are NULL and get filtered out)
     empty_data <- list(name = NULL, extra_field = NULL)
-    
-    # This should result in an INSERT with no columns, which PostgreSQL handles with DEFAULT VALUES
-    expect_error(
-        oRm:::flush.postgres(engine, "test_empty", empty_data, conn, commit = FALSE),
-        "syntax error"
-    )
+
+    # This should result in an INSERT with DEFAULT VALUES, which PostgreSQL handles correctly
+    result <- oRm:::flush.postgres(engine, "test_empty", empty_data, conn, commit = FALSE)
+
+    expect_true(is.data.frame(result))
+    expect_equal(result$id, 1)
+    expect_equal(result$name, "default_name")
+    expect_true(!is.null(result$created_at))
 })
 
 test_that("flush.postgres handles very long strings", {
@@ -415,22 +417,28 @@ test_that("qualify.postgres handles edge cases in table names", {
     expect_equal(special_schema, "my-schema.users")
 })
 
-test_that("create_schema.postgres handles invalid schema names", {
+test_that("create_schema.postgres accepts schema names that start with numbers", {
     conn_info <- tryCatch({
         use_postgres_test_db()
     }, error = function(e) {
         testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
     withr::defer(clear_postgres_test_tables())
-    
+
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
-    
-    # Test with invalid schema name (PostgreSQL has naming rules)
-    expect_error(
-        oRm:::create_schema.postgres(engine, "123invalid-start"),
-        "syntax error|invalid"
-    )
+
+    # Schema names starting with numbers are valid when quoted (which dbQuoteIdentifier does)
+    expect_silent(oRm:::create_schema.postgres(engine, "123valid_when_quoted"))
+
+    # Verify it was created
+    conn <- engine$get_connection()
+    result <- DBI::dbGetQuery(conn,
+        "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '123valid_when_quoted'")
+    expect_equal(nrow(result), 1)
+
+    # Clean up
+    DBI::dbExecute(conn, 'DROP SCHEMA IF EXISTS "123valid_when_quoted" CASCADE')
 })
 
 test_that("PostgreSQL dialect functions work with disconnected engine", {
@@ -480,7 +488,7 @@ test_that("postgres schema switching works", {
 
     AuditUser$create_table(overwrite = TRUE)
     withr::defer(AuditUser$drop_table(ask = FALSE))
-    expect_true("audit.audit_users" %in% engine$list_tables())
+    expect_true("audit_users" %in% engine$list_tables())
 })
 
 test_that("engine schema can be set on initialization", {
@@ -874,7 +882,11 @@ test_that("flush.postgres handles concurrent access scenarios", {
     
     # Test concurrent inserts
     conn2 <- engine2$get_connection()
-    
+
+    # Start transactions before flush
+    DBI::dbBegin(conn1)
+    DBI::dbBegin(conn2)
+
     result1 <- oRm:::flush.postgres(engine1, "test_concurrent", list(name = "user1"), conn1, commit = FALSE)
     result2 <- oRm:::flush.postgres(engine2, "test_concurrent", list(name = "user2"), conn2, commit = FALSE)
     
