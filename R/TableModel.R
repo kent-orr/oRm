@@ -72,7 +72,7 @@ TableModel <- R6::R6Class(
     #' @param ... Column definitions.
     #' @param .data a list of Column defintions
     #' @param .schema Character. Schema to apply to the table name. Defaults to the engine's schema.
-        #' @param .default_mode Character. Default mode used when `read()` is called with `.mode` = NULL. Must be one of "all", "one_or_none", "get", "data.frame", or "tbl".
+    #' @param .default_mode Character. Default mode used when `read()` is called with `.mode` = NULL. Must be one of "all", "one_or_none", "get", "data.frame", or "tbl".
     initialize = function(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = c("all", "one_or_none", "get", "data.frame", "tbl")) {
         if (missing(tablename) || missing(engine)) {
             stop("Both 'tablename' and 'engine' must be provided to TableModel.")
