@@ -1,7 +1,7 @@
 Package: oRm
 Type: Package
 Title: Lightweight Object-Relational Mapper for R
-Version: 0.3.2
+Version: 0.3.4.9000
 Author: Kent Orr [aut, cre]
 Authors@R: c(person("Kent", "Orr", email = "orr.kent@pawpawanalytics.com", role = c("aut", "cre")))
 Maintainer: Kent Orr <orr.kent@pawpawanalytics.com>
@@ -9,8 +9,8 @@ Description: A lightweight Object-Relational Mapper (ORM) that simplifies databa
 License: MIT + file LICENSE
 Depends: R (>= 4.1.0)
 Encoding: UTF-8
-Imports: DBI, dbplyr, dplyr, pool, R6, rlang
-Suggests: knitr, rmarkdown, testthat (>= 3.0.0), stevedore (>= 0.9.6),
+Imports: DBI, dbplyr, dplyr, jsonlite, pool, R6, rlang
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0),
         RSQLite, RPostgres, withr, htmltools, bslib, tibble
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2

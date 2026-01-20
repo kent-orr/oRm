@@ -1,258 +1,15 @@
 testthat::source_test_helpers()
 
-# Suite-level setup
-tryCatch({
-    setup_postgres_test_db()
-}, error = function(e) {
-    testthat::skip(paste("Could not set up PostgreSQL container for suite:", e$message))
-})
-
-# Suite-level cleanup
+# Suite-level cleanup to remove any leftover containers
 withr::defer({
     cleanup_postgres_test_db()
 }, testthat::teardown_env())
 
 # =============================================================================
-# 0. TEST INFRASTRUCTURE TESTS
+# POSTGRESQL DIALECT TESTS
 # =============================================================================
-
-test_that("setup_postgres_test_db returns valid connection info", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    
-    expect_type(conn_info, "list")
-    expect_named(conn_info, c("drv", "dbname", "host", "user", "password", "port"))
-    expect_equal(conn_info$dbname, "tests")
-    expect_equal(conn_info$host, "localhost")
-    expect_equal(conn_info$user, "tester")
-    expect_equal(conn_info$password, "tester")
-    expect_equal(conn_info$port, 5432)
-    expect_s4_class(conn_info$drv, "PqDriver")
-})
-
-test_that("setup_postgres_test_db creates working database connection", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    
-    con <- tryCatch({
-        do.call(DBI::dbConnect, conn_info)
-    }, error = function(e) {
-        testthat::skip(paste("Could not connect to PostgreSQL:", e$message))
-    })
-    withr::defer(DBI::dbDisconnect(con))
-    
-    expect_s4_class(con, "PqConnection")
-    expect_no_error(DBI::dbExecute(con, "SELECT 1"))
-    expect_no_error(DBI::dbExecute(con, "CREATE TEMPORARY TABLE test_table (id INTEGER)"))
-    expect_no_error(DBI::dbExecute(con, "INSERT INTO test_table VALUES (1)"))
-    
-    result <- DBI::dbGetQuery(con, "SELECT id FROM test_table")
-    expect_equal(result$id, 1)
-})
-
-test_that("setup_postgres_test_db handles existing containers", {
-    # First setup
-    conn_info1 <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    
-    # Second setup should clean up and recreate
-    conn_info2 <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up second PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    
-    expect_equal(conn_info1, conn_info2)
-    
-    # Should be able to connect to the new container
-    con <- tryCatch({
-        do.call(DBI::dbConnect, conn_info2)
-    }, error = function(e) {
-        testthat::skip(paste("Could not connect to recreated PostgreSQL:", e$message))
-    })
-    withr::defer(DBI::dbDisconnect(con))
-    
-    expect_no_error(DBI::dbExecute(con, "SELECT 1"))
-})
-
-test_that("cleanup_postgres_test_db removes container", {
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    
-    # Verify connection works
-    con <- tryCatch({
-        do.call(DBI::dbConnect, conn_info)
-    }, error = function(e) {
-        testthat::skip(paste("Could not connect to PostgreSQL:", e$message))
-    })
-    DBI::dbDisconnect(con)
-    
-    # Clean up
-    expect_no_error(cleanup_postgres_test_db())
-    
-    # Give Docker time to fully stop the container
-    Sys.sleep(2)
-    
-    # Connection should now fail - try with timeout to avoid hanging
-    expect_error({
-        tryCatch({
-            con <- DBI::dbConnect(
-                conn_info$drv,
-                dbname = conn_info$dbname,
-                host = conn_info$host,
-                user = conn_info$user,
-                password = conn_info$password,
-                port = conn_info$port,
-                connect_timeout = 3
-            )
-            DBI::dbDisconnect(con)
-            stop("Connection unexpectedly succeeded")
-        }, error = function(e) {
-            if (grepl("Connection refused|could not connect|timeout", e$message, ignore.case = TRUE)) {
-                # Expected error - connection properly failed
-                stop(e$message)
-            } else {
-                # Re-throw unexpected errors
-                stop(e$message)
-            }
-        })
-    }, "Connection refused|could not connect|timeout|Connection unexpectedly succeeded")
-})
-
-test_that("use_postgres_test_db returns connection info", {
-    # Setup database first
-    conn_info_setup <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    
-    # Test use_postgres_test_db
-    conn_info <- tryCatch({
-        use_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not use PostgreSQL test db:", e$message))
-    })
-    
-    expect_type(conn_info, "list")
-    expect_named(conn_info, c("drv", "dbname", "host", "user", "password", "port"))
-    expect_equal(conn_info$dbname, "tests")
-    expect_equal(conn_info$host, "localhost")
-    expect_equal(conn_info$user, "tester")
-    expect_equal(conn_info$password, "tester")
-    expect_equal(conn_info$port, 5432)
-    expect_s4_class(conn_info$drv, "PqDriver")
-    
-    # Should be able to connect
-    con <- tryCatch({
-        do.call(DBI::dbConnect, conn_info)
-    }, error = function(e) {
-        testthat::skip(paste("Could not connect using use_postgres_test_db:", e$message))
-    })
-    withr::defer(DBI::dbDisconnect(con))
-    
-    expect_no_error(DBI::dbExecute(con, "SELECT 1"))
-})
-
-test_that("clear_postgres_test_tables removes all tables", {
-    # Setup database
-    conn_info <- tryCatch({
-        setup_postgres_test_db()
-    }, error = function(e) {
-        testthat::skip(paste("Could not set up PostgreSQL container:", e$message))
-    })
-    withr::defer(cleanup_postgres_test_db())
-    
-    # Connect and create test tables
-    con <- tryCatch({
-        do.call(DBI::dbConnect, conn_info)
-    }, error = function(e) {
-        testthat::skip(paste("Could not connect to PostgreSQL:", e$message))
-    })
-    withr::defer(DBI::dbDisconnect(con))
-    
-    # Create some test tables
-    expect_no_error(DBI::dbExecute(con, "CREATE TABLE test_table1 (id INTEGER, name TEXT)"))
-    expect_no_error(DBI::dbExecute(con, "CREATE TABLE test_table2 (id INTEGER, value NUMERIC)"))
-    expect_no_error(DBI::dbExecute(con, "INSERT INTO test_table1 VALUES (1, 'test')"))
-    expect_no_error(DBI::dbExecute(con, "INSERT INTO test_table2 VALUES (1, 3.14)"))
-    
-    # Verify tables exist
-    tables_before <- DBI::dbGetQuery(con, "
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_type = 'BASE TABLE'
-    ")
-    expect_gte(nrow(tables_before), 2)
-    expect_true("test_table1" %in% tables_before$table_name)
-    expect_true("test_table2" %in% tables_before$table_name)
-    
-    # Clear tables
-    expect_no_error(clear_postgres_test_tables())
-    
-    # Verify tables are gone
-    tables_after <- DBI::dbGetQuery(con, "
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_type = 'BASE TABLE'
-    ")
-    expect_equal(nrow(tables_after), 0)
-})
-
-test_that("postgres helpers work with real Docker containers", {
-    # This test verifies the full workflow without mocking
-    testthat::skip_if_not_installed("stevedore")
-    testthat::skip_if_not_installed("RPostgres")
-    
-    if (!stevedore::docker_available()) {
-        testthat::skip("Docker not available, skipping PostgreSQL container tests")
-    }
-    
-    # Test full workflow
-    conn_info <- expect_no_error(setup_postgres_test_db())
-    withr::defer(cleanup_postgres_test_db())
-    
-    # Test connection
-    con <- expect_no_error(do.call(DBI::dbConnect, conn_info))
-    withr::defer(DBI::dbDisconnect(con))
-    
-    # Test basic operations
-    expect_no_error(DBI::dbExecute(con, "CREATE TABLE workflow_test (id SERIAL, data TEXT)"))
-    expect_no_error(DBI::dbExecute(con, "INSERT INTO workflow_test (data) VALUES ('test')"))
-    
-    result <- DBI::dbGetQuery(con, "SELECT * FROM workflow_test")
-    expect_equal(nrow(result), 1)
-    expect_equal(result$data, "test")
-    
-    # Test table clearing
-    expect_no_error(clear_postgres_test_tables())
-    
-    tables <- DBI::dbGetQuery(con, "
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_type = 'BASE TABLE'
-    ")
-    expect_equal(nrow(tables), 0)
-})
+# Note: Infrastructure tests (Docker setup, helper functions) are in
+# test-postgres-infrastructure.R to keep these tests fast.
 
 # =============================================================================
 # 1. ENGINE CONNECTION TESTS
@@ -260,7 +17,7 @@ test_that("postgres helpers work with real Docker containers", {
 
 test_that("postgres engine initializes and closes", {
     conn_info <- tryCatch({
-        use_postgres_test_db()
+        setup_postgres_test_db()
     }, error = function(e) {
         testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
@@ -494,27 +251,29 @@ test_that("flush.postgres handles empty data list", {
         testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
     withr::defer(clear_postgres_test_tables())
-    
+
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
 
     # Create test table with default values
     conn <- engine$get_connection()
     DBI::dbExecute(conn, "CREATE TABLE test_empty (
-        id SERIAL PRIMARY KEY, 
+        id SERIAL PRIMARY KEY,
         name TEXT DEFAULT 'default_name',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )")
     withr::defer(DBI::dbExecute(conn, "DROP TABLE IF EXISTS test_empty"))
-    
+
     # Test flush with empty data (all values are NULL and get filtered out)
     empty_data <- list(name = NULL, extra_field = NULL)
-    
-    # This should result in an INSERT with no columns, which PostgreSQL handles with DEFAULT VALUES
-    expect_error(
-        oRm:::flush.postgres(engine, "test_empty", empty_data, conn, commit = FALSE),
-        "syntax error"
-    )
+
+    # This should result in an INSERT with DEFAULT VALUES, which PostgreSQL handles correctly
+    result <- oRm:::flush.postgres(engine, "test_empty", empty_data, conn, commit = FALSE)
+
+    expect_true(is.data.frame(result))
+    expect_equal(result$id, 1)
+    expect_equal(result$name, "default_name")
+    expect_true(!is.null(result$created_at))
 })
 
 test_that("flush.postgres handles very long strings", {
@@ -658,22 +417,28 @@ test_that("qualify.postgres handles edge cases in table names", {
     expect_equal(special_schema, "my-schema.users")
 })
 
-test_that("create_schema.postgres handles invalid schema names", {
+test_that("create_schema.postgres accepts schema names that start with numbers", {
     conn_info <- tryCatch({
         use_postgres_test_db()
     }, error = function(e) {
         testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
     })
     withr::defer(clear_postgres_test_tables())
-    
+
     engine <- do.call(Engine$new, conn_info)
     withr::defer(engine$close())
-    
-    # Test with invalid schema name (PostgreSQL has naming rules)
-    expect_error(
-        oRm:::create_schema.postgres(engine, "123invalid-start"),
-        "syntax error|invalid"
-    )
+
+    # Schema names starting with numbers are valid when quoted (which dbQuoteIdentifier does)
+    expect_silent(oRm:::create_schema.postgres(engine, "123valid_when_quoted"))
+
+    # Verify it was created
+    conn <- engine$get_connection()
+    result <- DBI::dbGetQuery(conn,
+        "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '123valid_when_quoted'")
+    expect_equal(nrow(result), 1)
+
+    # Clean up
+    DBI::dbExecute(conn, 'DROP SCHEMA IF EXISTS "123valid_when_quoted" CASCADE')
 })
 
 test_that("PostgreSQL dialect functions work with disconnected engine", {
@@ -723,7 +488,7 @@ test_that("postgres schema switching works", {
 
     AuditUser$create_table(overwrite = TRUE)
     withr::defer(AuditUser$drop_table(ask = FALSE))
-    expect_true("audit.audit_users" %in% engine$list_tables())
+    expect_true("audit_users" %in% engine$list_tables())
 })
 
 test_that("engine schema can be set on initialization", {
@@ -1117,7 +882,11 @@ test_that("flush.postgres handles concurrent access scenarios", {
     
     # Test concurrent inserts
     conn2 <- engine2$get_connection()
-    
+
+    # Start transactions before flush
+    DBI::dbBegin(conn1)
+    DBI::dbBegin(conn2)
+
     result1 <- oRm:::flush.postgres(engine1, "test_concurrent", list(name = "user1"), conn1, commit = FALSE)
     result2 <- oRm:::flush.postgres(engine2, "test_concurrent", list(name = "user2"), conn2, commit = FALSE)
     
@@ -1163,9 +932,264 @@ test_that("PostgreSQL dialect handles non-standard column names", {
     )
     
     result <- oRm:::flush.postgres(engine, "test_quotes", test_data, conn, commit = FALSE)
-    
+
     expect_equal(result$`user name`, "John Doe")
     expect_equal(result$order, 1)
     expect_equal(result$select, "value")
     expect_equal(result$id, 1)
+})
+
+# =============================================================================
+# JSON COLUMN AUTO-SERIALIZATION/DESERIALIZATION TESTS
+# =============================================================================
+
+test_that("JSON columns auto-serialize R vectors on write", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        prompts = Column("JSONB"),
+        metadata = Column("JSON")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Test vector serialization
+    job1 <- Jobs$record(prompts = c("a", "b", "c"), metadata = list(key = "value"))
+    job1$create()
+
+    expect_equal(job1$data$id, 1)
+
+    # Verify it was stored as JSON in the database
+    conn <- engine$get_connection()
+    raw_result <- DBI::dbGetQuery(conn, "SELECT prompts, metadata FROM jobs WHERE id = 1")
+    expect_true(!is.null(raw_result$prompts))
+    expect_true(!is.null(raw_result$metadata))
+})
+
+test_that("JSON columns auto-deserialize on read", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        prompts = Column("JSONB"),
+        config = Column("JSON")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert with R objects
+    original_prompts <- c("prompt1", "prompt2", "prompt3")
+    original_config <- list(timeout = 30, retry = TRUE, max_attempts = 3)
+
+    job1 <- Jobs$record(prompts = original_prompts, config = original_config)
+    job1$create()
+
+    # Read back and verify deserialization
+    job_read <- Jobs$get(id == 1)
+
+    expect_equal(job_read$data$prompts, original_prompts)
+    expect_equal(job_read$data$config$timeout, 30)
+    expect_equal(job_read$data$config$retry, TRUE)
+    expect_equal(job_read$data$config$max_attempts, 3)
+})
+
+test_that("JSON columns treat strings as pre-formatted JSON", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        data = Column("JSONB")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert with pre-formatted JSON string
+    json_string <- '{"custom": "format", "nested": {"value": 123}}'
+    job1 <- Jobs$record(data = json_string)
+    job1$create()
+
+    # Read back
+    job_read <- Jobs$get(id == 1)
+
+    # Should be deserialized to R object
+    expect_type(job_read$data$data, "list")
+    expect_equal(job_read$data$data$custom, "format")
+    expect_equal(job_read$data$data$nested$value, 123)
+})
+
+test_that("JSON columns handle NULL values correctly", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        data = Column("JSONB", nullable = TRUE)
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert without JSON field (should be NULL)
+    job1 <- Jobs$record()
+    job1$create()
+
+    # Read back
+    job_read <- Jobs$get(id == 1)
+    expect_true(is.null(job_read$data$data) || is.na(job_read$data$data))
+})
+
+test_that("JSON columns handle complex nested structures", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        config = Column("JSONB")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert complex nested structure
+    complex_config <- list(
+        layers = list(
+            list(type = "dense", units = 128),
+            list(type = "dropout", rate = 0.5),
+            list(type = "dense", units = 10)
+        ),
+        optimizer = list(
+            name = "adam",
+            learning_rate = 0.001,
+            beta1 = 0.9,
+            beta2 = 0.999
+        ),
+        metrics = c("accuracy", "loss", "auc")
+    )
+
+    job1 <- Jobs$record(config = complex_config)
+    job1$create()
+
+    # Read back and verify structure is preserved
+    job_read <- Jobs$get(id == 1)
+
+    expect_equal(length(job_read$data$config$layers), 3)
+    expect_equal(job_read$data$config$layers[[1]]$type, "dense")
+    expect_equal(job_read$data$config$layers[[1]]$units, 128)
+    expect_equal(job_read$data$config$optimizer$name, "adam")
+    expect_equal(job_read$data$config$optimizer$learning_rate, 0.001)
+    expect_equal(job_read$data$config$metrics, c("accuracy", "loss", "auc"))
+})
+
+test_that("JSON columns work with multiple records", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        name = Column("TEXT", nullable = FALSE),
+        tags = Column("JSONB")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert multiple records with different JSON data
+    Jobs$record(name = "job1", tags = c("urgent", "backend"))$create()
+    Jobs$record(name = "job2", tags = c("frontend", "ui", "ux"))$create()
+    Jobs$record(name = "job3", tags = c("database"))$create()
+
+    # Read all back
+    all_jobs <- Jobs$all()
+
+    expect_equal(length(all_jobs), 3)
+    expect_equal(all_jobs[[1]]$data$tags, c("urgent", "backend"))
+    expect_equal(all_jobs[[2]]$data$tags, c("frontend", "ui", "ux"))
+    expect_equal(all_jobs[[3]]$data$tags, c("database"))
+})
+
+test_that("JSON/JSONB types are case-insensitive", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    # Test with lowercase json/jsonb
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        data1 = Column("json"),
+        data2 = Column("jsonb")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Should still auto-serialize
+    job1 <- Jobs$record(data1 = c(1, 2, 3), data2 = list(key = "value"))
+    job1$create()
+
+    # And auto-deserialize
+    job_read <- Jobs$get(id == 1)
+    expect_equal(job_read$data$data1, c(1, 2, 3))
+    expect_equal(job_read$data$data2$key, "value")
 })

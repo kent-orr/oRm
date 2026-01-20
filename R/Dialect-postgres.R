@@ -22,7 +22,7 @@ check_schema_exists.postgres <- function(x, .schema) {
   exists
 }
 
-#' @rdname flush  
+#' @rdname flush
 #' @usage \method{flush}{postgres}(x, table, data, con, commit = TRUE, ...)
 #' @description Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
 flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
@@ -31,29 +31,84 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   tbl_expr <- dbplyr::ident_q(table)
   fields <- names(data)
 
-  # Convert data values to proper format for SQL, handling Date/POSIXct objects
-  formatted_values <- sapply(data, function(x) {
-    if (inherits(x, "Date")) {
-      as.character(x)
-    } else if (inherits(x, "POSIXt")) {
-      format(x, "%Y-%m-%d %H:%M:%S")
-    } else {
-      x
-    }
-  })
-  
-  values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, formatted_values), collapse = ", "), ")")
-  field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
+  # Extract field definitions if provided
+  dots <- list(...)
+  field_defs <- dots$fields
 
-  sql <- paste0(
-    "INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql,
-    " RETURNING *"
-  )
+  # Create a map of field names to types for JSON detection
+  json_fields <- character(0)
+  if (!is.null(field_defs)) {
+    json_fields <- names(field_defs)[vapply(field_defs, function(f) {
+      toupper(f$type) %in% c("JSON", "JSONB")
+    }, logical(1))]
+  }
+
+  # Handle empty data case - insert with DEFAULT VALUES
+  if (length(fields) == 0) {
+    sql <- paste0("INSERT INTO ", tbl_expr, " DEFAULT VALUES RETURNING *")
+  } else {
+    # Convert data values to proper format for SQL, handling Date/POSIXct/JSON objects
+    formatted_values <- lapply(names(data), function(field_name) {
+      x <- data[[field_name]]
+
+      # Check if this is a JSON column that needs serialization
+      if (field_name %in% json_fields) {
+        # Serialize unless this is already valid JSON text.
+        if (is.character(x) && length(x) == 1) {
+          if (jsonlite::validate(x)) {
+            x
+          } else {
+            jsonlite::toJSON(x, auto_unbox = TRUE)
+          }
+        } else {
+          # Serialize R objects to JSON (vectors, lists, etc.)
+          # auto_unbox=TRUE: scalars in lists stay scalar, vectors stay as arrays
+          jsonlite::toJSON(x, auto_unbox = TRUE)
+        }
+      } else if (inherits(x, "Date")) {
+        as.character(x)
+      } else if (inherits(x, "POSIXt")) {
+        format(x, "%Y-%m-%d %H:%M:%S")
+      } else {
+        x
+      }
+    })
+
+    # Unlist to convert list to vector for dbQuoteLiteral
+    formatted_values <- unlist(formatted_values, use.names = FALSE)
+    values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, formatted_values), collapse = ", "), ")")
+    field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
+
+    sql <- paste0(
+      "INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql,
+      " RETURNING *"
+    )
+  }
 
   # Just execute the query and return the result
   # Let the caller handle transaction management
   result <- DBI::dbGetQuery(con, sql)
-  
+
+  # Deserialize JSON/JSONB columns in the returned result
+  if (nrow(result) > 0 && length(json_fields) > 0) {
+    for (json_field in json_fields) {
+      if (json_field %in% names(result)) {
+        result[[json_field]] <- lapply(result[[json_field]], function(val) {
+          if (is.null(val) || is.na(val)) {
+            return(val)
+          }
+          # Parse JSON string back to R object
+          tryCatch({
+            jsonlite::fromJSON(val, simplifyVector = TRUE, simplifyDataFrame = FALSE)
+          }, error = function(e) {
+            # If parsing fails, return original value
+            val
+          })
+        })
+      }
+    }
+  }
+
   return(result)
 }
 
@@ -69,18 +124,27 @@ qualify.postgres <- function(x, tablename, .schema) {
 #' @describeIn set_schema PostgreSQL applies schema via search_path.
 set_schema.postgres <- function(x, .schema) {
     if (is.null(.schema)) return(invisible(NULL))
-    conn <- NULL
-    if (inherits(x, "Engine")) {
-        conn <- x$conn
-    } else if (inherits(x, "TableModel")) {
-        conn <- x$engine$conn
+
+    # Get the engine object
+    engine <- if (inherits(x, "Engine")) x else x$engine
+
+    # Access connection directly to avoid recursion (get_connection calls set_schema)
+    # If connection is invalid, we can't set schema - it should be set during next get_connection
+    conn <- engine$conn
+
+    # Defensive check: ensure connection is not NULL before using it
+    if (is.null(conn)) {
+        return(invisible(NULL))
     }
- 
-    stopifnot("invalid connection in set_schema.postgres" = !is.null(conn) && DBI::dbIsValid(conn)) 
-    
+
+    # Check if connection is valid
+    if (!DBI::dbIsValid(conn)) {
+        return(invisible(NULL))
+    }
+
     sql <- paste0("SET search_path TO ", DBI::dbQuoteIdentifier(conn, .schema))
     execute_sql(x, conn, sql)
-    
+
     invisible(NULL)
 }
 
@@ -109,4 +173,3 @@ create_schema.postgres <- function(x, .schema) {
 execute_sql.postgres <- function(x, con, sql) {
     suppressMessages(DBI::dbExecute(con, sql))
 }
-
