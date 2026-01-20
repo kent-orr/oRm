@@ -22,7 +22,7 @@ check_schema_exists.postgres <- function(x, .schema) {
   exists
 }
 
-#' @rdname flush  
+#' @rdname flush
 #' @usage \method{flush}{postgres}(x, table, data, con, commit = TRUE, ...)
 #' @description Insert a row and return the inserted record using PostgreSQL's RETURNING clause.
 flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
@@ -31,9 +31,27 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   tbl_expr <- dbplyr::ident_q(table)
   fields <- names(data)
 
-  # Convert data values to proper format for SQL, handling Date/POSIXct objects
-  formatted_values <- sapply(data, function(x) {
-    if (inherits(x, "Date")) {
+  # Extract field definitions if provided
+  dots <- list(...)
+  field_defs <- dots$fields
+
+  # Create a map of field names to types for JSON detection
+  json_fields <- character(0)
+  if (!is.null(field_defs)) {
+    json_fields <- names(field_defs)[vapply(field_defs, function(f) {
+      toupper(f$type) %in% c("JSON", "JSONB")
+    }, logical(1))]
+  }
+
+  # Convert data values to proper format for SQL, handling Date/POSIXct/JSON objects
+  formatted_values <- sapply(names(data), function(field_name) {
+    x <- data[[field_name]]
+
+    # Check if this is a JSON column that needs serialization
+    if (field_name %in% json_fields && !is.character(x)) {
+      # Non-string values in JSON columns: serialize to JSON
+      jsonlite::toJSON(x, auto_unbox = TRUE)
+    } else if (inherits(x, "Date")) {
       as.character(x)
     } else if (inherits(x, "POSIXt")) {
       format(x, "%Y-%m-%d %H:%M:%S")
@@ -41,7 +59,7 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
       x
     }
   })
-  
+
   values_sql <- paste0("(", paste(DBI::dbQuoteLiteral(con, formatted_values), collapse = ", "), ")")
   field_sql <- paste(DBI::dbQuoteIdentifier(con, fields), collapse = ", ")
 
@@ -53,7 +71,7 @@ flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
   # Just execute the query and return the result
   # Let the caller handle transaction management
   result <- DBI::dbGetQuery(con, sql)
-  
+
   return(result)
 }
 

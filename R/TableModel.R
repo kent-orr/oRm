@@ -339,6 +339,32 @@ TableModel <- R6::R6Class(
 
         rows <- dplyr::collect(tbl_ref)
 
+        # Deserialize JSON columns if this is a PostgreSQL database
+        if (self$engine$dialect == "postgres" && nrow(rows) > 0) {
+            # Identify JSON/JSONB columns
+            json_fields <- names(self$fields)[vapply(self$fields, function(f) {
+                toupper(f$type) %in% c("JSON", "JSONB")
+            }, logical(1))]
+
+            # Deserialize each JSON column
+            for (json_field in json_fields) {
+                if (json_field %in% names(rows)) {
+                    rows[[json_field]] <- lapply(rows[[json_field]], function(val) {
+                        if (is.null(val) || is.na(val)) {
+                            return(val)
+                        }
+                        # Parse JSON string back to R object
+                        tryCatch({
+                            jsonlite::fromJSON(val, simplifyVector = TRUE)
+                        }, error = function(e) {
+                            # If parsing fails, return original value
+                            val
+                        })
+                    })
+                }
+            }
+        }
+
         if (.mode == "data.frame") {
         return(rows)
         }

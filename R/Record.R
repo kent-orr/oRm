@@ -160,7 +160,8 @@ Record <- R6::R6Class(
           self$model$tablename,
           self$data,
           con,
-          FALSE  # Never commit in the dialect function
+          FALSE,  # Never commit in the dialect function
+          fields = self$model$fields  # Pass field definitions for type handling
         )
       }, error = function(e) {
         # Rollback if we started a transaction
