@@ -1163,9 +1163,264 @@ test_that("PostgreSQL dialect handles non-standard column names", {
     )
     
     result <- oRm:::flush.postgres(engine, "test_quotes", test_data, conn, commit = FALSE)
-    
+
     expect_equal(result$`user name`, "John Doe")
     expect_equal(result$order, 1)
     expect_equal(result$select, "value")
     expect_equal(result$id, 1)
+})
+
+# =============================================================================
+# JSON COLUMN AUTO-SERIALIZATION/DESERIALIZATION TESTS
+# =============================================================================
+
+test_that("JSON columns auto-serialize R vectors on write", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        prompts = Column("JSONB"),
+        metadata = Column("JSON")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Test vector serialization
+    job1 <- Jobs$record(prompts = c("a", "b", "c"), metadata = list(key = "value"))
+    job1$create()
+
+    expect_equal(job1$data$id, 1)
+
+    # Verify it was stored as JSON in the database
+    conn <- engine$get_connection()
+    raw_result <- DBI::dbGetQuery(conn, "SELECT prompts, metadata FROM jobs WHERE id = 1")
+    expect_true(!is.null(raw_result$prompts))
+    expect_true(!is.null(raw_result$metadata))
+})
+
+test_that("JSON columns auto-deserialize on read", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        prompts = Column("JSONB"),
+        config = Column("JSON")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert with R objects
+    original_prompts <- c("prompt1", "prompt2", "prompt3")
+    original_config <- list(timeout = 30, retry = TRUE, max_attempts = 3)
+
+    job1 <- Jobs$record(prompts = original_prompts, config = original_config)
+    job1$create()
+
+    # Read back and verify deserialization
+    job_read <- Jobs$get(id == 1)
+
+    expect_equal(job_read$data$prompts, original_prompts)
+    expect_equal(job_read$data$config$timeout, 30)
+    expect_equal(job_read$data$config$retry, TRUE)
+    expect_equal(job_read$data$config$max_attempts, 3)
+})
+
+test_that("JSON columns treat strings as pre-formatted JSON", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        data = Column("JSONB")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert with pre-formatted JSON string
+    json_string <- '{"custom": "format", "nested": {"value": 123}}'
+    job1 <- Jobs$record(data = json_string)
+    job1$create()
+
+    # Read back
+    job_read <- Jobs$get(id == 1)
+
+    # Should be deserialized to R object
+    expect_type(job_read$data$data, "list")
+    expect_equal(job_read$data$data$custom, "format")
+    expect_equal(job_read$data$data$nested$value, 123)
+})
+
+test_that("JSON columns handle NULL values correctly", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        data = Column("JSONB", nullable = TRUE)
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert without JSON field (should be NULL)
+    job1 <- Jobs$record()
+    job1$create()
+
+    # Read back
+    job_read <- Jobs$get(id == 1)
+    expect_true(is.null(job_read$data$data) || is.na(job_read$data$data))
+})
+
+test_that("JSON columns handle complex nested structures", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        config = Column("JSONB")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert complex nested structure
+    complex_config <- list(
+        layers = list(
+            list(type = "dense", units = 128),
+            list(type = "dropout", rate = 0.5),
+            list(type = "dense", units = 10)
+        ),
+        optimizer = list(
+            name = "adam",
+            learning_rate = 0.001,
+            beta1 = 0.9,
+            beta2 = 0.999
+        ),
+        metrics = c("accuracy", "loss", "auc")
+    )
+
+    job1 <- Jobs$record(config = complex_config)
+    job1$create()
+
+    # Read back and verify structure is preserved
+    job_read <- Jobs$get(id == 1)
+
+    expect_equal(length(job_read$data$config$layers), 3)
+    expect_equal(job_read$data$config$layers[[1]]$type, "dense")
+    expect_equal(job_read$data$config$layers[[1]]$units, 128)
+    expect_equal(job_read$data$config$optimizer$name, "adam")
+    expect_equal(job_read$data$config$optimizer$learning_rate, 0.001)
+    expect_equal(job_read$data$config$metrics, c("accuracy", "loss", "auc"))
+})
+
+test_that("JSON columns work with multiple records", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        name = Column("TEXT", nullable = FALSE),
+        tags = Column("JSONB")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Insert multiple records with different JSON data
+    Jobs$record(name = "job1", tags = c("urgent", "backend"))$create()
+    Jobs$record(name = "job2", tags = c("frontend", "ui", "ux"))$create()
+    Jobs$record(name = "job3", tags = c("database"))$create()
+
+    # Read all back
+    all_jobs <- Jobs$all()
+
+    expect_equal(length(all_jobs), 3)
+    expect_equal(all_jobs[[1]]$data$tags, c("urgent", "backend"))
+    expect_equal(all_jobs[[2]]$data$tags, c("frontend", "ui", "ux"))
+    expect_equal(all_jobs[[3]]$data$tags, c("database"))
+})
+
+test_that("JSON/JSONB types are case-insensitive", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    # Test with lowercase json/jsonb
+    Jobs <- engine$model(
+        "jobs",
+        id = Column("SERIAL", primary_key = TRUE, nullable = FALSE),
+        data1 = Column("json"),
+        data2 = Column("jsonb")
+    )
+
+    Jobs$create_table(overwrite = TRUE)
+    withr::defer(Jobs$drop_table(ask = FALSE))
+
+    # Should still auto-serialize
+    job1 <- Jobs$record(data1 = c(1, 2, 3), data2 = list(key = "value"))
+    job1$create()
+
+    # And auto-deserialize
+    job_read <- Jobs$get(id == 1)
+    expect_equal(job_read$data$data1, c(1, 2, 3))
+    expect_equal(job_read$data$data2$key, "value")
 })
