@@ -1,5 +1,16 @@
 # Helper functions for PostgreSQL tests
 
+docker_available <- function() {
+    # Check if docker command is available and working
+    result <- tryCatch({
+        system2("docker", args = "ps", stdout = FALSE, stderr = FALSE)
+        TRUE
+    }, error = function(e) {
+        FALSE
+    })
+    return(result == TRUE || result == 0)
+}
+
 check_for_test_db <- function() {
     # attempt to connect to the tests database
     tryCatch({
@@ -23,57 +34,56 @@ check_for_test_db <- function() {
 
 setup_postgres_test_db <- function() {
     testthat::skip_on_cran()
-    testthat::skip_if_not_installed("stevedore")
     testthat::skip_if_not_installed("RPostgres")
 
-    if (!stevedore::docker_available()) {
+    if (!docker_available()) {
         testthat::skip("Docker not available, skipping PostgreSQL tests")
     }
 
-    # Clean up any existing postgres containers
-    docker <- stevedore::docker_client()
     container_name <- "orm_postgres_test"
-    
-    # First, try to remove container by name (more reliable)
+
+    # Clean up any existing container by name
     tryCatch({
-        existing_container <- docker$container$get(container_name)
         message("Stopping existing PostgreSQL container: ", container_name)
-        existing_container$stop(t = 5)
-        existing_container$remove(force = TRUE)
-        Sys.sleep(1)  # Brief pause for cleanup
+        system2("docker", args = c("stop", container_name),
+                stdout = FALSE, stderr = FALSE)
+        system2("docker", args = c("rm", "-f", container_name),
+                stdout = FALSE, stderr = FALSE)
+        Sys.sleep(1)
     }, error = function(e) invisible(NULL))
-    
-    # Also clean up any other postgres:14-alpine containers as backup
+
+    # Also clean up any other postgres:14-alpine containers
     tryCatch({
-        containers <- docker$container$list(all = TRUE)
-        for (container in containers) {
-            if (grepl("postgres:14-alpine", container$image)) {
-                message("Cleaning up PostgreSQL container: ", container$name)
-                tryCatch({
-                    container$stop(t = 5)
-                    container$remove(force = TRUE)
-                }, error = function(e) invisible(NULL))
+        containers <- system2("docker",
+                            args = c("ps", "-a", "--filter", "ancestor=postgres:14-alpine",
+                                   "--format", "{{.Names}}"),
+                            stdout = TRUE, stderr = FALSE)
+        if (length(containers) > 0 && nchar(containers[1]) > 0) {
+            for (container in containers) {
+                message("Cleaning up PostgreSQL container: ", container)
+                system2("docker", args = c("stop", container),
+                       stdout = FALSE, stderr = FALSE)
+                system2("docker", args = c("rm", "-f", container),
+                       stdout = FALSE, stderr = FALSE)
             }
         }
     }, error = function(e) invisible(NULL))
 
     # Pull postgres image
     message("Pulling PostgreSQL Alpine image...")
-    docker$image$pull("postgres:14-alpine")
+    system2("docker", args = c("pull", "postgres:14-alpine"))
 
     # Create and start new postgres container
     message("Creating new PostgreSQL container...")
-    container <- docker$container$create(
-        name = container_name,
-        image = "postgres:14-alpine",
-        env = c(
-            POSTGRES_USER = "tester",
-            POSTGRES_PASSWORD = "tester",
-            POSTGRES_DB = "tests"
-        ),
-        ports = c("5432:5432")
-    )
-    container$start()
+    system2("docker", args = c(
+        "run", "-d",
+        "--name", container_name,
+        "-e", "POSTGRES_USER=tester",
+        "-e", "POSTGRES_PASSWORD=tester",
+        "-e", "POSTGRES_DB=tests",
+        "-p", "5432:5432",
+        "postgres:14-alpine"
+    ))
 
     # Wait for container to be ready
     max_attempts <- 15
@@ -86,8 +96,8 @@ setup_postgres_test_db <- function() {
             stop("PostgreSQL failed to start after ", max_attempts, " attempts")
         }
         Sys.sleep(2)
-    } 
-    
+    }
+
     # if we're all good, return the connection details
     list(
         drv = RPostgres::Postgres(),
@@ -100,15 +110,21 @@ setup_postgres_test_db <- function() {
 }
 
 use_postgres_test_db <- function() {
-    if (!requireNamespace("stevedore", quietly = TRUE) || !stevedore::docker_available()) {
+    if (!docker_available()) {
         testthat::skip("Docker not available for PostgreSQL tests")
     }
-    
+
     # Check if test database is available
     if (!check_for_test_db()) {
-        testthat::skip("PostgreSQL test database not available")
+        # If not available, try to set it up
+        tryCatch({
+            message("PostgreSQL test database not available, attempting to set up...")
+            return(setup_postgres_test_db())
+        }, error = function(e) {
+            testthat::skip(paste("Could not set up PostgreSQL test database:", e$message))
+        })
     }
-    
+
     # Return connection parameters
     list(
         drv = RPostgres::Postgres(),
@@ -121,10 +137,10 @@ use_postgres_test_db <- function() {
 }
 
 clear_postgres_test_tables <- function() {
-    if (!requireNamespace("stevedore", quietly = TRUE) || !stevedore::docker_available()) {
+    if (!docker_available()) {
         return(invisible(NULL))
     }
-    
+
     # Connect to the tests database
     tryCatch({
         con <- DBI::dbConnect(
@@ -135,24 +151,24 @@ clear_postgres_test_tables <- function() {
             password = "tester",
             port = 5432
         )
-        
+
         # Get all user-created tables (excluding system tables)
         tables <- DBI::dbGetQuery(con, "
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
             AND table_type = 'BASE TABLE'
         ")
-        
+
         # Drop each table
         if (nrow(tables) > 0) {
             for (table_name in tables$table_name) {
-                DBI::dbExecute(con, paste0("DROP TABLE IF EXISTS ", 
+                DBI::dbExecute(con, paste0("DROP TABLE IF EXISTS ",
                                          DBI::dbQuoteIdentifier(con, table_name), " CASCADE"))
             }
             message("Cleared ", nrow(tables), " test tables")
         }
-        
+
         DBI::dbDisconnect(con)
     }, error = function(e) {
         message("Note: Could not clear test tables: ", e$message)
@@ -160,36 +176,39 @@ clear_postgres_test_tables <- function() {
 }
 
 cleanup_postgres_test_db <- function() {
-    if (!requireNamespace("stevedore", quietly = TRUE) || !stevedore::docker_available()) {
+    if (!docker_available()) {
         return(invisible(NULL))
     }
-    
+
     # Find and remove all postgres:14-alpine containers
-    docker <- stevedore::docker_client()
-    
     tryCatch({
-        containers <- docker$container$list(all = TRUE)
+        containers <- system2("docker",
+                            args = c("ps", "-a", "--filter", "ancestor=postgres:14-alpine",
+                                   "--format", "{{.Names}}"),
+                            stdout = TRUE, stderr = FALSE)
         removed_count <- 0
-        
-        for (container in containers) {
-            if (grepl("postgres:14-alpine", container$image)) {
-                message("Removing PostgreSQL container: ", container$name)
+
+        if (length(containers) > 0 && nchar(containers[1]) > 0) {
+            for (container in containers) {
+                message("Removing PostgreSQL container: ", container)
                 tryCatch({
-                    container$stop(t = 5)
-                    container$remove(force = TRUE)
+                    system2("docker", args = c("stop", "-t", "5", container),
+                           stdout = FALSE, stderr = FALSE)
+                    system2("docker", args = c("rm", "-f", container),
+                           stdout = FALSE, stderr = FALSE)
                     removed_count <- removed_count + 1
                 }, error = function(e) {
-                    message("Warning: Could not remove container ", container$name, ": ", e$message)
+                    message("Warning: Could not remove container ", container, ": ", e$message)
                 })
             }
         }
-        
+
         if (removed_count > 0) {
             message("PostgreSQL test cleanup completed - removed ", removed_count, " containers")
         } else {
             message("No PostgreSQL test containers found to clean up")
         }
-        
+
     }, error = function(e) {
         message("Note: Could not access Docker containers for cleanup: ", e$message)
     })
