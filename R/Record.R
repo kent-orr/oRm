@@ -68,6 +68,18 @@ Record <- R6::R6Class(
         }
       }
       self$data <- utils::modifyList(self$data, args)
+
+      # Unwrap list columns: when records are created from dataframe rows
+      # (via TableModel$read()), list columns remain wrapped in an extra list.
+      # We need to unwrap these for proper data structure.
+      for (field_name in names(self$data)) {
+        val <- self$data[[field_name]]
+        # If it's an unnamed list of length 1, unwrap it (this is a list column from dataframe)
+        # Named lists are actual JSON objects and should not be unwrapped
+        if (is.list(val) && length(val) == 1 && is.null(names(val))) {
+          self$data[[field_name]] <- val[[1]]
+        }
+      }
     },
 
 
@@ -88,9 +100,14 @@ Record <- R6::R6Class(
     create = function(flush_record = NULL) {
       con <- self$model$get_connection()
       
-      # Validate required fields
+      # Validate required fields (excluding auto-generated fields like SERIAL)
       required_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isFALSE(x$nullable), logical(1))
+        vapply(self$model$fields, function(x) {
+          # A field is required if it's not nullable AND not auto-generated
+          # SERIAL, BIGSERIAL, SMALLSERIAL are auto-generated types
+          is_auto_generated <- toupper(x$type) %in% c("SERIAL", "BIGSERIAL", "SMALLSERIAL")
+          isFALSE(x$nullable) && !is_auto_generated
+        }, logical(1))
       ]
       missing_fields <- setdiff(required_fields, names(self$data))
       if (length(missing_fields) > 0) {
@@ -179,6 +196,18 @@ Record <- R6::R6Class(
       # Update record data with returned values
       if (!is.null(result) && nrow(result) > 0) {
         self$data <- as.list(result[1, ])
+
+        # Unwrap list columns: when dataframes have list columns and we extract
+        # a single row with as.list(), the values remain wrapped in an extra list.
+        # We need to unwrap these for proper data structure.
+        for (field_name in names(self$data)) {
+          val <- self$data[[field_name]]
+          # If it's an unnamed list of length 1, unwrap it (this is a list column from dataframe)
+          # Named lists are actual JSON objects and should not be unwrapped
+          if (is.list(val) && length(val) == 1 && is.null(names(val))) {
+            self$data[[field_name]] <- val[[1]]
+          }
+        }
       }
       
       invisible(self)
