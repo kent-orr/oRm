@@ -13,7 +13,7 @@ As this uses R6 classes, the models are modified in place and do not need to be 
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,12 +34,12 @@ As this uses R6 classes, the models are modified in place and do not need to be 
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
+    <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Topics</h6></li>
     <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
     <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
   </ul></li>
-<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/kent-orr/oRm/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -120,30 +120,39 @@ As this uses R6 classes, the models are modified in place and do not need to be 
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># Set up models</span></span></span>
 <span class="r-in"><span><span class="va">User</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span><span class="st">"users"</span>, id <span class="op">=</span> <span class="fu"><a href="Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
 <span class="r-in"><span><span class="va">Post</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span><span class="st">"posts"</span>, </span></span>
 <span class="r-in"><span>                     id <span class="op">=</span> <span class="fu"><a href="Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, </span></span>
 <span class="r-in"><span>                     user_id <span class="op">=</span> <span class="fu"><a href="Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Define a one-to-many relationship from User to Post</span></span></span>
 <span class="r-in"><span><span class="fu">define_relationship</span><span class="op">(</span><span class="va">User</span>, <span class="st">"id"</span>, <span class="st">"one_to_many"</span>, <span class="va">Post</span>, <span class="st">"user_id"</span>, </span></span>
 <span class="r-in"><span>                    ref <span class="op">=</span> <span class="st">"posts"</span>, backref <span class="op">=</span> <span class="st">"user"</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'User' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Now User has a 'posts' relationship and Post has a 'user' relationship</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Create some sample data</span></span></span>
 <span class="r-in"><span><span class="va">user</span> <span class="op">&lt;-</span> <span class="va">User</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'User' not found</span>
 <span class="r-in"><span><span class="va">post</span> <span class="op">&lt;-</span> <span class="va">Post</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, user_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'Post' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use the relationships</span></span></span>
 <span class="r-in"><span><span class="va">user_posts</span> <span class="op">&lt;-</span> <span class="va">user</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'posts'</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'user' not found</span>
 <span class="r-in"><span><span class="va">post_user</span> <span class="op">&lt;-</span> <span class="va">post</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">'user'</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'post' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">user_posts</span><span class="op">)</span>  <span class="co"># Should show the post</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'user_posts' not found</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">post_user</span><span class="op">)</span>   <span class="co"># Should show the user</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'post_user' not found</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
@@ -156,7 +165,7 @@ As this uses R6 classes, the models are modified in place and do not need to be 
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>

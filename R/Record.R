@@ -28,6 +28,7 @@
 #' @export
 Record <- R6::R6Class(
   "Record",
+  lock_objects = FALSE,
   public = list(
     relationships = c(),
     model = NULL,
@@ -61,7 +62,10 @@ Record <- R6::R6Class(
         method <- model$methods[[i]]
         if (method$target == "record") {
           method_name <- method$name
-          self[[method_name]] <- method$fn
+          method_fn <- method$fn
+          # Set the function's environment to the current environment so it can access self
+          environment(method_fn) <- environment()
+          self[[method_name]] <- method_fn
         }
       }
 

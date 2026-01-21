@@ -39,7 +39,7 @@ If a backref is specified, it also creates a reverse relationship in the related
 As this uses R6 classes, the models are modified in place and do not need to be reassigned.
 }
 \examples{
-\dontrun{
+\donttest{
 # Set up models
 User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
 Post <- engine$model("posts", 

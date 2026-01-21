@@ -1,0 +1,178 @@
+# Using Records
+
+If you’re here, I hope you’ve gone over the basics of Engines and
+TableModels. A Record is the next step in your data modeling journey. A
+Record is a type of TableModel that represents a single row of data in a
+database.
+
+``` r
+library(oRm)
+engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE
+)
+Classes <- engine$model(
+    tablename = "classes", 
+    id = Column('INTEGER', primary_key = TRUE),
+    subject = Column('TEXT'),
+    teacher_id = ForeignKey('INTEGER', references = 'teachers.id'),
+    grade_average = Column('NUMBER', default = \(x) rnorm(1, 80, 10))
+)
+Classes$create_table()
+#> <TableModel>
+#> Table: classes
+#> Columns: id, subject, teacher_id, grade_average
+
+for (i in 1:10) {
+    Classes$record(
+        id = i, 
+        subject = ifelse(i %% 2 == 0, "Math", "Science"),
+        teacher_id = ifelse(i %% 2 == 0, 1, 2)
+    )$create()
+}
+```
+
+At this point we’ve got a database full of records representing classes.
+Each class has an id, a subject, a teacher_id, and a grade_average. The
+**C**R**UD** operations (Create, Update, Delete) operations happen here.
+
+Let’s start with creating a new record. Like Engine and TableModel you
+can use the Record\$new() function to create a new Record object. Or,
+you can use the parent model object to create a new record:
+
+``` r
+english = Classes$record(
+    id = 11, 
+    subject = "English", 
+    teacher_id = 2, 
+    grade_average = 85
+)
+english
+#> <Record>: 'classes'
+#> grade_average: 85
+#> id: 11
+#> subject: English
+#> teacher_id: 2
+```
+
+Just defining a Record object doesn’t save it to the database. To do
+that, you need to call the create() method on the Record object.
+
+## Create
+
+``` r
+english$create(flush_record = NULL)
+```
+
+Create only comes with a single argument, flush_record, which is a
+boolean indicating whether to flush the record to the database after
+creation. The default NULL will check the transaction state and flush
+the record if it’s not in a transaction, or wait for commit if it’s in a
+transaction. This can of course be overridden. The point here is that
+you might have a ‘SERIAL’ column in your table that automatically
+increments the id for you, or your column has a timestamp function being
+called by the database itself. If a record is flushed, it will return
+the updated record (if the dialect supports it).
+
+In interactive use, you probably want to flush every creation so that
+you have the whole record to work with on creation. In a loop or
+transaction where you’re making a modification, you may not be very
+concerned about flushing.
+
+## Update
+
+Let’s say we want to change the grade_average of English from 85 to 90.
+The record data (aka row data) is stored in `record$data`. We can modify
+it and then call the update() method to save the changes to the
+database.
+
+``` r
+english$data$grade_average = 90
+english$update()
+Classes$read(id==11, .mode='get')
+#> <Record>: 'classes'
+#> grade_average: 90
+#> id: 11
+#> subject: English
+#> teacher_id: 2
+```
+
+alternatively, you can give named arguments to the update() method to do
+it in one go.
+
+``` r
+english$update(grade_average = 91)
+Classes$read(id==11, .mode='get')
+#> <Record>: 'classes'
+#> grade_average: 91
+#> id: 11
+#> subject: English
+#> teacher_id: 2
+```
+
+And need to give a named list for programmatic updates?
+
+``` r
+e_data = list(grade_average = 92, teacher_id = 1)
+english$update(.data = e_data)
+Classes$read(id==11, .mode='get')
+#> <Record>: 'classes'
+#> grade_average: 92
+#> id: 11
+#> subject: English
+#> teacher_id: 1
+```
+
+## Delete
+
+To delete a record, call the delete() method on the Record object.
+
+``` r
+english$delete()
+#> NULL
+Classes$read(!subject %in% c("Math", "Science"), .mode='one_or_none')
+#> NULL
+```
+
+## Record-Level Methods
+
+Beyond CRUD operations, you can attach custom behavior to records using
+the [`Method()`](https://kent-orr.github.io/oRm/reference/Method.md)
+function. Record-level methods are defined when creating the model and
+become available on all record instances:
+
+``` r
+Classes <- engine$model(
+    tablename = "classes",
+    id = Column('INTEGER', primary_key = TRUE),
+    subject = Column('TEXT'),
+    teacher_id = ForeignKey('INTEGER', references = 'teachers.id'),
+    grade_average = Column('NUMBER', default = \(x) rnorm(1, 80, 10)),
+
+    # Record-level method (target='record' is the default)
+    describe = Method(function() {
+        paste("This is a", self$data$subject, "class with an average of",
+              round(self$data$grade_average, 2))
+    })
+)
+
+Classes$create_table(overwrite = TRUE)
+#> <TableModel>
+#> Table: classes
+#> Columns: id, subject, teacher_id, grade_average
+math <- Classes$record(id = 1, subject = "Math", teacher_id = 1)$create()
+
+# Use the custom record method
+math$describe()
+#> [1] "This is a Math class with an average of 85.12"
+```
+
+Record methods have access to `self`, which refers to the record
+instance. You can access the record’s data via `self$data` and call
+other record methods like `self$update()` or `self$relationship()`.
+
+For more complex examples of using methods for business logic, see the
+[Using
+Methods](https://kent-orr.github.io/oRm/articles/using-methods.md)
+vignette.

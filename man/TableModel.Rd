@@ -11,34 +11,38 @@ with the database table.
 \details{
 TableModel is a core component of the oRm framework, responsible for:
 \itemize{
-  \item Defining table structure with columns and relationships
-  \item Creating and managing database tables
-  \item Providing an interface for CRUD operations on table records
-  \item Managing relationships between different tables
+    \item Defining table structure with columns and relationships
+    \item Creating and managing database tables
+    \item Providing an interface for CRUD operations on table records
+    \item Managing relationships between different tables
 }
 
 Key features:
 \itemize{
-  \item Dynamic table creation and management
-  \item Support for various column types and constraints
-  \item Relationship definitions and querying
-  \item Record creation and retrieval
+    \item Dynamic table creation and management
+    \item Support for various column types and constraints
+    \item Relationship definitions and querying
+    \item Record creation and retrieval
 }
 }
 \note{
 Errors if the table's schema does not exist.
+
+Throws an error if zero or multiple records are found.
+
+Throws an error if multiple records are found.
 }
 \section{Methods}{
 
 \describe{
-  \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
-  \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
-  \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
-  \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
-  \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
-  \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
-  \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
-  \item{\code{print()}}{Print a concise summary of the model, including its fields.}
+    \item{\code{initialize(tablename, engine, ..., .data = list(), .schema = NULL, .default_mode = "all")}}{Constructor for creating a new TableModel instance.}
+    \item{\code{get_connection()}}{Retrieve the active database connection from the engine.}
+    \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
+    \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
+    \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
+    \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
+    \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
+    \item{\code{print()}}{Print a concise summary of the model, including its fields.}
 }
 }
 
@@ -48,13 +52,60 @@ Errors if the table's schema does not exist.
 ## Method `TableModel$drop_table`
 ## ------------------------------------------------
 
-\dontrun{
+\donttest{
 # Drop the "users" table after confirmation
 User$drop_table()
 
 # Force drop without confirmation
 User$drop_table(ask = FALSE)
 }
+
+## ------------------------------------------------
+## Method `TableModel$get`
+## ------------------------------------------------
+
+\donttest{
+# Get by primary key value (if single primary key exists)
+user <- User$get(123)
+
+# Get by named filter
+user <- User$get(email == "user@example.com")
+
+# Get with multiple filters
+user <- User$get(name == "John", active == 1)
+}
+
+## ------------------------------------------------
+## Method `TableModel$all`
+## ------------------------------------------------
+
+\donttest{
+# Get all users
+users <- User$all()
+
+# Get all active users
+active_users <- User$all(active == 1)
+
+# Get users with specific criteria
+admin_users <- User$all(role == "admin", active == 1)
+}
+
+## ------------------------------------------------
+## Method `TableModel$one_or_none`
+## ------------------------------------------------
+
+\donttest{
+# Get user by email (expects 0 or 1 result)
+user <- User$one_or_none(email == "user@example.com")
+
+# Returns NULL if no match
+user <- User$one_or_none(id == 999)
+
+# Errors if multiple matches
+user <- User$one_or_none(status == "active")  # Error if multiple active users
+}
+Retrieve related records based on a defined relationship.
+
 }
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
@@ -93,6 +144,9 @@ Engine::get_connection
 \item \href{#method-TableModel-record}{\code{TableModel$record()}}
 \item \href{#method-TableModel-tbl}{\code{TableModel$tbl()}}
 \item \href{#method-TableModel-read}{\code{TableModel$read()}}
+\item \href{#method-TableModel-get}{\code{TableModel$get()}}
+\item \href{#method-TableModel-all}{\code{TableModel$all()}}
+\item \href{#method-TableModel-one_or_none}{\code{TableModel$one_or_none()}}
 \item \href{#method-TableModel-relationship}{\code{TableModel$relationship()}}
 \item \href{#method-TableModel-print}{\code{TableModel$print()}}
 \item \href{#method-TableModel-clone}{\code{TableModel$clone()}}
@@ -224,7 +278,7 @@ or `NULL` if the operation is canceled or skipped.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{\donttest{
 # Drop the "users" table after confirmation
 User$drop_table()
 
@@ -295,11 +349,124 @@ Positive values return the first N records, negative values return the last N re
 
 \item{\code{.offset}}{Integer. Offset for pagination. Default is 0.}
 
-\item{\code{.order_by}}{Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
-Retrieve related records based on a defined relationship.}
+\item{\code{.order_by}}{Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-get"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-get}{}}}
+\subsection{Method \code{get()}}{
+Shortcut for retrieving a single record. Expects exactly one matching record.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$get(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unquoted expressions for filtering. For models with a single primary key, 
+the first unnamed argument can be the primary key value.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A Record object if exactly one record is found.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+# Get by primary key value (if single primary key exists)
+user <- User$get(123)
+
+# Get by named filter
+user <- User$get(email == "user@example.com")
+
+# Get with multiple filters
+user <- User$get(name == "John", active == 1)
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-all"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-all}{}}}
+\subsection{Method \code{all()}}{
+Retrieve all records matching the given filters.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$all(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unquoted expressions for filtering.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list of Record objects, or NULL if no records are found.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+# Get all users
+users <- User$all()
+
+# Get all active users
+active_users <- User$all(active == 1)
+
+# Get users with specific criteria
+admin_users <- User$all(role == "admin", active == 1)
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-one_or_none"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-one_or_none}{}}}
+\subsection{Method \code{one_or_none()}}{
+Retrieve zero or one record matching the given filters.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$one_or_none(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unquoted expressions for filtering.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A Record object if exactly one record is found, NULL if no records are found.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+# Get user by email (expects 0 or 1 result)
+user <- User$one_or_none(email == "user@example.com")
+
+# Returns NULL if no match
+user <- User$one_or_none(id == 999)
+
+# Errors if multiple matches
+user <- User$one_or_none(status == "active")  # Error if multiple active users
+}
+Retrieve related records based on a defined relationship.
+
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-relationship"></a>}}

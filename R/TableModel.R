@@ -55,6 +55,7 @@ NULL
 #' 
 TableModel <- R6::R6Class(
     "TableModel",
+    lock_objects = FALSE,
     public = list(
     tablename = NULL,
     schema = NULL,
@@ -113,7 +114,10 @@ TableModel <- R6::R6Class(
             if (method$target == "table") {
                 # Inject method into this R6 instance
                 method_name <- method$name
-                self[[method_name]] <- method$fn
+                method_fn <- method$fn
+                # Set the function's environment to self so it can access self, just like regular R6 methods
+                environment(method_fn) <- environment()
+                self[[method_name]] <- method_fn
             }
         }
     },

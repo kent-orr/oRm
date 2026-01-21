@@ -153,7 +153,7 @@ ForeignKey <- function(type, ref_table = NULL, ref_column = NULL, references = N
 #'
 #'   # Instance method - available on individual student records
 #'   greet = Method(function() {
-#'     paste("Hello, I'm", self$name)
+#'     paste("Hello, I'm", self$data$name)
 #'   }, target = "record"),
 #'
 #'   # Instance method - modify record state

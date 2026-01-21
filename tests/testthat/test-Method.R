@@ -48,7 +48,7 @@ test_that("TableModel extracts and stores Method objects", {
     id = Column("INTEGER", primary_key = TRUE),
     name = Column("TEXT"),
     greet = Method(function() {
-      paste("Hello, I'm", self$name)
+      paste("Hello, I'm", self$data$name)
     }, target = "record"),
     find_by_name = Method(function(name) {
       self$read(name = name)
@@ -82,14 +82,14 @@ test_that("Table-targeted methods are injected into TableModel", {
 })
 
 test_that("Record-targeted methods are injected into Record instances", {
-  engine <- Engine$new("sqlite::memory:")
+  engine <- Engine$new("sqlite::memory:", drv=RSQLite::SQLite(), persist=TRUE)
 
   Students <- engine$model(
     "students",
     id = Column("INTEGER", primary_key = TRUE),
     name = Column("TEXT"),
     greet = Method(function() {
-      paste("Hello, I'm", self$name)
+      paste("Hello, I'm", self$data$name)
     }, target = "record")
   )
 
@@ -106,7 +106,7 @@ test_that("Record-targeted methods are injected into Record instances", {
 })
 
 test_that("Methods have access to self in record context", {
-  engine <- Engine$new("sqlite::memory:")
+  engine <- Engine$new("sqlite::memory:", drv=RSQLite::SQLite(), persist=TRUE)
 
   Students <- engine$model(
     "students",
@@ -147,7 +147,7 @@ test_that("Methods have access to self in table context", {
 })
 
 test_that("Multiple methods can be defined on the same model", {
-  engine <- Engine$new("sqlite::memory:")
+  engine <- Engine$new("sqlite::memory:", drv=RSQLite::SQLite(), persist=TRUE)
 
   Students <- engine$model(
     "students",
@@ -155,7 +155,7 @@ test_that("Multiple methods can be defined on the same model", {
     name = Column("TEXT"),
     age = Column("INTEGER"),
     greet = Method(function() {
-      paste("Hello, I'm", self$name)
+      paste("Hello, I'm", self$data$name)
     }, target = "record"),
     get_age = Method(function() {
       self$data$age
@@ -184,7 +184,7 @@ test_that("Multiple methods can be defined on the same model", {
 })
 
 test_that("Methods work correctly in integration scenario", {
-  engine <- Engine$new("sqlite::memory:")
+  engine <- Engine$new("sqlite::memory:", drv=RSQLite::SQLite(), persist=TRUE)
 
   Students <- engine$model(
     "students",
@@ -192,7 +192,7 @@ test_that("Methods work correctly in integration scenario", {
     name = Column("TEXT"),
     present = Column("INTEGER", default = 0),
     greet = Method(function() {
-      paste("Hello, I'm", self$name)
+      paste("Hello, I'm", self$data$name)
     }, target = "record"),
     mark_present = Method(function() {
       self$data$present <- 1
