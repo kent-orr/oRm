@@ -1,38 +1,37 @@
 # Changelog
 
-## oRm 0.3.0
+## oRm (development version)
 
 ### New Features
 
-- Added comprehensive PostgreSQL dialect support with RETURNING clause
-- Enhanced schema management with automatic schema creation
-- Improved transaction handling with
-  [`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
-  method
-- Added support for connection pooling via pool package
+- Added [`Method()`](https://kent-orr.github.io/oRm/reference/Method.md)
+  function for attaching custom methods to models at both table and
+  record levels
+  - Table-level methods operate on the entire table for custom queries
+    and bulk operations
+  - Record-level methods operate on individual records for
+    instance-specific behavior
+  - Both method types have access to `self` for calling model/record
+    methods
+- Added automatic JSON serialization/deserialization for PostgreSQL
+  - JSON and JSONB columns automatically serialize R objects when
+    writing to database
+  - Automatically deserialize JSON to R objects when reading from
+    database
+
+### Documentation
+
+- Added new vignette “Using Methods” demonstrating method usage patterns
+- Updated existing vignettes (Get Started, Using Records, Using
+  TableModels) to include method documentation
+- Added `Method` to core building blocks in package documentation
 
 ### Improvements
 
-- Enhanced dialect system for better database compatibility
-- Improved error handling and validation
-- Better documentation and vignettes
-- Added comprehensive test coverage for PostgreSQL dialect
-
-### Bug Fixes
-
-- Fixed S3 method signature consistency for
-  [`with()`](https://rdrr.io/r/base/with.html) methods
-- Improved handling of NULL values in database operations
-- Fixed documentation issues and parameter mismatches
-
-### Breaking Changes
-
-- Updated
-  [`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
-  and
-  [`with.Record()`](https://kent-orr.github.io/oRm/reference/with.Record.md)
-  method signatures for S3 consistency
+- Dropped stevedore dependency for PostgreSQL test setup
 
 ------------------------------------------------------------------------
 
-This is the initial CRAN submission for oRm.
+## oRm 0.3.1
+
+Initial CRAN release.
