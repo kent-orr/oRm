@@ -1,0 +1,295 @@
+# Why oRm
+
+`oRm` is not designed for analysis. It is made to facilitate creation,
+deletion, and modification of data in a database.
+
+Most R workflows invlove filtering, aggregating, and analyzing entire
+datasets. Working with a single row just isn’t where R shines. Another
+way to look at it is that the R ecosystem is built for data frames, not
+records.
+
+But every once in a while you need to build a quick data governance or
+lookup tool that’s operational, not analytical. Or maybe you’re
+validating a series of relational database tables and you are tired of
+writing a left_join, inner_join, etc. when you need to investigate how
+the pieces fit together. In those cases, `oRm` could be a useful tool.
+
+Let’s use a pretty basic example of where `oRm` would be suitable. Your
+team is recording measurements of plant growth. You don’t want an excel
+sheet on a hard drive to be your source fo truth, no, you’re thinking a
+database would be more appropriate. But how to ensure that observations
+are recorded accurately and consistently?
+
+## Using `dbplyr` and `DBI` to manage your database
+
+``` r
+library(DBI)
+library(dplyr)
+library(dbplyr)
+
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+
+# Create the table using a data.frame and dbWriteTable
+initial_data <- tibble::tibble(
+  observer_id = 1L,
+  plant_id = 101L,
+  measurement_date = as.Date("2025-07-30"),
+  measurement_value = 14.2
+)
+
+dbWriteTable(con, "measurements", initial_data)
+
+# ===== table setup complete =====
+
+# Add another row later
+new_row <- tibble::tibble(
+  observer_id = 2L,
+  plant_id = 102L,
+  measurement_date = as.Date("2025-07-31"),
+  measurement_value = 15.8
+)
+
+DBI::dbAppendTable(con, "measurements", new_row)
+#> [1] 1
+
+# View the table
+tbl(con, "measurements") |>
+  filter(observer_id == 2) |>
+  collect()
+#> # A tibble: 1 × 4
+#>   observer_id plant_id measurement_date measurement_value
+#>         <int>    <int>            <dbl>             <dbl>
+#> 1           2      102            20300              15.8
+```
+
+At this point, you’re mixing `DBI` calls, and `dplyr`. That’s fine until
+you need to build an interface, reuse logic across functions, or update
+a record based on user input. Suddenly you’re juggling SQL strings,
+dplyr pipelines, and column names by hand. So let’s see that in action:
+One of your team members actually put in the measurement wrong, it’s
+8.15, not 15.8. How would we fix this record in the database?
+
+``` r
+# You have to find the row and update it manually using SQL
+dbExecute(con, "
+  UPDATE measurements
+  SET measurement_value = 8.15
+  WHERE observer_id = 2
+")
+#> [1] 1
+dbGetQuery(con, 'SELECT * FROM measurements WHERE observer_id = 2')
+#>   observer_id plant_id measurement_date measurement_value
+#> 1           2      102            20300              8.15
+
+# Or if we stay are strinct about staying in dbplyr, we might do something like this:
+
+new_tab = tbl(con, "measurements") |>
+    mutate(
+        measurement_value  = case_when(
+            observer_id == 2 ~ 8.15,
+            TRUE ~ measurement_value
+        )
+    ) |>
+    collect()
+
+dbWriteTable(con, "measurements", new_tab, overwrite = TRUE)
+```
+
+You’re either hardcoding or pasting together SQL, or you’re overwriting
+the wntire table. At best it’s not very DRY, and it can make your code
+harder to understand and maintain. At worst, you can delete your whole
+database in a single operation with no recourse.
+
+![oh
+noes!](https://media0.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3emZwaXh2cXhkbm85MjR2ZnI2OTkzMDhtYXMwem9ncGdiaTk3emp3dSZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/dJEMs13SrsiuA/200.webp)
+
+oh noes!
+
+There’s no row-level object to work with, you’re always re-identifying
+rows with raw conditions.
+
+## Using `oRm` to Manage Your Database
+
+So now let’s use `oRm` to manage our database. We’re going to define our
+table schema and enter our first few observations.
+
+``` r
+library(oRm)
+
+engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE
+)
+
+Measurement <- engine$model(
+  "measurements",
+  id = Column("INTEGER", primary_key = TRUE),
+  observer_id = Column("INTEGER"),
+  plant_id = ForeignKey("INTEGER", references = 'plants.id'),  # we'll define this table shortly
+
+  measurement_date = Column("DATE"),
+  measurement_value = Column("REAL")
+)
+
+Measurement$create_table()
+#> <TableModel>
+#> Table: measurements
+#> Columns: id, observer_id, plant_id, measurement_date, measurement_value
+
+# ===== table setup complete =====
+
+# Add a few observations
+m1 = Measurement$record(
+  observer_id = 1,
+  plant_id = 101,
+  measurement_date = as.Date("2025-07-30"),
+  measurement_value = 14.2
+)$create()
+
+m2 = Measurement$record(
+  observer_id = 1,
+  plant_id = 101,
+  measurement_date = as.Date("2025-08-15"),
+  measurement_value = 16.0
+)$create()
+
+m3 = Measurement$record(
+  observer_id = 2,
+  plant_id = 102,
+  measurement_date = as.Date("2025-07-31"),
+  measurement_value = 15.8
+)$create()
+
+m1
+#> <Record>: 'measurements'
+#> id: 1
+#> observer_id: 1
+#> plant_id: 101
+#> measurement_date: 20299
+#> measurement_value: 14.2
+```
+
+And oh, yikes. Person 2 put in the measurement wrong. let’s correct it.
+
+``` r
+p2 = Measurement$read(observer_id == 2, .mode='get')
+p2$update(measurement_value = 8.15)
+p2
+#> <Record>: 'measurements'
+#> id: 3
+#> observer_id: 2
+#> plant_id: 102
+#> measurement_date: 20300
+#> measurement_value: 8.15
+```
+
+This time around we’re working with one single record, which is safer
+and more precise than using raw SQL. We’re also performing an update
+instead of re-writing the whole table.
+
+![snuggle
+fest](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnVlYm13dmJybDdvZGJnczdtajJ1aHNiZTJ1dDF4enB6Y3E3dmY5ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TyPKuTkBXmBPO/giphy.gif)
+
+snuggle fest
+
+## Relationships
+
+So far we’ve looked at **object** models, which are great for managing a
+single record, or records in loops. But what about **relationships**
+between records? Let’s say we have a lookup table for our plants. If you
+were looking closely at the Measurements table, you might have noticed
+we designated a foreign key to the Plants table. We’ll make use of that
+relationship now.
+
+``` r
+Plants <- engine$model(
+    "plants",
+    id = Column("INTEGER", primary_key = TRUE),
+    plant_type = Column("TEXT")
+)
+Plants$create_table()
+#> <TableModel>
+#> Table: plants
+#> Columns: id, plant_type
+
+# and we'll make a handful of plant records
+Plants$record(id = 101, plant_type = "pea")$create()
+Plants$record(id = 102, plant_type = "potato")$create()
+Plants$record(id = 103, plant_type = "pea")$create()
+```
+
+At this point, our database is aware of the relationship between Plants
+and Measurements. But oRm is not. We’ll now **model** a **relationship**
+between the two tables which oRm **objects** will use.
+
+``` r
+define_relationship(
+    local_model = Plants,
+    local_key = "id",
+    type = "one_to_many",
+    related_model = Measurement,
+    related_key = "plant_id",
+    ref = "measurements",
+    backref = "plant"
+)
+#> <TableModel>
+#> Table: plants
+#> Columns: id, plant_type
+```
+
+And after we’ve made that mapping, we can find all the related
+measurements for a specific plant.
+
+``` r
+p101 = Plants$read(id == 101, .mode='get')
+p101$relationship('measurements')
+#> [[1]]
+#> <Record>: 'measurements'
+#> id: 1
+#> observer_id: 1
+#> plant_id: 101
+#> measurement_date: 20299
+#> measurement_value: 14.2 
+#> 
+#> [[2]]
+#> <Record>: 'measurements'
+#> id: 2
+#> observer_id: 1
+#> plant_id: 101
+#> measurement_date: 20315
+#> measurement_value: 16
+```
+
+Or we can look for a specific relationship by filtering
+
+``` r
+p101$relationship('measurements', measurement_value < 15.0)
+#> [[1]]
+#> <Record>: 'measurements'
+#> id: 1
+#> observer_id: 1
+#> plant_id: 101
+#> measurement_date: 20299
+#> measurement_value: 14.2
+```
+
+## Conclusion
+
+In this vignette, you’ve seen how oRm can simplify the process of
+inserting, updating, and querying data with structured models instead of
+scattered SQL or repeated joins. You’ve also seen how relationships
+between records can be declared once and reused throughout your code,
+making it easier to write clean, maintainable tools.
+
+But this is just the beginning.
+
+You don’t have to create the tables with oRm to use it — you can map
+models onto existing databases, including those already in use at your
+workplace. That means you can layer oRm on top of production databases
+to build admin dashboards, internal Shiny tools, or one-off data fixers
+with confidence.
+
+And once relationships are defined, you can traverse complex data
+structures just as easily. Users to logs, organizations to memberships,
+or plants to mesaurements.

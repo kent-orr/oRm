@@ -110,3 +110,53 @@ Classes$read(.order_by = c(subject, desc(id))) |>
 The read method also accepts an offset and a limit argument. These arguments are used to control the pagination of the results. Unlike a dataframe, the printing of a list of records will not truncate itself neatly, and with no filter all of the records will return. There is a default limt of 100 records to ensure that you don't get too much data at once. You can set this to NULL to override.
 
 Used in conjunction, you can effectivly paginate your records.
+
+## Table-Level Methods
+
+You can extend your TableModel with custom behavior using the `Method()` function. Table-level methods operate on the entire table and are useful for custom queries, bulk operations, or complex business logic:
+
+```{r}
+Classes <- engine$model(
+    tablename = "classes",
+    id = Column('INTEGER', primary_key = TRUE),
+    subject = Column('TEXT'),
+    teacher_id = ForeignKey('INTEGER', references = 'teachers.id'),
+    grade_average = Column('NUMBER', default = \(x) rnorm(1, 80, 10)),
+
+    # Table-level method
+    get_by_subject = Method(function(subject_name) {
+        self$read(subject == subject_name)
+    }, target = 'table'),
+
+    # Another table-level method
+    get_class_stats = Method(function() {
+        all_classes <- self$read()
+        list(
+            total = length(all_classes),
+            avg_grade = mean(sapply(all_classes, \(x) x$data$grade_average))
+        )
+    }, target = 'table')
+)
+
+Classes$create_table(overwrite = TRUE)
+
+# Create some sample data
+for (i in 1:10) {
+    Classes$record(
+        id = i,
+        subject = ifelse(i %% 2 == 0, "Math", "Science"),
+        teacher_id = ifelse(i %% 2 == 0, 1, 2)
+    )$create()
+}
+
+# Use custom table methods
+math_classes <- Classes$get_by_subject("Math")
+print(length(math_classes))
+
+stats <- Classes$get_class_stats()
+print(stats)
+```
+
+Table methods have access to `self`, which refers to the TableModel instance. This allows you to call any TableModel method like `self$read()`, `self$record()`, or `self$relationship()`.
+
+For more examples of using methods to implement business logic, see the [Using Methods](using-methods.html) vignette.

@@ -28,6 +28,7 @@
 #' @export
 Record <- R6::R6Class(
   "Record",
+  lock_objects = FALSE,
   public = list(
     relationships = c(),
     model = NULL,
@@ -55,6 +56,19 @@ Record <- R6::R6Class(
       
       self$model <- model
       self$relationships = model$relationships
+
+      # Inject record-targeted methods
+      for (i in seq_along(model$methods)) {
+        method <- model$methods[[i]]
+        if (method$target == "record") {
+          method_name <- method$name
+          method_fn <- method$fn
+          # Set the function's environment to the current environment so it can access self
+          environment(method_fn) <- environment()
+          self[[method_name]] <- method_fn
+        }
+      }
+
       field_names <- names(model$fields)
       for (i in seq_along(model$fields)) {
         field <- model$fields[[i]]

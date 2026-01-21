@@ -123,3 +123,73 @@ ForeignKey <- function(type, ref_table = NULL, ref_column = NULL, references = N
   col
 
 }
+
+
+#' Define a method to attach to a model
+#'
+#' @param fn A function containing the method implementation
+#' @param target Character. Either "record" for instance methods or "table" for model-level methods
+#'
+#' @details
+#' The `Method()` function provides explicit attachment of custom methods to ORM models.
+#' Methods defined with `target = "record"` become instance methods available on individual
+#' Record objects and have access to `self` (the record instance). Methods defined with
+#' `target = "table"` become class methods available on the TableModel itself.
+#'
+#' Within method functions, `self` refers to either the Record (for "record" target) or
+#' TableModel (for "table" target), following R6 conventions.
+#'
+#' @return An orm_method object
+#' @export
+#'
+#' @examples
+#' # Define a Students model with custom methods
+#' \dontrun{
+#' Students <- engine$model(
+#'   "students",
+#'   id = Column("INTEGER", primary_key = TRUE),
+#'   name = Column("TEXT"),
+#'   present = Column("INTEGER", default = 0),
+#'
+#'   # Instance method - available on individual student records
+#'   greet = Method(function() {
+#'     paste("Hello, I'm", self$data$name)
+#'   }, target = "record"),
+#'
+#'   # Instance method - modify record state
+#'   mark_present = Method(function() {
+#'     self$present <- 1
+#'     self$save()
+#'   }, target = "record"),
+#'
+#'   # Class method - available on the Students model
+#'   find_by_name = Method(function(name) {
+#'     self$read(name = name)
+#'   }, target = "table")
+#' )
+#'
+#' # Using the methods:
+#' student <- Students$read_one(id = 1)
+#' student$greet()  # "Hello, I'm Alice"
+#' student$mark_present()  # Updates and saves the record
+#'
+#' Students$find_by_name("Bob")  # Returns matching records
+#' }
+Method <- function(fn, target = c("record", "table")) {
+  # Validate that fn is a function
+  if (!is.function(fn)) {
+    stop("The 'fn' parameter must be a function.", call. = FALSE)
+  }
+
+  # Validate target parameter
+  target <- match.arg(target)
+
+  structure(
+    list(
+      name = NULL,  # Will be set by TableModel$initialize
+      fn = fn,
+      target = target
+    ),
+    class = "orm_method"
+  )
+}

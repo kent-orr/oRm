@@ -13,7 +13,7 @@ Imports: DBI, dbplyr, dplyr, jsonlite, pool, R6, rlang
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0),
         RSQLite, RPostgres, withr, htmltools, bslib, tibble
 Config/testthat/edition: 3
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Collate: 'Column.R' 'Dialect-mysql.R' 'Dialect-postgres.R' 'Dialect.R'
         'Dialect-sqlite.R' 'TableModel.R' 'Engine.R' 'Record.R'
         'Relationship.R'

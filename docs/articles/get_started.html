@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,13 +48,13 @@
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
+    <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Topics</h6></li>
     <li><a class="dropdown-item" href="../articles/with_shiny.html">oRm with Shiny</a></li>
     <li><a class="dropdown-item" href="../articles/developing-dialects.html">Developing Dialects</a></li>
   </ul>
 </li>
-<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -106,6 +106,9 @@ operations.</li>
 <li>
 <code>Relationship</code>: Defines how models are linked, supporting
 joins and nested querying.</li>
+<li>
+<code>Method</code>: Attaches custom behavior to models at table or
+record level.</li>
 </ul>
 <p>We’ll walk through each concept, starting with the
 <code>Engine</code>.</p>
@@ -298,9 +301,87 @@ with.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">young_orgs</span> <span class="op">&lt;-</span> <span class="va">Organization</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">"users"</span>, <span class="va">age</span> <span class="op">&lt;</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="va">young_orgs</span></span>
-<span><span class="co">#&gt; NULL</span></span></code></pre></div>
+<span><span class="co">#&gt; list()</span></span></code></pre></div>
 <p>This returns a list of user records with <code>age &lt; 30</code>
 that belong to each organization.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="defining-and-using-methods">Defining and Using Methods<a class="anchor" aria-label="anchor" href="#defining-and-using-methods"></a>
+</h2>
+<p>Methods let you attach custom behavior to your models, keeping
+business logic close to your data. You can define methods at both the
+table level and the record level using the <code><a href="../reference/Method.html">Method()</a></code>
+function.</p>
+<div class="section level3">
+<h3 id="table-level-methods">Table-level methods<a class="anchor" aria-label="anchor" href="#table-level-methods"></a>
+</h3>
+<p>Table-level methods operate on the entire table and are useful for
+custom queries or bulk operations:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
+<span>  <span class="st">"users"</span>,</span>
+<span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  organization_id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span><span class="op">)</span>,</span>
+<span>  name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span>,</span>
+<span>  age <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span><span class="op">)</span>,</span>
+<span></span>
+<span>  search_by_name <span class="op">=</span> <span class="fu"><a href="../reference/Method.html">Method</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">string</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">self</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/sql.html" class="external-link">sql</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"name like '%"</span>, <span class="va">string</span>, <span class="st">"%'"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span>, target <span class="op">=</span> <span class="st">'table'</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span>overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
+<span><span class="co">#&gt; Table: users</span></span>
+<span><span class="co">#&gt; Columns: id, organization_id, name, age</span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"John"</span>, age <span class="op">=</span> <span class="fl">25</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">2</span>, name <span class="op">=</span> <span class="st">"Jane"</span>, age <span class="op">=</span> <span class="fl">30</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Use the custom table method</span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">search_by_name</span><span class="op">(</span><span class="st">'J'</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [[1]]</span></span>
+<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
+<span><span class="co">#&gt; id: 1</span></span>
+<span><span class="co">#&gt; organization_id: NA</span></span>
+<span><span class="co">#&gt; name: John</span></span>
+<span><span class="co">#&gt; age: 25 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [[2]]</span></span>
+<span><span class="co">#&gt; &lt;Record&gt;: 'users'</span></span>
+<span><span class="co">#&gt; id: 2</span></span>
+<span><span class="co">#&gt; organization_id: NA</span></span>
+<span><span class="co">#&gt; name: Jane</span></span>
+<span><span class="co">#&gt; age: 30</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="record-level-methods">Record-level methods<a class="anchor" aria-label="anchor" href="#record-level-methods"></a>
+</h3>
+<p>Record-level methods operate on individual records and are useful for
+instance-specific operations:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
+<span>  <span class="st">"users"</span>,</span>
+<span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  name <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span>,</span>
+<span>  age <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span><span class="op">)</span>,</span>
+<span></span>
+<span>  greet <span class="op">=</span> <span class="fu"><a href="../reference/Method.html">Method</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Hi, my name is"</span>, <span class="va">self</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span>overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
+<span><span class="co">#&gt; Table: users</span></span>
+<span><span class="co">#&gt; Columns: id, name, age</span></span>
+<span><span class="va">jane</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Jane"</span>, age <span class="op">=</span> <span class="fl">30</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Use the custom record method</span></span>
+<span><span class="va">jane</span><span class="op">$</span><span class="fu">greet</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "Hi, my name is Jane"</span></span></code></pre></div>
+<p>For more details on using methods to implement business logic, see
+the <a href="using-methods.html">Using Methods</a> vignette.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -314,7 +395,7 @@ that belong to each organization.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>

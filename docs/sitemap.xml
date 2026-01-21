@@ -9,6 +9,7 @@
 <url><loc>https://kent-orr.github.io/oRm/articles/get_started.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/index.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/using-engine.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/articles/using-methods.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/using-records.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/using-relationships.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/articles/using-tablemodels.html</loc></url>
@@ -20,6 +21,7 @@
 <url><loc>https://kent-orr.github.io/oRm/reference/Column.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Engine.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/ForeignKey.html</loc></url>
+<url><loc>https://kent-orr.github.io/oRm/reference/Method.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Record.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/Relationship.html</loc></url>
 <url><loc>https://kent-orr.github.io/oRm/reference/TableModel.html</loc></url>

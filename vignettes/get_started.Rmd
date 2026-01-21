@@ -20,6 +20,7 @@ oRm is an object-relational mapping (ORM) framework designed for R users to work
 - `TableModel`: Represents a database table with column definitions and relationships.
 - `Record`: Represents a row in a table. Supports CRUD operations.
 - `Relationship`: Defines how models are linked, supporting joins and nested querying.
+- `Method`: Attaches custom behavior to models at table or record level.
 
 We’ll walk through each concept, starting with the `Engine`.
 
@@ -198,3 +199,57 @@ young_orgs
 ```
 
 This returns a list of user records with `age < 30` that belong to each organization.
+
+## Defining and Using Methods
+
+Methods let you attach custom behavior to your models, keeping business logic close to your data. You can define methods at both the table level and the record level using the `Method()` function.
+
+### Table-level methods
+
+Table-level methods operate on the entire table and are useful for custom queries or bulk operations:
+
+```{r}
+Users <- engine$model(
+  "users",
+  id = Column("INTEGER", primary_key = TRUE),
+  organization_id = Column("INTEGER"),
+  name = Column("TEXT"),
+  age = Column("INTEGER"),
+
+  search_by_name = Method(function(string) {
+    self$read(dplyr::sql(paste0("name like '%", string, "%'")))
+  }, target = 'table')
+)
+
+Users$create_table(overwrite = TRUE)
+Users$record(id = 1, name = "John", age = 25)$create()
+Users$record(id = 2, name = "Jane", age = 30)$create()
+
+# Use the custom table method
+Users$search_by_name('J')
+```
+
+### Record-level methods
+
+Record-level methods operate on individual records and are useful for instance-specific operations:
+
+```{r}
+Users <- engine$model(
+  "users",
+  id = Column("INTEGER", primary_key = TRUE),
+  name = Column("TEXT"),
+  age = Column("INTEGER"),
+
+  greet = Method(function() {
+    print(paste("Hi, my name is", self$data$name))
+  })
+)
+
+Users$create_table(overwrite = TRUE)
+jane <- Users$record(id = 1, name = "Jane", age = 30)$create()
+
+# Use the custom record method
+jane$greet()
+```
+
+For more details on using methods to implement business logic, see the [Using Methods](using-methods.html) vignette.

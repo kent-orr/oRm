@@ -18,6 +18,7 @@ articles:
         - using-tablemodels
         - using-records
         - using-relationships
+        - using-methods
 
     - title: "Advanced Topics"
       navbar: "Advanced Topics"

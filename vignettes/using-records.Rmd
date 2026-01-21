@@ -102,3 +102,33 @@ To delete a record, call the delete() method on the Record object.
 english$delete()
 Classes$read(!subject %in% c("Math", "Science"), .mode='one_or_none')
 ```
+
+## Record-Level Methods
+
+Beyond CRUD operations, you can attach custom behavior to records using the `Method()` function. Record-level methods are defined when creating the model and become available on all record instances:
+
+```{r}
+Classes <- engine$model(
+    tablename = "classes",
+    id = Column('INTEGER', primary_key = TRUE),
+    subject = Column('TEXT'),
+    teacher_id = ForeignKey('INTEGER', references = 'teachers.id'),
+    grade_average = Column('NUMBER', default = \(x) rnorm(1, 80, 10)),
+
+    # Record-level method (target='record' is the default)
+    describe = Method(function() {
+        paste("This is a", self$data$subject, "class with an average of",
+              round(self$data$grade_average, 2))
+    })
+)
+
+Classes$create_table(overwrite = TRUE)
+math <- Classes$record(id = 1, subject = "Math", teacher_id = 1)$create()
+
+# Use the custom record method
+math$describe()
+```
+
+Record methods have access to `self`, which refers to the record instance. You can access the record's data via `self$data` and call other record methods like `self$update()` or `self$relationship()`.
+
+For more complex examples of using methods for business logic, see the [Using Methods](using-methods.html) vignette.

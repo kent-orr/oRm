@@ -42,7 +42,7 @@ your changes. If neither \code{commit()} nor \code{rollback()} is called, the tr
 rolled back by default and a warning will be issued.
 }
 \examples{
-\dontrun{
+\donttest{
 # With auto-commit (default)
 with.Engine(engine, {
   User$record(name = "Alice")$create()

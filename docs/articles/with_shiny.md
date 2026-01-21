@@ -1,0 +1,248 @@
+# oRm with Shiny
+
+`oRm` was conceived as a means of handling database interactions in R
+shiny, much like `sqlalchemy` in python flask applications. It can be a
+useful tool for handling CRUD operations such as interactive tables,
+forms, and UI elements. In this vignette we’ll focus on the basics of
+`oRm` and how it can be used to build a simple CRUD application.
+
+## Form Inputs
+
+Let’s imagine we have a simple shiny app that allows team members to add
+observations to a database. We’ll demonstrate an observeEvent handler
+that creates a new observation in the database when a button is clicked.
+For demonstration purposes, we’ll consdier that the data is plant
+heights and the team members are represented by IDs.
+
+``` r
+# in global.R =====
+engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE  # Optional for in-memory databases
+)
+
+Observations <- engine$model(
+    "observations",
+    observer_id = Column('Integer', primary_key = TRUE),
+    plant_subject_id = Column('Integer'),
+    plant_height = Column('Numeric', nullable = FALSE)
+)
+# =====
+
+# in server.R =====
+observeEvent(input$add_observation, {
+    # observer_id and plant_height are the values from the form inputs
+    observation = Observations$new(
+        observer_id = input$observer_id,
+        plant_subject_id = input$plant_subject_id,
+        plant_height = input$plant_height
+    )
+    observation$create()
+    showNotification("Observation added!")
+})
+```
+
+In a simple application, this can quickly achieve CRUD functionality.
+However, for a full-featured application, more sophisticated features
+like validation and error handling would be necessary. To allow for that
+logic to be implemented we might want to take advantage of a database
+transaction state. For that, take a look at the `with.Engine` section in
+this document.
+
+## Paging Results
+
+Large tables need broken up or your browser may tank. Paging is a good
+way to handle this. Popular table packages like `DT` or `reactable`
+provide built-in support for pagination, but what if you want to
+implement something like a carousel of card elements, or sets of plots?
+
+To enable pagination in your application, you’ll need to modify your
+query to limit the number of results returned and also include a `LIMIT`
+and `OFFSET` clause. Let’s say we want to display the observations as
+cards in a uiOutput, but we only want to show the last 5 cards.
+
+``` r
+displayed_observations <- reactive({
+    page_no = input$page_no
+    offset = (page_no - 1) * 5  # Assuming 5 observations per page
+
+    observations = Observations$read(
+        .order_by = list(desc(observer_id)), 
+        .limit = 5, 
+        .offset = offset
+        )
+    
+    return(observations)
+})
+
+output$observation_cards <- renderUI({
+    observations = displayed_observations()
+    tagList(
+        lapply(observations, function(observation) {
+            card(
+                card_title(paste("Plant ID:", observation$data$plant_subject_id)),
+                card_body(
+                    paste("Observer ID:", observation$data$observer_id),
+                    paste("Plant Height:", observation$data$plant_height)
+                    )
+            )
+        })
+    )
+})
+```
+
+## Dropdowns and Filters
+
+Inevitably shiny applications need a dynamically created dropdown that
+users can select from. `oRm` can help manage lookup tables in an oop
+manner instead of using SQL queries directly.
+
+``` r
+Users <- engine$model(
+    "users",
+    user_id = Column('Integer', primary_key = TRUE),
+    user_name = Column('String', nullable = FALSE)
+)
+
+observeEvent(input$check_options, {
+
+    users = Users$read()
+    choices = setNames(
+        sapply(users, function(user) user$data$user_id),
+        sapply(users, function(user) user$data$user_name)
+    )
+
+    updateSelectInput(session, "user_id", choices = choices)
+
+})
+```
+
+## With.Engine() for Transaction Management
+
+The
+[`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
+function provides robust transaction management for database operations.
+It automatically begins a transaction, executes your code, and then
+either commits or rolls back the transaction based on the outcome. This
+is particularly valuable in Shiny applications where you need to ensure
+data integrity across multiple database operations.
+
+### Key Features:
+
+1.  **Automatic Transaction Management**: Begins and commits
+    transactions automatically
+2.  **Error Handling**: Automatically rolls back on errors to prevent
+    partial updates
+3.  **Manual Control**: Allows explicit `commit()` and `rollback()`
+    calls within the transaction block
+4.  **Atomicity**: Ensures all operations succeed or none do
+
+### Basic Usage in Shiny:
+
+``` r
+observeEvent(input$add_observation, {
+    # observer_id and plant_height are the values from the form inputs
+
+    with(engine, {
+        observation = Observations$new(
+            observer_id = input$observer_id,
+            plant_subject_id = input$plant_subject_id,
+            plant_height = input$plant_height
+        )
+        observation$create()
+        # All changes are automatically committed if no errors occur
+    })
+    
+    showNotification("Observation added!")
+})
+```
+
+## Flushing Data for Immediate Feedback
+
+When working with databases in Shiny applications, you often need to
+retrieve server-generated values (like auto-increment IDs) immediately
+after creating records. The `flush_record` parameter in the `create()`
+method enables this functionality, allowing you to access these values
+before committing the transaction.
+
+### How Flushing Works:
+
+1.  The `create(flush_record = TRUE)` call performs an insert operation
+    that returns server-generated values
+2.  These values are immediately available in the record’s `data`
+    property
+3.  You can use these values to update UI elements or for subsequent
+    operations
+4.  Different database dialects handle this differently, but oRm
+    abstracts these differences
+
+### Example with Auto-incrementing IDs:
+
+``` r
+# Setup a model with an auto-incrementing column
+Observations <- engine$model(
+    "observations",
+    id = Column('Serial', primary_key = TRUE),  # Auto-incrementing ID
+    observer_id = Column('Integer'),
+    plant_subject_id = Column('Integer'),
+    plant_height = Column('Numeric', nullable = FALSE),
+    timestamp = Column('Timestamp', default = function() Sys.time())
+)
+
+# Track observation count in a reactive value
+observation_count <- reactiveVal(0)
+
+observeEvent(input$add_observation, {
+    with.Engine(engine, {
+        # Create record with flush_record = TRUE to get the ID immediately
+        observation <- Observations$record(
+            observer_id = input$observer_id,
+            plant_subject_id = input$plant_subject_id,
+            plant_height = input$plant_height
+        )
+        
+        # This returns the ID immediately, even before commit
+        observation$create(flush_record = TRUE)
+        
+        # Now we can use the ID for UI updates
+        current_id <- observation$data$id
+        observation_count(current_id)
+        
+        # And for related records
+        ObservationNotes$record(
+            observation_id = current_id,
+            note = input$notes
+        )$create()
+    })
+    
+    # Show feedback with the new observation ID
+    showNotification(paste("Added observation #", observation_count()))
+    
+    # Update a plot or table with the new data
+    output$observation_plot <- renderPlot({
+        # Plot using the latest observation count
+        plot_observations(limit = observation_count())
+    })
+})
+```
+
+### Database-Specific Behavior:
+
+Different databases handle returning values differently:
+
+- PostgreSQL: Uses RETURNING clause to fetch values in the same query  
+- SQLite: Uses last_insert_rowid() to get the most recent ID  
+- MySQL/MariaDB: Uses LAST_INSERT_ID() function
+
+oRm handles these differences through dialect-specific implementations,
+so your code remains consistent regardless of the database backend. When
+to Use Flushing: Use flush_record = TRUE when you need to:
+
+1.  Display server-generated IDs or timestamps to users  
+2.  Create related records that reference the new record’s ID  
+3.  Update reactive UI elements based on the new record  
+4.  Track the progress of batch operations
+
+This approach is particularly valuable in interactive Shiny applications
+where immediate feedback improves the user experience.

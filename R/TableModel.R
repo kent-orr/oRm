@@ -55,12 +55,14 @@ NULL
 #' 
 TableModel <- R6::R6Class(
     "TableModel",
+    lock_objects = FALSE,
     public = list(
     tablename = NULL,
     schema = NULL,
     engine = NULL,
     fields = list(),
     relationships = list(),
+    methods = list(),
     default_mode = "all",
 
     #' @description
@@ -95,6 +97,29 @@ TableModel <- R6::R6Class(
             class(col_defs[[i]]) <- append(class(col_defs[[i]]), engine$dialect)
         }
         self$fields <- col_defs
+
+        # Extract and process Method objects
+        method_defs <- dots[vapply(dots, inherits, logical(1), "orm_method")]
+        method_names <- names(dots[vapply(dots, inherits, logical(1), "orm_method")])
+
+        # Assign names to methods and separate by target
+        for (i in seq_along(method_defs)) {
+            method_defs[[i]][['name']] <- method_names[i]
+        }
+        self$methods <- method_defs
+
+        # Inject table-targeted methods into this TableModel instance
+        for (i in seq_along(method_defs)) {
+            method <- method_defs[[i]]
+            if (method$target == "table") {
+                # Inject method into this R6 instance
+                method_name <- method$name
+                method_fn <- method$fn
+                # Set the function's environment to self so it can access self, just like regular R6 methods
+                environment(method_fn) <- environment()
+                self[[method_name]] <- method_fn
+            }
+        }
     },
 
     #' @description

@@ -23,7 +23,7 @@ Key features:
 ## Method `Engine$model`
 ## ------------------------------------------------
 
-\dontrun{
+\donttest{
 engine$model(
     "users",
     Column$new("id", "integer"),
@@ -284,7 +284,7 @@ A new TableModel object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{\donttest{
 engine$model(
     "users",
     Column$new("id", "integer"),
