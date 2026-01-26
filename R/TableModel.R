@@ -290,7 +290,8 @@ TableModel <- R6::R6Class(
 
         filters <- rlang::enquos(...)
         if (length(filters) > 0) {
-        tbl_ref <- dplyr::filter(tbl_ref, !!!filters)
+        # Suppress dbplyr warnings about na.rm in SQL aggregate functions
+        tbl_ref <- suppressWarnings(dplyr::filter(tbl_ref, !!!filters))
         }
 
         # Apply ordering (only if user provided .order_by)
