@@ -340,6 +340,13 @@ TableModel <- R6::R6Class(
             dplyr::select(-.row_id)
         }
 
+        # Project to declared columns so partial models over an existing table
+        # only surface fields the user has opted in to. Without this, Record$new
+        # rejects undeclared columns returned by `SELECT *`.
+        if (length(self$fields) > 0) {
+            tbl_ref <- dplyr::select(tbl_ref, dplyr::all_of(names(self$fields)))
+        }
+
         if (.mode == "tbl") return(tbl_ref)
 
         rows <- dplyr::collect(tbl_ref)
