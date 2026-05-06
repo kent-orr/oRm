@@ -100,6 +100,47 @@ u$update()
 u$delete()
 ```
 
+### 7. Read-Only Engines
+
+Pass `.read_only = TRUE` to prevent all write operations on an engine. Useful for giving analysts a safe connection to production databases.
+
+```r
+ro_engine <- Engine$new(
+  drv   = RSQLite::SQLite(),
+  dbname = "prod.sqlite",
+  .read_only = TRUE
+)
+
+# Reads work fine
+records <- User$read()
+
+# Any write attempt is blocked
+User$record(id = 99, name = "Ghost")$create()
+#> Error: Engine is read-only; refusing write operation.
+```
+
+Enforcement is applied at two levels: application-level guards on every write call, plus a dialect-specific connection-level flag (SQLite `SQLITE_RO`, PostgreSQL `default_transaction_read_only=on`, MySQL `SET SESSION TRANSACTION READ ONLY`).
+
+### 8. Partial Models
+
+Define a `TableModel` with only a subset of an existing table's columns. `read()` will project results to just the declared fields.
+
+```r
+# The 'users' table also has 'ssn' and 'internal_notes' columns — omit them here
+UserView <- engine$model(
+  "users",
+  id    = Column("INTEGER", primary_key = TRUE),
+  name  = Column("TEXT"),
+  email = Column("TEXT")
+)
+
+UserView$read(.mode = "data.frame")
+#>   id  name           email
+#> 1  1  Kent  kent@example.com
+```
+
+Combine with `.read_only = TRUE` for safe, scoped access to production tables.
+
 ---
 
 Early-stage project. Feedback welcome!

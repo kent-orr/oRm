@@ -122,6 +122,56 @@ For example:
 - PostgreSQL supports `RETURNING *` to fetch inserted rows immediately.
 - SQLite does not support `RETURNING`, so `oRm` falls back to using `last_insert_rowid()`.
 
-These dialect-specific behaviors are handled automatically, so your code can stay consistent 
+These dialect-specific behaviors are handled automatically, so your code can stay consistent
 regardless of the database in use.
+
+## Read-Only Engines
+
+Pass `.read_only = TRUE` when creating an Engine to prevent all write operations. This is
+useful when giving analysts a connection to a production database, running exploratory
+queries against live data, or any situation where accidental writes would be harmful.
+
+```{r, eval=FALSE}
+ro_engine <- Engine$new(
+  drv    = RPostgres::Postgres(),
+  dbname = "prod_db",
+  host   = "db.example.com",
+  .read_only = TRUE
+)
+```
+
+### What is blocked
+
+Any statement that is not a read (`SELECT`, `WITH`, `EXPLAIN`, `SHOW`, `PRAGMA`, `VALUES`)
+is rejected with an error before it reaches the database:
+
+```{r, eval=FALSE}
+# Fine
+ro_engine$get_query("SELECT count(*) FROM users")
+
+# Blocked at the application level
+ro_engine$execute("DELETE FROM users WHERE id = 1")
+#> Error: Engine is read-only; refusing to execute non-SELECT statement.
+
+# TableModel and Record write methods are also blocked
+User$record(id = 99, name = "Ghost")$create()
+#> Error: Engine is read-only; refusing write operation.
+
+User$create_table()
+#> Error: Engine is read-only; cannot create tables.
+```
+
+### Dialect-level enforcement
+
+In addition to application-level guards, `oRm` applies a connection-level read-only flag
+appropriate to each backend:
+
+| Dialect    | Mechanism |
+|------------|-----------|
+| SQLite     | `RSQLite::SQLITE_RO` open flag — the connection itself cannot write |
+| PostgreSQL | libpq `options="-c default_transaction_read_only=on"` — every transaction is read-only at the driver level |
+| MySQL      | `SET SESSION TRANSACTION READ ONLY` executed after each new connection is opened |
+
+For pooled MySQL connections, driver-level enforcement is not available; `oRm` will emit a
+warning and fall back to application-level guards only.
 
