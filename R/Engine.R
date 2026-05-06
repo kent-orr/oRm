@@ -39,25 +39,49 @@ Engine <- R6::R6Class(
         conn = NULL,
         use_pool = FALSE,
         persist = FALSE,
+        read_only = FALSE,
         dialect = NULL,
         schema  = NULL,
-        
-        
-        
+
+
+
         #' @description
         #' Create an Engine object
         #' @param ... Additional arguments to be passed to DBI::dbConnect
         #' @param conn_args A list of arguments to be passed to DBI::dbConnect
         #' @param .schema Character. The default schema to apply to child TableModel objects
+        #' @param .read_only Logical. If TRUE, the engine refuses non-SELECT
+        #'     statements and applies dialect-specific connection-level
+        #'     read-only enforcement (SQLite: `SQLITE_RO` open flag; PostgreSQL:
+        #'     `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY`; MySQL:
+        #'     `SET SESSION TRANSACTION READ ONLY`).
         #' @param use_pool Logical. Whether or not to make use of the pool package for connections to this engine
         #' @param persist Logical. Whether to keep the connection open after operations (default: FALSE)
-        initialize = function(..., conn_args = list(), .schema = NULL, use_pool = FALSE, persist = FALSE) {
+        initialize = function(..., conn_args = list(), .schema = NULL, .read_only = FALSE, use_pool = FALSE, persist = FALSE) {
             # Combine dots and conn_args, with dots taking precedence
             self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
             private$detect_dialect()
             self$schema <- .schema
             self$use_pool <- use_pool
             self$persist <- persist
+            self$read_only <- isTRUE(.read_only)
+
+            if (self$read_only) {
+                if (use_pool) {
+                    warning(
+                        "Read-only enforcement on pooled connections is not applied at the driver level; ",
+                        "relying on application-level guards only.",
+                        call. = FALSE
+                    )
+                }
+                # SQLite enforces read-only via the SQLITE_RO open flag, which
+                # has to be passed at dbConnect time.
+                if (identical(self$dialect, "sqlite") &&
+                    is.null(self$conn_args[["flags"]]) &&
+                    requireNamespace("RSQLite", quietly = TRUE)) {
+                    self$conn_args[["flags"]] <- RSQLite::SQLITE_RO
+                }
+            }
         },
         
         
@@ -69,12 +93,18 @@ Engine <- R6::R6Class(
         #'
         #' @return A DBIConnection object or a pool object
         get_connection = function() {
+            fresh <- FALSE
             if (is.null(self$conn) || (!self$use_pool && !DBI::dbIsValid(self$conn))) {
                 if (self$use_pool) {
                     self$conn <- do.call(pool::dbPool, self$conn_args)
                 } else {
                     self$conn <- do.call(DBI::dbConnect, self$conn_args)
+                    fresh <- TRUE
                 }
+            }
+
+            if (fresh && self$read_only) {
+                apply_read_only(self, self$conn)
             }
 
             if (!is.null(self$schema)) {
@@ -122,6 +152,12 @@ Engine <- R6::R6Class(
         #' @return The number of rows affected
         execute = function(sql) {
             on.exit(if (private$exit_check()) self$close())
+            if (self$read_only && !is_read_sql(sql)) {
+                stop(
+                    "Engine is read-only; refusing to execute non-SELECT statement.",
+                    call. = FALSE
+                )
+            }
             con <- self$get_connection()
             execute_sql(self, con, sql)
         },

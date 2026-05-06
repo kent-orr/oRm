@@ -73,3 +73,10 @@ check_schema_exists.sqlite <- function(x, .schema) {
     TRUE
 }
 
+#' @describeIn apply_read_only SQLite enforces read-only via the SQLITE_RO
+#'   open flag injected into `conn_args` at engine construction; nothing more
+#'   to do post-connect.
+apply_read_only.sqlite <- function(x, con) {
+    invisible(NULL)
+}
+

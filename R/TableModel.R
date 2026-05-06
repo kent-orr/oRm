@@ -157,6 +157,9 @@ TableModel <- R6::R6Class(
     #' @return The TableModel object invisibly.
     #' @note Errors if the table's schema does not exist.
     create_table = function(if_not_exists = TRUE, overwrite = FALSE, ask = TRUE, verbose = FALSE) {
+        if (isTRUE(self$engine$read_only) && !verbose) {
+            stop("Engine is read-only; cannot create tables.", call. = FALSE)
+        }
         if (!is.null(self$schema)) {
             if (!check_schema_exists(self$engine, self$schema)) {
                 stop(
@@ -240,6 +243,9 @@ TableModel <- R6::R6Class(
     #' User$drop_table(ask = FALSE)
     #' }
     drop_table = function(ask = interactive()) {
+        if (isTRUE(self$engine$read_only)) {
+            stop("Engine is read-only; cannot drop tables.", call. = FALSE)
+        }
         drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
 
         resp <- 'y'
