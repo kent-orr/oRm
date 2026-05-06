@@ -150,10 +150,13 @@ TableModel <- R6::R6Class(
     #' Create the associated table in the database.
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
+    #' @param ask Logical. If TRUE (default) and `overwrite` is TRUE, prompt for
+    #'     confirmation in interactive sessions before dropping the table.
+    #'     Pass `ask = FALSE` to bypass the prompt (e.g. in scripts).
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
     #' @return The TableModel object invisibly.
     #' @note Errors if the table's schema does not exist.
-    create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
+    create_table = function(if_not_exists = TRUE, overwrite = FALSE, ask = TRUE, verbose = FALSE) {
         if (!is.null(self$schema)) {
             if (!check_schema_exists(self$engine, self$schema)) {
                 stop(
@@ -167,6 +170,16 @@ TableModel <- R6::R6Class(
         }
 
         if (overwrite) {
+            if (ask && interactive()) {
+                prompt <- paste0("Are you sure you want to overwrite ", self$tablename, "? [y/N] ")
+                confirm <- readline(prompt)
+                if (!grepl("y", confirm, ignore.case = TRUE)) {
+                    stop(
+                        "Aborted: did not confirm overwrite of ", self$tablename, ".",
+                        call. = FALSE
+                    )
+                }
+            }
             conn <- self$get_connection()
             drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(conn, self$tablename))
             if (verbose) {
