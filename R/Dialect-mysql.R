@@ -43,6 +43,12 @@ set_schema.mysql <- function(x, .schema) {
     invisible(NULL)
 }
 
+#' @describeIn apply_read_only MySQL enforces read-only at the session level.
+apply_read_only.mysql <- function(x, con) {
+    DBI::dbExecute(con, "SET SESSION TRANSACTION READ ONLY")
+    invisible(NULL)
+}
+
 #' @describeIn check_schema_exists Check if a schema exists for MySQL.
 check_schema_exists.mysql <- function(x, .schema) {
     if (is.null(.schema)) return(TRUE)

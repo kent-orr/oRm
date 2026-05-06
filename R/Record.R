@@ -112,8 +112,11 @@ Record <- R6::R6Class(
     #'   transaction.
     #' @return Invisible NULL
     create = function(flush_record = NULL) {
+      if (isTRUE(self$model$engine$read_only)) {
+        stop("Engine is read-only; cannot create records.", call. = FALSE)
+      }
       con <- self$model$get_connection()
-      
+
       # Validate required fields (excluding auto-generated fields like SERIAL)
       required_fields <- names(self$model$fields)[
         vapply(self$model$fields, function(x) {
@@ -153,6 +156,9 @@ Record <- R6::R6Class(
     #'   automatically commit when not already in a transaction.
     #' @return The Record instance (invisibly).
     flush = function(commit = NULL) {
+      if (isTRUE(self$model$engine$read_only)) {
+        stop("Engine is read-only; cannot flush records.", call. = FALSE)
+      }
       con <- self$model$get_connection()
       
       # Determine commit behavior based on transaction state if not specified
@@ -232,6 +238,9 @@ Record <- R6::R6Class(
     #' @param .data A named list of field values to update (alternative to ...).
     #' @return The Record instance (invisibly).
     update = function(..., .data = list()) {
+      if (isTRUE(self$model$engine$read_only)) {
+        stop("Engine is read-only; cannot update records.", call. = FALSE)
+      }
       con <- self$model$get_connection()
       
       # Combine ... and .data, with ... taking precedence
@@ -314,8 +323,11 @@ Record <- R6::R6Class(
     #' @description Delete this record from the database.
     #' @return Invisible NULL
     delete = function() {
+      if (isTRUE(self$model$engine$read_only)) {
+        stop("Engine is read-only; cannot delete records.", call. = FALSE)
+      }
       con <- self$model$get_connection()
-      
+
       key_fields <- names(self$model$fields)[
         vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
       ]

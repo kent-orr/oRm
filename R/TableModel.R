@@ -150,10 +150,16 @@ TableModel <- R6::R6Class(
     #' Create the associated table in the database.
     #' @param if_not_exists Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.
     #' @param overwrite Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.
+    #' @param ask Logical. If TRUE (default) and `overwrite` is TRUE, prompt for
+    #'     confirmation in interactive sessions before dropping the table.
+    #'     Pass `ask = FALSE` to bypass the prompt (e.g. in scripts).
     #' @param verbose Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.
     #' @return The TableModel object invisibly.
     #' @note Errors if the table's schema does not exist.
-    create_table = function(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE) {
+    create_table = function(if_not_exists = TRUE, overwrite = FALSE, ask = TRUE, verbose = FALSE) {
+        if (isTRUE(self$engine$read_only) && !verbose) {
+            stop("Engine is read-only; cannot create tables.", call. = FALSE)
+        }
         if (!is.null(self$schema)) {
             if (!check_schema_exists(self$engine, self$schema)) {
                 stop(
@@ -167,6 +173,16 @@ TableModel <- R6::R6Class(
         }
 
         if (overwrite) {
+            if (ask && interactive()) {
+                prompt <- paste0("Are you sure you want to overwrite ", self$tablename, "? [y/N] ")
+                confirm <- readline(prompt)
+                if (!grepl("y", confirm, ignore.case = TRUE)) {
+                    stop(
+                        "Aborted: did not confirm overwrite of ", self$tablename, ".",
+                        call. = FALSE
+                    )
+                }
+            }
             conn <- self$get_connection()
             drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(conn, self$tablename))
             if (verbose) {
@@ -227,6 +243,9 @@ TableModel <- R6::R6Class(
     #' User$drop_table(ask = FALSE)
     #' }
     drop_table = function(ask = interactive()) {
+        if (isTRUE(self$engine$read_only)) {
+            stop("Engine is read-only; cannot drop tables.", call. = FALSE)
+        }
         drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
 
         resp <- 'y'
@@ -338,6 +357,13 @@ TableModel <- R6::R6Class(
             dplyr::mutate(.row_id = dplyr::row_number()) |>
             dplyr::filter(.row_id > .offset) |>
             dplyr::select(-.row_id)
+        }
+
+        # Project to declared columns so partial models over an existing table
+        # only surface fields the user has opted in to. Without this, Record$new
+        # rejects undeclared columns returned by `SELECT *`.
+        if (length(self$fields) > 0) {
+            tbl_ref <- dplyr::select(tbl_ref, dplyr::all_of(names(self$fields)))
         }
 
         if (.mode == "tbl") return(tbl_ref)

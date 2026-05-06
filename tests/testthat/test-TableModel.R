@@ -231,3 +231,86 @@ test_that("TableModel$read() supports pagination with limit and offset", {
   # Clean up
   engine$close()
 })
+
+test_that("create_table(overwrite=TRUE) prompts for confirmation in interactive sessions", {
+  skip_if_not_installed("testthat", "3.5.0")
+
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  on.exit(engine$close(), add = TRUE)
+
+  Model <- TableModel$new(
+    tablename = "confirm_overwrite",
+    engine = engine,
+    id   = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT")
+  )
+  Model$create_table()
+
+  # Seed a row so we can detect whether the table was actually overwritten.
+  Model$record(id = 1, name = "before")$create()
+  expect_equal(Model$read(.mode = "data.frame")$name, "before")
+
+  # Decline the prompt: error is raised and the table is left intact.
+  testthat::local_mocked_bindings(
+    interactive = function() TRUE,
+    readline    = function(...) "n",
+    .package = "oRm"
+  )
+  expect_error(
+    Model$create_table(overwrite = TRUE),
+    "did not confirm overwrite"
+  )
+  expect_equal(Model$read(.mode = "data.frame")$name, "before")
+})
+
+test_that("create_table(overwrite=TRUE) proceeds when user confirms", {
+  skip_if_not_installed("testthat", "3.5.0")
+
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  on.exit(engine$close(), add = TRUE)
+
+  Model <- TableModel$new(
+    tablename = "confirm_overwrite_yes",
+    engine = engine,
+    id   = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT")
+  )
+  Model$create_table()
+  Model$record(id = 1, name = "before")$create()
+
+  testthat::local_mocked_bindings(
+    interactive = function() TRUE,
+    readline    = function(...) "y",
+    .package = "oRm"
+  )
+  expect_no_error(Model$create_table(overwrite = TRUE))
+
+  # Table was dropped and recreated; the seeded row should be gone.
+  expect_equal(nrow(Model$read(.mode = "data.frame")), 0)
+})
+
+test_that("create_table(overwrite=TRUE, ask=FALSE) bypasses the prompt", {
+  skip_if_not_installed("testthat", "3.5.0")
+
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  on.exit(engine$close(), add = TRUE)
+
+  Model <- TableModel$new(
+    tablename = "skip_prompt",
+    engine = engine,
+    id = Column("INTEGER", primary_key = TRUE)
+  )
+  Model$create_table()
+
+  # Mock interactive() as TRUE to prove ask=FALSE is what skips the prompt,
+  # not the non-interactive test session. readline() must never be called.
+  readline_called <- FALSE
+  testthat::local_mocked_bindings(
+    interactive = function() TRUE,
+    readline    = function(...) { readline_called <<- TRUE; "n" },
+    .package = "oRm"
+  )
+
+  expect_no_error(Model$create_table(overwrite = TRUE, ask = FALSE))
+  expect_false(readline_called)
+})

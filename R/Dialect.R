@@ -135,6 +135,50 @@ create_schema.default <- function(x, .schema) {
 }
 
 
+# Read-only enforcement --------------------------------------------------
+
+
+#' Apply read-only enforcement to a freshly opened connection.
+#'
+#' Dialect-specific dispatch. Called once per new physical connection
+#' when `Engine$read_only` is TRUE. SQLite handles read-only via the
+#' SQLITE_RO open flag and so its method is a no-op.
+#'
+#' @param x An Engine instance.
+#' @param con A DBI connection object.
+#' @keywords internal
+apply_read_only <- function(x, con) {
+    dispatch_method(x, "apply_read_only", con)
+}
+
+#' @rdname apply_read_only
+#' @keywords internal
+apply_read_only.default <- function(x, con) {
+    invisible(NULL)
+}
+
+#' Detect whether a SQL string is a read-only statement.
+#'
+#' Used to gate `Engine$execute()` when the engine is configured as
+#' read-only. Conservative: only matches statements that begin with one
+#' of SELECT, WITH, EXPLAIN, SHOW, PRAGMA, VALUES (after stripping
+#' leading whitespace and `--` line comments).
+#'
+#' @param sql Character. SQL statement.
+#' @return Logical.
+#' @keywords internal
+is_read_sql <- function(sql) {
+    if (length(sql) != 1 || !is.character(sql)) return(FALSE)
+    trimmed <- sub("^(\\s*--[^\n]*\\n)*\\s*", "", sql, perl = TRUE)
+    grepl(
+        "^(SELECT|WITH|EXPLAIN|SHOW|PRAGMA|VALUES)\\b",
+        trimmed,
+        ignore.case = TRUE,
+        perl = TRUE
+    )
+}
+
+
 # Execute SQL -------------------------------------------------------------
 
 #' Execute a SQL statement
