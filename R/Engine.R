@@ -67,19 +67,38 @@ Engine <- R6::R6Class(
             self$read_only <- isTRUE(.read_only)
 
             if (self$read_only) {
-                if (use_pool) {
-                    warning(
-                        "Read-only enforcement on pooled connections is not applied at the driver level; ",
-                        "relying on application-level guards only.",
-                        call. = FALSE
-                    )
-                }
                 # SQLite enforces read-only via the SQLITE_RO open flag, which
                 # has to be passed at dbConnect time.
                 if (identical(self$dialect, "sqlite") &&
                     is.null(self$conn_args[["flags"]]) &&
                     requireNamespace("RSQLite", quietly = TRUE)) {
                     self$conn_args[["flags"]] <- RSQLite::SQLITE_RO
+                }
+
+                # PostgreSQL enforces read-only via a libpq connection option,
+                # so every (re)connection — including pooled checkouts — starts
+                # with default_transaction_read_only = on before any SQL runs.
+                if (identical(self$dialect, "postgres")) {
+                    ro_opt <- "-c default_transaction_read_only=on"
+                    existing <- self$conn_args[["options"]]
+                    if (is.null(existing) || !nzchar(existing)) {
+                        self$conn_args[["options"]] <- ro_opt
+                    } else if (!grepl("default_transaction_read_only", existing, fixed = TRUE)) {
+                        self$conn_args[["options"]] <- paste(existing, ro_opt)
+                    }
+                }
+
+                # MySQL has no equivalent connection-arg, so its enforcement is
+                # per-session via apply_read_only.mysql() and only fires for
+                # connections we open ourselves. Warn if pooled.
+                if (use_pool && !identical(self$dialect, "postgres") &&
+                    !identical(self$dialect, "sqlite")) {
+                    warning(
+                        "Driver-level read-only enforcement is not available for dialect '",
+                        self$dialect,
+                        "' on pooled connections; relying on application-level guards only.",
+                        call. = FALSE
+                    )
                 }
             }
         },

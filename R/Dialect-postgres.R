@@ -174,12 +174,10 @@ execute_sql.postgres <- function(x, con, sql) {
     suppressMessages(DBI::dbExecute(con, sql))
 }
 
-#' @describeIn apply_read_only PostgreSQL applies session-level read-only mode
-#'   so every transaction defaults to READ ONLY.
+#' @describeIn apply_read_only PostgreSQL enforces read-only via the libpq
+#'   `options="-c default_transaction_read_only=on"` connection parameter
+#'   injected into `conn_args` at engine construction; nothing more to do
+#'   post-connect.
 apply_read_only.postgres <- function(x, con) {
-    suppressMessages(DBI::dbExecute(
-        con,
-        "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY"
-    ))
     invisible(NULL)
 }

@@ -160,8 +160,64 @@ test_that("default SQLite engine (no .read_only) still allows writes", {
 })
 
 # ---------------------------------------------------------------------------
-# PostgreSQL: connection-level enforcement via session characteristics
+# PostgreSQL: option injection (no live DB needed) + connection-level enforcement
 # ---------------------------------------------------------------------------
+
+# Build a fake driver whose class triggers the postgres dialect detection
+# without actually connecting anywhere. Used to test conn_args mutation.
+fake_postgres_drv <- function() {
+  structure(list(), class = c("PqDriver", "DBIDriver"))
+}
+
+test_that("postgres engine injects the libpq read-only option", {
+  engine <- Engine$new(
+    drv = fake_postgres_drv(),
+    dbname = "x",
+    .read_only = TRUE
+  )
+  expect_equal(engine$dialect, "postgres")
+  expect_true(engine$read_only)
+  expect_equal(
+    engine$conn_args$options,
+    "-c default_transaction_read_only=on"
+  )
+})
+
+test_that("postgres read-only option is appended to user-provided options", {
+  engine <- Engine$new(
+    drv = fake_postgres_drv(),
+    dbname = "x",
+    options = "-c statement_timeout=5000",
+    .read_only = TRUE
+  )
+  expect_match(engine$conn_args$options, "statement_timeout=5000", fixed = TRUE)
+  expect_match(engine$conn_args$options, "default_transaction_read_only=on", fixed = TRUE)
+})
+
+test_that("postgres read-only option is not double-injected", {
+  engine <- Engine$new(
+    drv = fake_postgres_drv(),
+    dbname = "x",
+    options = "-c default_transaction_read_only=on",
+    .read_only = TRUE
+  )
+  # User already set it; we should leave their value alone.
+  expect_equal(
+    engine$conn_args$options,
+    "-c default_transaction_read_only=on"
+  )
+})
+
+test_that("postgres engine without .read_only does not touch options", {
+  engine <- Engine$new(
+    drv = fake_postgres_drv(),
+    dbname = "x"
+  )
+  expect_false(engine$read_only)
+  expect_null(engine$conn_args$options)
+})
+
+# Live PostgreSQL test ------------------------------------------------------
 
 test_that("PostgreSQL read-only engine refuses writes at the driver level", {
   skip_on_cran()
