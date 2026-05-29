@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -139,6 +140,13 @@ the most commonly used methods:</p>
 <li><p><code>model()</code> Creates a <code>TableModel</code> object
 from the Engine. <a href="./using-tablemodels.html">See the TableModel
 vignette</a></p></li>
+<li><p><code>hydrate()</code> Builds a <code>TableModel</code> by
+introspecting an existing table, so you can do basic CRUD without
+declaring columns. See <a href="#hydrating-models-from-existing-tables">Hydrating models from
+existing tables</a> below.</p></li>
+<li><p><code>hydrate_schema()</code> Hydrates all tables in a schema at
+once and auto-wires relationships from reflected foreign keys. See <a href="#hydrating-an-entire-schema">Hydrating an entire schema</a>
+below.</p></li>
 <li><p><code>get_connection()</code> Returns the underlying DBI
 connection. You can use this directly for raw SQL or with
 <code><a href="https://dplyr.tidyverse.org/reference/tbl.html" class="external-link">dplyr::tbl()</a></code> for custom queries.</p></li>
@@ -156,6 +164,111 @@ results as a data.frame using <code><a href="https://dbi.r-dbi.org/reference/dbG
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">get_query</span><span class="op">(</span><span class="st">"SELECT * FROM things"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="hydrating-models-from-existing-tables">Hydrating models from existing tables<a class="anchor" aria-label="anchor" href="#hydrating-models-from-existing-tables"></a>
+</h2>
+<p>When a table already exists in the database, <code>hydrate()</code>
+inspects its columns and returns a ready-to-use <code>TableModel</code>.
+This avoids re-declaring every column when you just need basic CRUD
+against an existing table.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Reflect every column of the existing "users" table</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">Users</span><span class="op">$</span><span class="va">fields</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Narrow the model with include / exclude</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"age"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hash"</span>, <span class="st">"configuration"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3L</span>, name <span class="op">=</span> <span class="st">"Ada"</span>, age <span class="op">=</span> <span class="fl">36L</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span></code></pre></div>
+<p>The depth of reflection depends on the dialect:</p>
+<ul>
+<li>
+<strong>Default (all dialects)</strong>: column names and
+best-effort types only.</li>
+<li>
+<strong>PostgreSQL</strong>: canonical types, primary key flags,
+nullability, column defaults (server-side defaults such as
+<code>nextval()</code> are stored as <code><a href="https://dbplyr.tidyverse.org/reference/sql.html" class="external-link">dbplyr::sql()</a></code> and
+applied by the database at insert time), and foreign keys returned as
+<code>ForeignKey</code> objects — schema-qualified when the target lives
+in another schema.</li>
+</ul>
+<p>For dialects that do not reflect primary keys, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code>
+and <code>delete()</code> (which key off declared PK fields) require you
+to supply the key column via <code>...</code>. Arguments in
+<code>...</code> take precedence over reflected columns, mirroring
+<code>model()</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span></span>
+<span>  <span class="st">"users"</span>,</span>
+<span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>  <span class="co"># ... also accepts Method()s or column-type overrides</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="hydrating-an-entire-schema">Hydrating an entire schema<a class="anchor" aria-label="anchor" href="#hydrating-an-entire-schema"></a>
+</h2>
+<p><code>hydrate_schema()</code> hydrates every table in a schema in one
+call and automatically wires up <code>many_to_one</code> /
+<code>one_to_many</code> relationships implied by the reflected foreign
+keys. This is most useful with the PostgreSQL dialect, whose reflection
+captures foreign keys.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Hydrate all tables in the engine's default schema</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or target specific tables</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"users"</span>, <span class="st">"posts"</span>, <span class="st">"comments"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Access individual models</span></span>
+<span><span class="va">posts</span> <span class="op">&lt;-</span> <span class="va">models</span><span class="op">$</span><span class="va">posts</span></span>
+<span><span class="va">users</span> <span class="op">&lt;-</span> <span class="va">models</span><span class="op">$</span><span class="va">users</span></span>
+<span></span>
+<span><span class="co"># Relationships are wired automatically from FK metadata</span></span>
+<span><span class="va">post</span>   <span class="op">&lt;-</span> <span class="va">posts</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, .mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span>
+<span><span class="va">author</span> <span class="op">&lt;-</span> <span class="va">post</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span>   <span class="co"># traverses posts.user_id -&gt; users.id</span></span></code></pre></div>
+<p>Key arguments:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Argument</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>tables</code></td>
+<td><code>NULL</code></td>
+<td>Tables to hydrate; <code>NULL</code> hydrates all in the schema</td>
+</tr>
+<tr class="even">
+<td><code>exclude</code></td>
+<td><code>NULL</code></td>
+<td>Table names to skip</td>
+</tr>
+<tr class="odd">
+<td><code>.schema</code></td>
+<td>engine schema</td>
+<td>Schema to inspect</td>
+</tr>
+<tr class="even">
+<td><code>wire_relationships</code></td>
+<td><code>TRUE</code></td>
+<td>Auto-wire FK-based relationships</td>
+</tr>
+</tbody>
+</table>
+<p>Foreign keys pointing at tables outside the hydrated set are silently
+skipped with a warning. You can always call
+<code><a href="../reference/define_relationship.html">define_relationship()</a></code> manually afterwards to wire
+additional relationships.</p>
+</div>
+<div class="section level2">
 <h2 id="using-with-engine">Using with.Engine<a class="anchor" aria-label="anchor" href="#using-with-engine"></a>
 </h2>
 <p><code>with.Engine</code> is an S3 method for managing transaction
@@ -165,14 +278,14 @@ transaction.</p>
 <p>This provides a safeguard against partial writes or inconsistent
 states. If you’re familiar with Python’s <code>sqlalchemy</code>, the
 usage will feel familiar.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">engine</span>, <span class="op">{</span></span>
 <span>  <span class="va">user</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>name <span class="op">=</span> <span class="st">"John Doe"</span><span class="op">)</span></span>
 <span>  <span class="va">user</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>You can also choose to manually commit or roll back transactions.
 This gives you full control over error handling:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">engine</span>, <span class="op">{</span></span>
 <span>  <span class="va">user</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Jane Doe"</span><span class="op">)</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="op">{</span></span>
@@ -203,6 +316,82 @@ inserted rows immediately. - SQLite does not support
 <code>last_insert_rowid()</code>.</p>
 <p>These dialect-specific behaviors are handled automatically, so your
 code can stay consistent regardless of the database in use.</p>
+</div>
+<div class="section level2">
+<h2 id="read-only-engines">Read-Only Engines<a class="anchor" aria-label="anchor" href="#read-only-engines"></a>
+</h2>
+<p>Pass <code>.read_only = TRUE</code> when creating an Engine to
+prevent all write operations. This is useful when giving analysts a
+connection to a production database, running exploratory queries against
+live data, or any situation where accidental writes would be
+harmful.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ro_engine</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  drv    <span class="op">=</span> <span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  dbname <span class="op">=</span> <span class="st">"prod_db"</span>,</span>
+<span>  host   <span class="op">=</span> <span class="st">"db.example.com"</span>,</span>
+<span>  .read_only <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="what-is-blocked">What is blocked<a class="anchor" aria-label="anchor" href="#what-is-blocked"></a>
+</h3>
+<p>Any statement that is not a read (<code>SELECT</code>,
+<code>WITH</code>, <code>EXPLAIN</code>, <code>SHOW</code>,
+<code>PRAGMA</code>, <code>VALUES</code>) is rejected with an error
+before it reaches the database:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Fine</span></span>
+<span><span class="va">ro_engine</span><span class="op">$</span><span class="fu">get_query</span><span class="op">(</span><span class="st">"SELECT count(*) FROM users"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Blocked at the application level</span></span>
+<span><span class="va">ro_engine</span><span class="op">$</span><span class="fu">execute</span><span class="op">(</span><span class="st">"DELETE FROM users WHERE id = 1"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error: Engine is read-only; refusing to execute non-SELECT statement.</span></span>
+<span></span>
+<span><span class="co"># TableModel and Record write methods are also blocked</span></span>
+<span><span class="va">User</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">99</span>, name <span class="op">=</span> <span class="st">"Ghost"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error: Engine is read-only; refusing write operation.</span></span>
+<span></span>
+<span><span class="va">User</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error: Engine is read-only; cannot create tables.</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="dialect-level-enforcement">Dialect-level enforcement<a class="anchor" aria-label="anchor" href="#dialect-level-enforcement"></a>
+</h3>
+<p>In addition to application-level guards, <code>oRm</code> applies a
+connection-level read-only flag appropriate to each backend:</p>
+<table class="table">
+<colgroup>
+<col width="52%">
+<col width="47%">
+</colgroup>
+<thead><tr class="header">
+<th>Dialect</th>
+<th>Mechanism</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>SQLite</td>
+<td>
+<code><a href="https://rsqlite.r-dbi.org/reference/SQLite.html" class="external-link">RSQLite::SQLITE_RO</a></code> open flag — the connection itself
+cannot write</td>
+</tr>
+<tr class="even">
+<td>PostgreSQL</td>
+<td>libpq <code>options="-c default_transaction_read_only=on"</code> —
+every transaction is read-only at the driver level</td>
+</tr>
+<tr class="odd">
+<td>MySQL</td>
+<td>
+<code>SET SESSION TRANSACTION READ ONLY</code> executed after each
+new connection is opened</td>
+</tr>
+</tbody>
+</table>
+<p>For pooled MySQL connections, driver-level enforcement is not
+available; <code>oRm</code> will emit a warning and fall back to
+application-level guards only.</p>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

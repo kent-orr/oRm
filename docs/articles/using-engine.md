@@ -50,6 +50,15 @@ the most commonly used methods:
   TableModel
   vignette](https://kent-orr.github.io/oRm/articles/using-tablemodels.md)
 
+- `hydrate()` Builds a `TableModel` by introspecting an existing table,
+  so you can do basic CRUD without declaring columns. See [Hydrating
+  models from existing tables](#hydrating-models-from-existing-tables)
+  below.
+
+- `hydrate_schema()` Hydrates all tables in a schema at once and
+  auto-wires relationships from reflected foreign keys. See [Hydrating
+  an entire schema](#hydrating-an-entire-schema) below.
+
 - `get_connection()` Returns the underlying DBI connection. You can use
   this directly for raw SQL or with
   [`dplyr::tbl()`](https://dplyr.tidyverse.org/reference/tbl.html) for
@@ -71,6 +80,87 @@ engine$execute("CREATE TABLE things (id INTEGER PRIMARY KEY, name TEXT)")
 # Retrieve a result
 df <- engine$get_query("SELECT * FROM things")
 ```
+
+## Hydrating models from existing tables
+
+When a table already exists in the database, `hydrate()` inspects its
+columns and returns a ready-to-use `TableModel`. This avoids
+re-declaring every column when you just need basic CRUD against an
+existing table.
+
+``` r
+# Reflect every column of the existing "users" table
+Users <- engine$hydrate("users")
+names(Users$fields)
+
+# Narrow the model with include / exclude
+Users <- engine$hydrate("users", include = c("id", "name", "age"))
+Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+
+Users$record(id = 3L, name = "Ada", age = 36L)$create()
+Users$read(.mode = "data.frame")
+```
+
+The depth of reflection depends on the dialect:
+
+- **Default (all dialects)**: column names and best-effort types only.
+- **PostgreSQL**: canonical types, primary key flags, nullability,
+  column defaults (server-side defaults such as `nextval()` are stored
+  as [`dbplyr::sql()`](https://dbplyr.tidyverse.org/reference/sql.html)
+  and applied by the database at insert time), and foreign keys returned
+  as `ForeignKey` objects — schema-qualified when the target lives in
+  another schema.
+
+For dialects that do not reflect primary keys,
+[`update()`](https://rdrr.io/r/stats/update.html) and `delete()` (which
+key off declared PK fields) require you to supply the key column via
+`...`. Arguments in `...` take precedence over reflected columns,
+mirroring `model()`:
+
+``` r
+Users <- engine$hydrate(
+  "users",
+  id = Column("INTEGER", primary_key = TRUE)
+  # ... also accepts Method()s or column-type overrides
+)
+```
+
+## Hydrating an entire schema
+
+`hydrate_schema()` hydrates every table in a schema in one call and
+automatically wires up `many_to_one` / `one_to_many` relationships
+implied by the reflected foreign keys. This is most useful with the
+PostgreSQL dialect, whose reflection captures foreign keys.
+
+``` r
+# Hydrate all tables in the engine's default schema
+models <- engine$hydrate_schema()
+
+# Or target specific tables
+models <- engine$hydrate_schema(tables = c("users", "posts", "comments"))
+
+# Access individual models
+posts <- models$posts
+users <- models$users
+
+# Relationships are wired automatically from FK metadata
+post   <- posts$read(id == 1, .mode = "get")
+author <- post$relationship("users")   # traverses posts.user_id -> users.id
+```
+
+Key arguments:
+
+| Argument | Default | Description |
+|----|----|----|
+| `tables` | `NULL` | Tables to hydrate; `NULL` hydrates all in the schema |
+| `exclude` | `NULL` | Table names to skip |
+| `.schema` | engine schema | Schema to inspect |
+| `wire_relationships` | `TRUE` | Auto-wire FK-based relationships |
+
+Foreign keys pointing at tables outside the hydrated set are silently
+skipped with a warning. You can always call
+[`define_relationship()`](https://kent-orr.github.io/oRm/reference/define_relationship.md)
+manually afterwards to wire additional relationships.
 
 ## Using with.Engine
 
@@ -126,3 +216,56 @@ to using `last_insert_rowid()`.
 
 These dialect-specific behaviors are handled automatically, so your code
 can stay consistent regardless of the database in use.
+
+## Read-Only Engines
+
+Pass `.read_only = TRUE` when creating an Engine to prevent all write
+operations. This is useful when giving analysts a connection to a
+production database, running exploratory queries against live data, or
+any situation where accidental writes would be harmful.
+
+``` r
+ro_engine <- Engine$new(
+  drv    = RPostgres::Postgres(),
+  dbname = "prod_db",
+  host   = "db.example.com",
+  .read_only = TRUE
+)
+```
+
+### What is blocked
+
+Any statement that is not a read (`SELECT`, `WITH`, `EXPLAIN`, `SHOW`,
+`PRAGMA`, `VALUES`) is rejected with an error before it reaches the
+database:
+
+``` r
+# Fine
+ro_engine$get_query("SELECT count(*) FROM users")
+
+# Blocked at the application level
+ro_engine$execute("DELETE FROM users WHERE id = 1")
+#> Error: Engine is read-only; refusing to execute non-SELECT statement.
+
+# TableModel and Record write methods are also blocked
+User$record(id = 99, name = "Ghost")$create()
+#> Error: Engine is read-only; refusing write operation.
+
+User$create_table()
+#> Error: Engine is read-only; cannot create tables.
+```
+
+### Dialect-level enforcement
+
+In addition to application-level guards, `oRm` applies a
+connection-level read-only flag appropriate to each backend:
+
+| Dialect | Mechanism |
+|----|----|
+| SQLite | [`RSQLite::SQLITE_RO`](https://rsqlite.r-dbi.org/reference/SQLite.html) open flag — the connection itself cannot write |
+| PostgreSQL | libpq `options="-c default_transaction_read_only=on"` — every transaction is read-only at the driver level |
+| MySQL | `SET SESSION TRANSACTION READ ONLY` executed after each new connection is opened |
+
+For pooled MySQL connections, driver-level enforcement is not available;
+`oRm` will emit a warning and fall back to application-level guards
+only.

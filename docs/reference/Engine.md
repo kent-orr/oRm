@@ -19,6 +19,10 @@ Key features:
 
 \[TableModel::new()\]
 
+\[Engine\$model()\], \[reflect_columns()\]
+
+\[Engine\$hydrate()\], \[define_relationship()\], \[reflect_tables()\]
+
 \[TableModel\$print()\], \[Record\$print()\].
 
 ## Public fields
@@ -71,6 +75,10 @@ Key features:
 
 - [`Engine$model()`](#method-Engine-model)
 
+- [`Engine$hydrate()`](#method-Engine-hydrate)
+
+- [`Engine$hydrate_schema()`](#method-Engine-hydrate_schema)
+
 - [`Engine$set_transaction_state()`](#method-Engine-set_transaction_state)
 
 - [`Engine$get_transaction_state()`](#method-Engine-get_transaction_state)
@@ -95,6 +103,7 @@ Create an Engine object
       ...,
       conn_args = list(),
       .schema = NULL,
+      .read_only = FALSE,
       use_pool = FALSE,
       persist = FALSE
     )
@@ -112,6 +121,14 @@ Create an Engine object
 - `.schema`:
 
   Character. The default schema to apply to child TableModel objects
+
+- `.read_only`:
+
+  Logical. If TRUE, the engine refuses non-SELECT statements and applies
+  dialect-specific connection-level read-only enforcement (SQLite:
+  \`SQLITE_RO\` open flag; PostgreSQL: \`SET SESSION CHARACTERISTICS AS
+  TRANSACTION READ ONLY\`; MySQL: \`SET SESSION TRANSACTION READ
+  ONLY\`).
 
 - `use_pool`:
 
@@ -322,6 +339,139 @@ A new TableModel object
 
 ------------------------------------------------------------------------
 
+### Method `hydrate()`
+
+Build a TableModel by introspecting an existing database table.
+
+Inspects the columns of an existing table and returns a ready-to-use
+TableModel, so basic CRUD is possible without pre-defining columns. The
+default reflection is best-effort and dialect-agnostic (column names and
+reported types only; see \[reflect_columns()\]). The PostgreSQL dialect
+reflects richer metadata: canonical types, primary keys, nullability,
+defaults, and foreign keys (as \[ForeignKey\] objects).
+
+#### Usage
+
+    Engine$hydrate(
+      tablename,
+      ...,
+      include = NULL,
+      exclude = NULL,
+      .schema = NULL,
+      .default_mode = "all"
+    )
+
+#### Arguments
+
+- `tablename`:
+
+  Name of the existing table to hydrate.
+
+- `...`:
+
+  Additional \`Column\`, \`ForeignKey\`, or \`Method\` objects to merge
+  in. These take precedence over reflected columns of the same name,
+  matching the behaviour of \`model()\`.
+
+- `include`:
+
+  Optional character vector of column names to keep.
+
+- `exclude`:
+
+  Optional character vector of column names to drop.
+
+- `.schema`:
+
+  Character. The default schema to apply to the TableModel.
+
+- `.default_mode`:
+
+  Character. Default read mode for the TableModel.
+
+#### Returns
+
+A new TableModel object.
+
+#### Examples
+
+    \donttest{
+    # Given a table "users" that already exists in the database:
+    Users <- engine$hydrate("users")
+    Users <- engine$hydrate("users", include = c("id", "name"))
+    Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+    }
+
+------------------------------------------------------------------------
+
+### Method `hydrate_schema()`
+
+Hydrate several tables from a schema at once and wire up the
+relationships implied by their foreign keys.
+
+Each table is hydrated via \[Engine\$hydrate()\]; afterwards, every
+reflected \[ForeignKey\] whose target is also among the hydrated models
+is turned into a \`many_to_one\` relationship (with the reverse
+\`one_to_many\` backref) using \[define_relationship()\]. Foreign keys
+pointing at tables outside the hydrated set are skipped with a warning.
+This is most useful with the PostgreSQL dialect, whose reflection
+captures foreign keys.
+
+#### Usage
+
+    Engine$hydrate_schema(
+      tables = NULL,
+      ...,
+      .schema = NULL,
+      exclude = NULL,
+      .default_mode = "all",
+      wire_relationships = TRUE
+    )
+
+#### Arguments
+
+- `tables`:
+
+  Optional character vector limiting which tables to hydrate. When
+  \`NULL\`, all tables in the schema are hydrated (see
+  \[reflect_tables()\]).
+
+- `...`:
+
+  Additional \`Column\`, \`ForeignKey\`, or \`Method\` objects passed to
+  every \`hydrate()\` call (overrides of reflected columns).
+
+- `.schema`:
+
+  Character. Schema to hydrate. Defaults to the engine schema.
+
+- `exclude`:
+
+  Optional character vector of table names to drop.
+
+- `.default_mode`:
+
+  Character. Default read mode for each TableModel.
+
+- `wire_relationships`:
+
+  Logical. Whether to auto-wire relationships from reflected foreign
+  keys. Defaults to TRUE.
+
+#### Returns
+
+A named list of TableModel objects, keyed by bare table name.
+
+#### Examples
+
+    \donttest{
+    models <- engine$hydrate_schema()
+    models <- engine$hydrate_schema(tables = c("users", "posts"))
+    posts <- models$posts
+    }
+
+------------------------------------------------------------------------
+
 ### Method `set_transaction_state()`
 
 Set the internal transaction state
@@ -449,5 +599,32 @@ engine$model(
     Column$new("name", "text")
 )
 #> Error: object 'engine' not found
+# }
+
+## ------------------------------------------------
+## Method `Engine$hydrate`
+## ------------------------------------------------
+
+# \donttest{
+# Given a table "users" that already exists in the database:
+Users <- engine$hydrate("users")
+#> Error: object 'engine' not found
+Users <- engine$hydrate("users", include = c("id", "name"))
+#> Error: object 'engine' not found
+Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+#> Error: object 'engine' not found
+# }
+
+## ------------------------------------------------
+## Method `Engine$hydrate_schema`
+## ------------------------------------------------
+
+# \donttest{
+models <- engine$hydrate_schema()
+#> Error: object 'engine' not found
+models <- engine$hydrate_schema(tables = c("users", "posts"))
+#> Error: object 'engine' not found
+posts <- models$posts
+#> Error: object 'models' not found
 # }
 ```

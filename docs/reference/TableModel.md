@@ -234,6 +234,7 @@ Create the associated table in the database.
     TableModel$create_table(
       if_not_exists = TRUE,
       overwrite = FALSE,
+      ask = TRUE,
       verbose = FALSE
     )
 
@@ -248,6 +249,12 @@ Create the associated table in the database.
 
   Logical. If TRUE, drop the table if it exists and recreate it. Default
   is FALSE.
+
+- `ask`:
+
+  Logical. If TRUE (default) and \`overwrite\` is TRUE, prompt for
+  confirmation in interactive sessions before dropping the table. Pass
+  \`ask = FALSE\` to bypass the prompt (e.g. in scripts).
 
 - `verbose`:
 

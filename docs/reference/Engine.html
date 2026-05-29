@@ -27,7 +27,7 @@ Supports persistent connections for improved performance
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,7 @@ Supports persistent connections for improved performance
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -91,6 +92,8 @@ in how database resources are managed.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>[TableModel::new()]</p>
+<p>[Engine$model()], [reflect_columns()]</p>
+<p>[Engine$hydrate()], [define_relationship()], [reflect_tables()]</p>
 <p>[TableModel$print()], [Record$print()].</p></div>
     </div>
     <div class="section level2">
@@ -137,6 +140,8 @@ in how database resources are managed.</p>
 <li><p><a href="#method-Engine-create_schema"><code>Engine$create_schema()</code></a></p></li>
 <li><p><a href="#method-Engine-check_schema_exists"><code>Engine$check_schema_exists()</code></a></p></li>
 <li><p><a href="#method-Engine-model"><code>Engine$model()</code></a></p></li>
+<li><p><a href="#method-Engine-hydrate"><code>Engine$hydrate()</code></a></p></li>
+<li><p><a href="#method-Engine-hydrate_schema"><code>Engine$hydrate_schema()</code></a></p></li>
 <li><p><a href="#method-Engine-set_transaction_state"><code>Engine$set_transaction_state()</code></a></p></li>
 <li><p><a href="#method-Engine-get_transaction_state"><code>Engine$get_transaction_state()</code></a></p></li>
 <li><p><a href="#method-Engine-qualify"><code>Engine$qualify()</code></a></p></li>
@@ -151,6 +156,7 @@ in how database resources are managed.</p>
 <span>  <span class="va">...</span>,</span>
 <span>  conn_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  .schema <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  .read_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  use_pool <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  persist <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -168,6 +174,14 @@ in how database resources are managed.</p>
 
 <dt><code>.schema</code></dt>
 <dd><p>Character. The default schema to apply to child TableModel objects</p></dd>
+
+
+<dt><code>.read_only</code></dt>
+<dd><p>Logical. If TRUE, the engine refuses non-SELECT
+statements and applies dialect-specific connection-level
+read-only enforcement (SQLite: `SQLITE_RO` open flag; PostgreSQL:
+`SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY`; MySQL:
+`SET SESSION TRANSACTION READ ONLY`).</p></dd>
 
 
 <dt><code>use_pool</code></dt>
@@ -377,15 +391,152 @@ engine$model(
 </div>
 
 
-</div><p></p><hr><a id="method-Engine-set_transaction_state"></a><div class="section">
-<h3 id="method-set-transaction-state-">Method <code>set_transaction_state()</code><a class="anchor" aria-label="anchor" href="#method-set-transaction-state-"></a></h3>
-<p>Set the internal transaction state</p><div class="section">
+</div><p></p><hr><a id="method-Engine-hydrate"></a><div class="section">
+<h3 id="method-hydrate-">Method <code>hydrate()</code><a class="anchor" aria-label="anchor" href="#method-hydrate-"></a></h3>
+<p>Build a TableModel by introspecting an existing database table.</p>
+<p>Inspects the columns of an existing table and returns a ready-to-use
+TableModel, so basic CRUD is possible without pre-defining columns.
+The default reflection is best-effort and dialect-agnostic (column
+names and reported types only; see [reflect_columns()]). The
+PostgreSQL dialect reflects richer metadata: canonical types, primary
+keys, nullability, defaults, and foreign keys (as [ForeignKey]
+objects).</p><div class="section">
 <h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">set_transaction_state</span><span class="op">(</span><span class="va">state</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span></span>
+<span>  <span class="va">tablename</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  include <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  .schema <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  .default_mode <span class="op">=</span> <span class="st">"all"</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>tablename</code></dt>
+<dd><p>Name of the existing table to hydrate.</p></dd>
+
+
+<dt><code>...</code></dt>
+<dd><p>Additional `Column`, `ForeignKey`, or `Method` objects to
+merge in. These take precedence over reflected columns of the same
+name, matching the behaviour of `model()`.</p></dd>
+
+
+<dt><code>include</code></dt>
+<dd><p>Optional character vector of column names to keep.</p></dd>
+
+
+<dt><code>exclude</code></dt>
+<dd><p>Optional character vector of column names to drop.</p></dd>
+
+
+<dt><code>.schema</code></dt>
+<dd><p>Character. The default schema to apply to the TableModel.</p></dd>
+
+
+<dt><code>.default_mode</code></dt>
+<dd><p>Character. Default read mode for the TableModel.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-9">Returns<a class="anchor" aria-label="anchor" href="#returns-9"></a></h4>
+<p>A new TableModel object.</p>
+</div>
+<div class="section">
+<h4 id="examples-1">Examples<a class="anchor" aria-label="anchor" href="#examples-1"></a></h4>
+<p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
+# Given a table "users" that already exists in the database:
+Users &lt;- engine$hydrate("users")
+Users &lt;- engine$hydrate("users", include = c("id", "name"))
+Users &lt;- engine$hydrate("users", exclude = c("hash", "configuration"))
+}
+</code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-Engine-hydrate_schema"></a><div class="section">
+<h3 id="method-hydrate-schema-">Method <code>hydrate_schema()</code><a class="anchor" aria-label="anchor" href="#method-hydrate-schema-"></a></h3>
+<p>Hydrate several tables from a schema at once and wire up the
+relationships implied by their foreign keys.</p>
+<p>Each table is hydrated via [Engine$hydrate()]; afterwards, every
+reflected [ForeignKey] whose target is also among the hydrated models
+is turned into a `many_to_one` relationship (with the reverse
+`one_to_many` backref) using [define_relationship()]. Foreign keys
+pointing at tables outside the hydrated set are skipped with a
+warning. This is most useful with the PostgreSQL dialect, whose
+reflection captures foreign keys.</p><div class="section">
+<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span></span>
+<span>  tables <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  .schema <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  .default_mode <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  wire_relationships <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>tables</code></dt>
+<dd><p>Optional character vector limiting which tables to
+hydrate. When `NULL`, all tables in the schema are hydrated
+(see [reflect_tables()]).</p></dd>
+
+
+<dt><code>...</code></dt>
+<dd><p>Additional `Column`, `ForeignKey`, or `Method` objects
+passed to every `hydrate()` call (overrides of reflected columns).</p></dd>
+
+
+<dt><code>.schema</code></dt>
+<dd><p>Character. Schema to hydrate. Defaults to the engine
+schema.</p></dd>
+
+
+<dt><code>exclude</code></dt>
+<dd><p>Optional character vector of table names to drop.</p></dd>
+
+
+<dt><code>.default_mode</code></dt>
+<dd><p>Character. Default read mode for each TableModel.</p></dd>
+
+
+<dt><code>wire_relationships</code></dt>
+<dd><p>Logical. Whether to auto-wire relationships
+from reflected foreign keys. Defaults to TRUE.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-10">Returns<a class="anchor" aria-label="anchor" href="#returns-10"></a></h4>
+<p>A named list of TableModel objects, keyed by bare table name.</p>
+</div>
+<div class="section">
+<h4 id="examples-2">Examples<a class="anchor" aria-label="anchor" href="#examples-2"></a></h4>
+<p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
+models &lt;- engine$hydrate_schema()
+models &lt;- engine$hydrate_schema(tables = c("users", "posts"))
+posts &lt;- models$posts
+}
+</code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-Engine-set_transaction_state"></a><div class="section">
+<h3 id="method-set-transaction-state-">Method <code>set_transaction_state()</code><a class="anchor" aria-label="anchor" href="#method-set-transaction-state-"></a></h3>
+<p>Set the internal transaction state</p><div class="section">
+<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">set_transaction_state</span><span class="op">(</span><span class="va">state</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>state</code></dt>
 <dd><p>Logical. Indicates if a transaction is active</p></dd>
 
@@ -393,31 +544,31 @@ engine$model(
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-9">Returns<a class="anchor" aria-label="anchor" href="#returns-9"></a></h4>
+<h4 id="returns-11">Returns<a class="anchor" aria-label="anchor" href="#returns-11"></a></h4>
 <p>NULL</p>
 </div>
 
 </div><p></p><hr><a id="method-Engine-get_transaction_state"></a><div class="section">
 <h3 id="method-get-transaction-state-">Method <code>get_transaction_state()</code><a class="anchor" aria-label="anchor" href="#method-get-transaction-state-"></a></h3>
 <p>Retrieve the current transaction state</p><div class="section">
-<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
+<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">get_transaction_state</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="returns-10">Returns<a class="anchor" aria-label="anchor" href="#returns-10"></a></h4>
+<h4 id="returns-12">Returns<a class="anchor" aria-label="anchor" href="#returns-12"></a></h4>
 <p>Logical indicating if a transaction is active</p>
 </div>
 
 </div><p></p><hr><a id="method-Engine-qualify"></a><div class="section">
 <h3 id="method-qualify-">Method <code><a href="qualify.html">qualify()</a></code><a class="anchor" aria-label="anchor" href="#method-qualify-"></a></h3>
 <p>Qualify a table name with a schema</p><div class="section">
-<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
+<h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">qualify</span><span class="op">(</span><span class="va">tablename</span>, .schema <span class="op">=</span> <span class="va">self</span><span class="op">$</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>tablename</code></dt>
 <dd><p>Character. Table name to qualify</p></dd>
 
@@ -429,19 +580,19 @@ engine$model(
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-11">Returns<a class="anchor" aria-label="anchor" href="#returns-11"></a></h4>
+<h4 id="returns-13">Returns<a class="anchor" aria-label="anchor" href="#returns-13"></a></h4>
 <p>A fully qualified table name</p>
 </div>
 
 </div><p></p><hr><a id="method-Engine-format_tablename"></a><div class="section">
 <h3 id="method-format-tablename-">Method <code>format_tablename()</code><a class="anchor" aria-label="anchor" href="#method-format-tablename-"></a></h3>
 <p>Quote and format a schema-qualified table name</p><div class="section">
-<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
+<h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">format_tablename</span><span class="op">(</span><span class="va">tablename</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
+<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>tablename</code></dt>
 <dd><p>Character. Table name to format</p></dd>
 
@@ -449,7 +600,7 @@ engine$model(
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-12">Returns<a class="anchor" aria-label="anchor" href="#returns-12"></a></h4>
+<h4 id="returns-14">Returns<a class="anchor" aria-label="anchor" href="#returns-14"></a></h4>
 <p>A quoted table name</p>
 </div>
 
@@ -457,12 +608,12 @@ engine$model(
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p>Print a concise summary of the engine, including the SQL dialect,
 default schema, and connection status.</p><div class="section">
-<h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
+<h4 id="usage-16">Usage<a class="anchor" aria-label="anchor" href="#usage-16"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
+<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unused, present for compatibility.</p></dd>
 
@@ -470,19 +621,19 @@ default schema, and connection status.</p><div class="section">
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-13">Returns<a class="anchor" aria-label="anchor" href="#returns-13"></a></h4>
+<h4 id="returns-15">Returns<a class="anchor" aria-label="anchor" href="#returns-15"></a></h4>
 <p>The Engine object, invisibly.</p>
 </div>
 
 </div><p></p><hr><a id="method-Engine-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
+<h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Engine</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
+<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
@@ -508,6 +659,33 @@ default schema, and connection status.</p><div class="section">
 <span class="r-in"><span>    <span class="va"><a href="Column.html">Column</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"name"</span>, <span class="st">"text"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## ------------------------------------------------</span></span></span>
+<span class="r-in"><span><span class="co">## Method `Engine$hydrate`</span></span></span>
+<span class="r-in"><span><span class="co">## ------------------------------------------------</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="co"># Given a table "users" that already exists in the database:</span></span></span>
+<span class="r-in"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
+<span class="r-in"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
+<span class="r-in"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hash"</span>, <span class="st">"configuration"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## ------------------------------------------------</span></span></span>
+<span class="r-in"><span><span class="co">## Method `Engine$hydrate_schema`</span></span></span>
+<span class="r-in"><span><span class="co">## ------------------------------------------------</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
+<span class="r-in"><span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"users"</span>, <span class="st">"posts"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'engine' not found</span>
+<span class="r-in"><span><span class="va">posts</span> <span class="op">&lt;-</span> <span class="va">models</span><span class="op">$</span><span class="va">posts</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'models' not found</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -186,7 +186,7 @@ Classes <- engine$model(
     }, target = 'table')
 )
 
-Classes$create_table(overwrite = TRUE)
+Classes$create_table(overwrite = TRUE, ask = FALSE)  # ask = FALSE skips interactive confirmation
 #> <TableModel>
 #> Table: classes
 #> Columns: id, subject, teacher_id, grade_average
@@ -222,3 +222,65 @@ For more examples of using methods to implement business logic, see the
 [Using
 Methods](https://kent-orr.github.io/oRm/articles/using-methods.md)
 vignette.
+
+### Overwriting Tables
+
+`create_table(overwrite = TRUE)` drops and recreates the table. In
+interactive sessions, `oRm` will prompt for confirmation before
+proceeding:
+
+    Are you sure you want to overwrite classes? [y/N]
+
+Pass `ask = FALSE` to bypass the prompt in scripts or automated
+workflows:
+
+``` r
+Classes$create_table(overwrite = TRUE, ask = FALSE)
+```
+
+### Partial Models
+
+A partial model declares only a subset of an existing table’s columns.
+`read()` automatically projects results to the declared fields, so
+`Record` objects only expose what you have opted in to.
+
+This is useful when: - The existing table has sensitive or irrelevant
+columns you want to exclude - You want a safe, scoped view of a
+production table (especially combined with `.read_only = TRUE`) - You
+are not the table owner and do not want to replicate every column in
+your model
+
+``` r
+# Suppose 'users' also has 'ssn' and 'internal_notes' columns in the database
+UserView <- engine$model(
+  "users",
+  id    = Column("INTEGER", primary_key = TRUE),
+  name  = Column("TEXT"),
+  email = Column("TEXT")
+)
+
+# read() returns only id, name, email — other columns are filtered out
+df <- UserView$read(.mode = "data.frame")
+names(df)  # "id" "name" "email"
+
+# For maximum safety, pair with a read-only engine
+ro_engine <- Engine$new(
+  drv    = RSQLite::SQLite(),
+  dbname = "prod.sqlite",
+  .read_only = TRUE
+)
+
+UserView <- ro_engine$model(
+  "users",
+  id    = Column("INTEGER", primary_key = TRUE),
+  name  = Column("TEXT"),
+  email = Column("TEXT")
+)
+
+UserView$read(.mode = "data.frame")
+```
+
+Partial models do not modify the underlying table. The column projection
+happens in R via
+[`dplyr::select()`](https://dplyr.tidyverse.org/reference/select.html)
+after the query runs, so the database is not aware of the restriction.

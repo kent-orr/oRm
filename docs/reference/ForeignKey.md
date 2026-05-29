@@ -10,6 +10,7 @@ ForeignKey(
   ref_table = NULL,
   ref_column = NULL,
   references = NULL,
+  ref_schema = NULL,
   on_delete = NULL,
   on_update = NULL,
   ...
@@ -33,8 +34,14 @@ ForeignKey(
 
 - references:
 
-  "table.column" string specifying the referenced field. This is the
-  recommended way to declare the target.
+  "table.column" (or schema-qualified "schema.table.column") string
+  specifying the referenced field. This is the recommended way to
+  declare the target.
+
+- ref_schema:
+
+  Character. Optional schema of the referenced table, for foreign keys
+  that point at a table in another schema.
 
 - on_delete:
 

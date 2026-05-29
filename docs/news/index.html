@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -56,9 +57,56 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="orm-development-version">oRm (development version)<a class="anchor" aria-label="anchor" href="#orm-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.5.0" id="orm-050">oRm 0.5.0<a class="anchor" aria-label="anchor" href="#orm-050"></a></h2>
 <div class="section level3">
-<h3 id="new-features-development-version">New Features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h3>
+<h3 id="new-features-0-5-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-5-0"></a></h3>
+<ul><li>
+<strong>PostgreSQL rich table reflection</strong> — <code>engine$hydrate()</code> now captures full column metadata when using the PostgreSQL dialect:
+<ul><li>Canonical types (e.g. <code>integer</code>, <code>text</code>, <code>timestamp with time zone</code>)</li>
+<li>Primary key flags, nullability, and column defaults</li>
+<li>Server-side defaults (sequences, <code>now()</code>, etc.) stored as <code><a href="https://dbplyr.tidyverse.org/reference/sql.html" class="external-link">dbplyr::sql()</a></code> objects and applied by the database at insert time</li>
+<li>Foreign keys reflected as <code>ForeignKey</code> objects, schema-qualified when the target lives in another schema</li>
+</ul></li>
+<li>
+<strong>Schema-qualified foreign keys</strong> — <code><a href="../reference/ForeignKey.html">ForeignKey()</a></code> now accepts cross-schema targets:
+<ul><li>New <code>ref_schema</code> argument: <code>ForeignKey("INTEGER", ref_schema = "other", ref_table = "users", ref_column = "id")</code>
+</li>
+<li>Three-part <code>references</code> shorthand: <code>ForeignKey("INTEGER", references = "other.users.id")</code>
+</li>
+<li>
+<code><a href="../reference/render_constraint.html">render_constraint()</a></code> emits <code>REFERENCES "other"."users" ("id")</code> for cross-schema FKs</li>
+</ul></li>
+<li>
+<strong><code>Engine$hydrate_schema()</code></strong> — hydrate an entire schema in one call and auto-wire relationships:
+<ul><li>Hydrates all (or a selected subset of) tables via <code>hydrate()</code>
+</li>
+<li>Turns every reflected <code>ForeignKey</code> into a <code>many_to_one</code> / <code>one_to_many</code> relationship pair via <code><a href="../reference/define_relationship.html">define_relationship()</a></code>
+</li>
+<li>Accepts <code>tables</code>, <code>exclude</code>, <code>.schema</code>, and <code>wire_relationships</code> arguments</li>
+<li>Foreign keys pointing at tables outside the hydrated set emit a warning and are skipped</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/reflect_tables.html">reflect_tables()</a></code> generic</strong> — new dialect-dispatched function that lists the tables available in a schema:
+<ul><li>Default implementation wraps <code><a href="https://dbi.r-dbi.org/reference/dbListTables.html" class="external-link">DBI::dbListTables()</a></code>
+</li>
+<li>PostgreSQL implementation queries <code>pg_catalog.pg_tables</code> for the target schema</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="improvements-0-5-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-5-0"></a></h3>
+<ul><li>
+<code>Record</code> now skips server-side defaults (<code><a href="https://dbplyr.tidyverse.org/reference/sql.html" class="external-link">dbplyr::sql()</a></code> objects) at insert time, letting the database compute the value and relying on <code><a href="../reference/flush.html">flush()</a></code> to read it back</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-5-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-5-0"></a></h3>
+<ul><li>Updated README and <code><a href="../articles/using-engine.html">vignette("using-engine")</a></code> to document PostgreSQL rich reflection, schema-qualified foreign keys, and <code>hydrate_schema()</code>
+</li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="orm-040">oRm 0.4.0<a class="anchor" aria-label="anchor" href="#orm-040"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-4-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-4-0"></a></h3>
 <ul><li>Added <code><a href="../reference/Method.html">Method()</a></code> function for attaching custom methods to models at both table and record levels
 <ul><li>Table-level methods operate on the entire table for custom queries and bulk operations</li>
 <li>Record-level methods operate on individual records for instance-specific behavior</li>
@@ -68,15 +116,28 @@
 <ul><li>JSON and JSONB columns automatically serialize R objects when writing to database</li>
 <li>Automatically deserialize JSON to R objects when reading from database</li>
 </ul></li>
+<li>Added <code>Engine(.read_only = TRUE)</code> for read-only database access
+<ul><li>Application-level guards block all INSERT, UPDATE, DELETE, CREATE TABLE, and DROP TABLE operations</li>
+<li>Dialect-level enforcement: SQLite uses the <code>SQLITE_RO</code> open flag; PostgreSQL sets <code>default_transaction_read_only=on</code> via libpq; MySQL executes <code>SET SESSION TRANSACTION READ ONLY</code> post-connect</li>
+</ul></li>
+<li>Added partial model support: a <code>TableModel</code> can declare a subset of an existing table’s columns
+<ul><li>
+<code>read()</code> projects results to only the declared fields, preventing undeclared columns from surfacing in <code>Record</code> objects</li>
+<li>Useful for scoped, safe access to production tables with sensitive or irrelevant columns</li>
+</ul></li>
+<li>
+<code>create_table(overwrite = TRUE)</code> now prompts for confirmation in interactive sessions
+<ul><li>Pass <code>ask = FALSE</code> to bypass the prompt in scripts and automated workflows</li>
+</ul></li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
+<h3 id="documentation-0-4-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-4-0"></a></h3>
 <ul><li>Added new vignette “Using Methods” demonstrating method usage patterns</li>
 <li>Updated existing vignettes (Get Started, Using Records, Using TableModels) to include method documentation</li>
 <li>Added <code>Method</code> to core building blocks in package documentation</li>
 </ul></div>
 <div class="section level3">
-<h3 id="improvements-development-version">Improvements<a class="anchor" aria-label="anchor" href="#improvements-development-version"></a></h3>
+<h3 id="improvements-0-4-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-4-0"></a></h3>
 <ul><li>Dropped stevedore dependency for PostgreSQL test setup</li>
 </ul><hr></div>
 </div>

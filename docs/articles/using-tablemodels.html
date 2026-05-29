@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -277,7 +278,7 @@ complex business logic:</p>
 <span>    <span class="op">}</span>, target <span class="op">=</span> <span class="st">'table'</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">Classes</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span>overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">Classes</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span>overwrite <span class="op">=</span> <span class="cn">TRUE</span>, ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>  <span class="co"># ask = FALSE skips interactive confirmation</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt; Table: classes</span></span>
 <span><span class="co">#&gt; Columns: id, subject, teacher_id, grade_average</span></span>
@@ -309,6 +310,62 @@ TableModel instance. This allows you to call any TableModel method like
 <code>self$relationship()</code>.</p>
 <p>For more examples of using methods to implement business logic, see
 the <a href="using-methods.html">Using Methods</a> vignette.</p>
+</div>
+<div class="section level3">
+<h3 id="overwriting-tables">Overwriting Tables<a class="anchor" aria-label="anchor" href="#overwriting-tables"></a>
+</h3>
+<p><code>create_table(overwrite = TRUE)</code> drops and recreates the
+table. In interactive sessions, <code>oRm</code> will prompt for
+confirmation before proceeding:</p>
+<pre><code>Are you sure you want to overwrite classes? [y/N]</code></pre>
+<p>Pass <code>ask = FALSE</code> to bypass the prompt in scripts or
+automated workflows:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Classes</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span>overwrite <span class="op">=</span> <span class="cn">TRUE</span>, ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="partial-models">Partial Models<a class="anchor" aria-label="anchor" href="#partial-models"></a>
+</h3>
+<p>A partial model declares only a subset of an existing table’s
+columns. <code>read()</code> automatically projects results to the
+declared fields, so <code>Record</code> objects only expose what you
+have opted in to.</p>
+<p>This is useful when: - The existing table has sensitive or irrelevant
+columns you want to exclude - You want a safe, scoped view of a
+production table (especially combined with
+<code>.read_only = TRUE</code>) - You are not the table owner and do not
+want to replicate every column in your model</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Suppose 'users' also has 'ssn' and 'internal_notes' columns in the database</span></span>
+<span><span class="va">UserView</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
+<span>  <span class="st">"users"</span>,</span>
+<span>  id    <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  name  <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span>,</span>
+<span>  email <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># read() returns only id, name, email — other columns are filtered out</span></span>
+<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">UserView</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span>  <span class="co"># "id" "name" "email"</span></span>
+<span></span>
+<span><span class="co"># For maximum safety, pair with a read-only engine</span></span>
+<span><span class="va">ro_engine</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  drv    <span class="op">=</span> <span class="fu">RSQLite</span><span class="fu">::</span><span class="fu"><a href="https://rsqlite.r-dbi.org/reference/SQLite.html" class="external-link">SQLite</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  dbname <span class="op">=</span> <span class="st">"prod.sqlite"</span>,</span>
+<span>  .read_only <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">UserView</span> <span class="op">&lt;-</span> <span class="va">ro_engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
+<span>  <span class="st">"users"</span>,</span>
+<span>  id    <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  name  <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span>,</span>
+<span>  email <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">UserView</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span></code></pre></div>
+<p>Partial models do not modify the underlying table. The column
+projection happens in R via <code><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">dplyr::select()</a></code> after the query
+runs, so the database is not aware of the restriction.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

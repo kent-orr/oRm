@@ -4,6 +4,7 @@ pkgdown_sha: ~
 articles:
   developing-dialects: developing-dialects.html
   get_started: get_started.html
+  hydrating-tables: hydrating-tables.html
   using-engine: using-engine.html
   using-methods: using-methods.html
   using-records: using-records.html
@@ -11,7 +12,7 @@ articles:
   using-tablemodels: using-tablemodels.html
   why_oRm: why_oRm.html
   with_shiny: with_shiny.html
-last_built: 2026-01-21T01:36Z
+last_built: 2026-05-29T17:20Z
 urls:
   reference: https://kent-orr.github.io/oRm/reference
   article: https://kent-orr.github.io/oRm/articles

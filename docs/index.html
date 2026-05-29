@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,7 @@
     <li><a class="dropdown-item" href="articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -179,6 +180,125 @@
 <span><span class="va">u</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span> <span class="op">&lt;-</span> <span class="st">"Hogan"</span></span>
 <span><span class="va">u</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">u</span><span class="op">$</span><span class="fu">delete</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_7-read-only-engines">7. Read-Only Engines<a class="anchor" aria-label="anchor" href="#id_7-read-only-engines"></a>
+</h3>
+<p>Pass <code>.read_only = TRUE</code> to prevent all write operations on an engine. Useful for giving analysts a safe connection to production databases.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ro_engine</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/Engine.html">Engine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  drv   <span class="op">=</span> <span class="fu">RSQLite</span><span class="fu">::</span><span class="fu"><a href="https://rsqlite.r-dbi.org/reference/SQLite.html" class="external-link">SQLite</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  dbname <span class="op">=</span> <span class="st">"prod.sqlite"</span>,</span>
+<span>  .read_only <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Reads work fine</span></span>
+<span><span class="va">records</span> <span class="op">&lt;-</span> <span class="va">User</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Any write attempt is blocked</span></span>
+<span><span class="va">User</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">99</span>, name <span class="op">=</span> <span class="st">"Ghost"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error: Engine is read-only; refusing write operation.</span></span></code></pre></div>
+<p>Enforcement is applied at two levels: application-level guards on every write call, plus a dialect-specific connection-level flag (SQLite <code>SQLITE_RO</code>, PostgreSQL <code>default_transaction_read_only=on</code>, MySQL <code>SET SESSION TRANSACTION READ ONLY</code>).</p>
+</div>
+<div class="section level3">
+<h3 id="id_8-partial-models">8. Partial Models<a class="anchor" aria-label="anchor" href="#id_8-partial-models"></a>
+</h3>
+<p>Define a <code>TableModel</code> with only a subset of an existing table’s columns. <code>read()</code> will project results to just the declared fields.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># The 'users' table also has 'ssn' and 'internal_notes' columns — omit them here</span></span>
+<span><span class="va">UserView</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
+<span>  <span class="st">"users"</span>,</span>
+<span>  id    <span class="op">=</span> <span class="fu"><a href="reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  name  <span class="op">=</span> <span class="fu"><a href="reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span>,</span>
+<span>  email <span class="op">=</span> <span class="fu"><a href="reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"TEXT"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">UserView</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   id  name           email</span></span>
+<span><span class="co">#&gt; 1  1  Kent  kent@example.com</span></span></code></pre></div>
+<p>Combine with <code>.read_only = TRUE</code> for safe, scoped access to production tables.</p>
+</div>
+<div class="section level3">
+<h3 id="id_9-hydrating-models-from-existing-tables">9. Hydrating Models From Existing Tables<a class="anchor" aria-label="anchor" href="#id_9-hydrating-models-from-existing-tables"></a>
+</h3>
+<p>When a table already exists, <code>engine$hydrate()</code> introspects its columns and returns a ready-to-use <code>TableModel</code>, so you can do basic CRUD without declaring every column by hand.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Reflect all columns of the existing "users" table</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">Users</span><span class="op">$</span><span class="va">fields</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "id" "name" "age" "hash"</span></span>
+<span></span>
+<span><span class="co"># Keep or drop columns with include / exclude</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"age"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hash"</span>, <span class="st">"configuration"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3L</span>, name <span class="op">=</span> <span class="st">"Ada"</span>, age <span class="op">=</span> <span class="fl">36L</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span></code></pre></div>
+<p>The <strong>default</strong> reflection recovers column names and best-effort types only. The <strong>PostgreSQL dialect</strong> reflects richer metadata automatically:</p>
+<ul>
+<li>Canonical types (e.g. <code>integer</code>, <code>text</code>, <code>timestamp with time zone</code>)</li>
+<li>Primary key flags</li>
+<li>Nullability and column defaults (server-side defaults like <code>nextval()</code> are preserved as <code><a href="https://dbplyr.tidyverse.org/reference/sql.html" class="external-link">dbplyr::sql()</a></code> objects and applied by the database at insert time)</li>
+<li>Foreign keys, returned as <code>ForeignKey</code> objects and schema-qualified when the target lives in another schema</li>
+</ul>
+<p>For other dialects, because the primary key is not reflected, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code>delete()</code> require you to supply the key column via <code>...</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, id <span class="op">=</span> <span class="fu"><a href="reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>...</code> argument also lets you attach <code><a href="reference/Method.html">Method()</a></code>s or override any reflected column definition, exactly like <code>engine$model()</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="id_10-hydrating-an-entire-schema">10. Hydrating an Entire Schema<a class="anchor" aria-label="anchor" href="#id_10-hydrating-an-entire-schema"></a>
+</h3>
+<p><code>engine$hydrate_schema()</code> hydrates every table in a schema in one call and automatically wires up the <code>many_to_one</code> / <code>one_to_many</code> relationships implied by the reflected foreign keys. This is most useful with the PostgreSQL dialect, whose reflection captures foreign keys.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Hydrate all tables in the engine's default schema</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or restrict to a specific set of tables</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"users"</span>, <span class="st">"posts"</span>, <span class="st">"comments"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Access individual models</span></span>
+<span><span class="va">posts</span>  <span class="op">&lt;-</span> <span class="va">models</span><span class="op">$</span><span class="va">posts</span></span>
+<span><span class="va">users</span>  <span class="op">&lt;-</span> <span class="va">models</span><span class="op">$</span><span class="va">users</span></span>
+<span></span>
+<span><span class="co"># Relationships are wired automatically from FK metadata</span></span>
+<span><span class="va">post</span> <span class="op">&lt;-</span> <span class="va">posts</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, .mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span>
+<span><span class="va">author</span> <span class="op">&lt;-</span> <span class="va">post</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span>   <span class="co"># many_to_one via posts.user_id -&gt; users.id</span></span></code></pre></div>
+<p>Options:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Argument</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>tables</code></td>
+<td><code>NULL</code></td>
+<td>Tables to hydrate; <code>NULL</code> hydrates all in the schema</td>
+</tr>
+<tr>
+<td><code>exclude</code></td>
+<td><code>NULL</code></td>
+<td>Table names to skip</td>
+</tr>
+<tr>
+<td><code>.schema</code></td>
+<td>engine schema</td>
+<td>Schema to inspect</td>
+</tr>
+<tr>
+<td><code>wire_relationships</code></td>
+<td><code>TRUE</code></td>
+<td>Auto-wire FK relationships</td>
+</tr>
+</tbody>
+</table>
 <hr>
 <p>Early-stage project. Feedback welcome!</p>
 </div>

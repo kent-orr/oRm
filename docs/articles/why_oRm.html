@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
+    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -174,7 +175,7 @@ record in the database?</p>
 <span></span>
 <span><span class="va">new_tab</span> <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/tbl.html" class="external-link">tbl</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"measurements"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>        measurement_value  <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
+<span>        measurement_value  <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
 <span>            <span class="va">observer_id</span> <span class="op">==</span> <span class="fl">2</span> <span class="op">~</span> <span class="fl">8.15</span>,</span>
 <span>            <span class="cn">TRUE</span> <span class="op">~</span> <span class="va">measurement_value</span></span>
 <span>        <span class="op">)</span></span>

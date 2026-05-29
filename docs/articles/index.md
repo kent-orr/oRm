@@ -13,6 +13,8 @@
   TableModels](https://kent-orr.github.io/oRm/articles/using-tablemodels.md):
 - [Using
   Records](https://kent-orr.github.io/oRm/articles/using-records.md):
+- [Hydrating Models from Existing
+  Tables](https://kent-orr.github.io/oRm/articles/hydrating-tables.md):
 - [Using
   Relationships](https://kent-orr.github.io/oRm/articles/using-relationships.md):
 - [Using

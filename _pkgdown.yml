@@ -17,6 +17,7 @@ articles:
         - using-engine
         - using-tablemodels
         - using-records
+        - hydrating-tables
         - using-relationships
         - using-methods
 
