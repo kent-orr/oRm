@@ -161,21 +161,58 @@ Users$record(id = 3L, name = "Ada", age = 36L)$create()
 Users$read(.mode = "data.frame")
 ```
 
-Notes for this first pass:
+The **default** reflection recovers column names and best-effort types only.
+The **PostgreSQL dialect** reflects richer metadata automatically:
 
-- Reflection is **dialect-agnostic** and captures column **names and
-  best-effort types** only. Primary keys, nullability, defaults, and foreign
-  keys are **not** reflected yet.
-- Because the primary key is not reflected, `update()` and `delete()` (which
-  key off declared primary-key fields) require you to supply the key column via
-  `...`, which takes precedence over reflected columns:
+- Canonical types (e.g. `integer`, `text`, `timestamp with time zone`)
+- Primary key flags
+- Nullability and column defaults (server-side defaults like `nextval()` are
+  preserved as `dbplyr::sql()` objects and applied by the database at insert
+  time)
+- Foreign keys, returned as `ForeignKey` objects and schema-qualified when the
+  target lives in another schema
 
-  ```r
-  Users <- engine$hydrate("users", id = Column("INTEGER", primary_key = TRUE))
-  ```
+For other dialects, because the primary key is not reflected, `update()` and
+`delete()` require you to supply the key column via `...`:
 
-- The `...` argument also lets you attach `Method()`s or override reflected
-  column definitions at hydrate time, exactly like `engine$model()`.
+```r
+Users <- engine$hydrate("users", id = Column("INTEGER", primary_key = TRUE))
+```
+
+The `...` argument also lets you attach `Method()`s or override any reflected
+column definition, exactly like `engine$model()`.
+
+### 10. Hydrating an Entire Schema
+
+`engine$hydrate_schema()` hydrates every table in a schema in one call and
+automatically wires up the `many_to_one` / `one_to_many` relationships implied
+by the reflected foreign keys. This is most useful with the PostgreSQL dialect,
+whose reflection captures foreign keys.
+
+```r
+# Hydrate all tables in the engine's default schema
+models <- engine$hydrate_schema()
+
+# Or restrict to a specific set of tables
+models <- engine$hydrate_schema(tables = c("users", "posts", "comments"))
+
+# Access individual models
+posts  <- models$posts
+users  <- models$users
+
+# Relationships are wired automatically from FK metadata
+post <- posts$read(id == 1, .mode = "get")
+author <- post$relationship("users")   # many_to_one via posts.user_id -> users.id
+```
+
+Options:
+
+| Argument | Default | Description |
+|---|---|---|
+| `tables` | `NULL` | Tables to hydrate; `NULL` hydrates all in the schema |
+| `exclude` | `NULL` | Table names to skip |
+| `.schema` | engine schema | Schema to inspect |
+| `wire_relationships` | `TRUE` | Auto-wire FK relationships |
 
 ---
 

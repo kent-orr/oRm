@@ -181,3 +181,148 @@ execute_sql.postgres <- function(x, con, sql) {
 apply_read_only.postgres <- function(x, con) {
     invisible(NULL)
 }
+
+
+# Reflection -------------------------------------------------------------
+
+#' Map a PostgreSQL referential-action code to a SQL action.
+#'
+#' `pg_constraint.confdeltype`/`confupdtype` are single characters. "NO ACTION"
+#' (`a`) is the implicit default and is returned as NULL so it is not rendered.
+#' @keywords internal
+pg_fk_action <- function(code) {
+    switch(code,
+        a = NULL,        # NO ACTION (default)
+        r = "RESTRICT",
+        c = "CASCADE",
+        n = "SET NULL",
+        d = "SET DEFAULT",
+        NULL
+    )
+}
+
+#' @describeIn reflect_columns PostgreSQL reflection via `pg_catalog`, capturing
+#'   canonical types, primary keys, nullability, defaults, and foreign keys
+#'   (returned as [ForeignKey] objects, schema-qualified when the target lives
+#'   in another schema).
+reflect_columns.postgres <- function(x, tablename, ...) {
+    conn <- x$get_connection()
+
+    parts <- strsplit(tablename, "\\.")[[1]]
+    if (length(parts) >= 2) {
+        schema <- parts[1]
+        table  <- parts[2]
+    } else {
+        schema <- DBI::dbGetQuery(conn, "SELECT current_schema() AS s")$s[1]
+        table  <- parts[1]
+    }
+    sch_lit <- DBI::dbQuoteLiteral(conn, schema)
+    tbl_lit <- DBI::dbQuoteLiteral(conn, table)
+
+    cols <- tryCatch(
+        DBI::dbGetQuery(conn, paste0(
+            "SELECT a.attname AS name, ",
+            "pg_catalog.format_type(a.atttypid, a.atttypmod) AS type, ",
+            "a.attnotnull AS notnull, ",
+            "pg_catalog.pg_get_expr(d.adbin, d.adrelid) AS default_expr ",
+            "FROM pg_catalog.pg_attribute a ",
+            "JOIN pg_catalog.pg_class c ON c.oid = a.attrelid ",
+            "JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace ",
+            "LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum ",
+            "WHERE n.nspname = ", sch_lit, " AND c.relname = ", tbl_lit, " ",
+            "AND a.attnum > 0 AND NOT a.attisdropped ",
+            "ORDER BY a.attnum"
+        )),
+        error = function(e) {
+            stop(
+                sprintf("hydrate: could not read table %s (%s).", tablename, conditionMessage(e)),
+                call. = FALSE
+            )
+        }
+    )
+
+    if (NROW(cols) == 0) {
+        stop(sprintf("hydrate: table %s reports no columns.", tablename), call. = FALSE)
+    }
+
+    pk <- DBI::dbGetQuery(conn, paste0(
+        "SELECT a.attname AS name ",
+        "FROM pg_catalog.pg_constraint con ",
+        "JOIN pg_catalog.pg_class c ON c.oid = con.conrelid ",
+        "JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace ",
+        "JOIN pg_catalog.pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = ANY(con.conkey) ",
+        "WHERE con.contype = 'p' AND n.nspname = ", sch_lit, " AND c.relname = ", tbl_lit
+    ))$name
+
+    fks <- DBI::dbGetQuery(conn, paste0(
+        "SELECT la.attname AS local_col, fn.nspname AS ref_schema, ",
+        "fc.relname AS ref_table, fa.attname AS ref_column, ",
+        "con.confdeltype AS on_delete, con.confupdtype AS on_update ",
+        "FROM pg_catalog.pg_constraint con ",
+        "JOIN pg_catalog.pg_class c ON c.oid = con.conrelid ",
+        "JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace ",
+        "JOIN pg_catalog.pg_class fc ON fc.oid = con.confrelid ",
+        "JOIN pg_catalog.pg_namespace fn ON fn.oid = fc.relnamespace ",
+        "JOIN generate_subscripts(con.conkey, 1) AS k(i) ON true ",
+        "JOIN pg_catalog.pg_attribute la ON la.attrelid = con.conrelid AND la.attnum = con.conkey[k.i] ",
+        "JOIN pg_catalog.pg_attribute fa ON fa.attrelid = con.confrelid AND fa.attnum = con.confkey[k.i] ",
+        "WHERE con.contype = 'f' AND n.nspname = ", sch_lit, " AND c.relname = ", tbl_lit
+    ))
+
+    fk_map <- stats::setNames(
+        lapply(seq_len(NROW(fks)), function(i) fks[i, ]),
+        as.character(fks$local_col)
+    )
+
+    build_field <- function(i) {
+        nm <- cols$name[i]
+        is_pk <- nm %in% pk
+        args <- list(
+            type = cols$type[i],
+            # Pass TRUE for PKs, NULL otherwise: passing FALSE would trip
+            # Column()'s `is.logical(primary_key)` branch and wipe nullable.
+            primary_key = if (is_pk) TRUE else NULL,
+            nullable = !isTRUE(cols$notnull[i])
+        )
+        if (!is.na(cols$default_expr[i])) {
+            args$default <- dbplyr::sql(cols$default_expr[i])
+        }
+
+        if (nm %in% names(fk_map)) {
+            fk <- fk_map[[nm]]
+            do.call(ForeignKey, c(
+                list(
+                    type       = args$type,
+                    ref_schema = as.character(fk$ref_schema),
+                    ref_table  = as.character(fk$ref_table),
+                    ref_column = as.character(fk$ref_column),
+                    on_delete  = pg_fk_action(as.character(fk$on_delete)),
+                    on_update  = pg_fk_action(as.character(fk$on_update))
+                ),
+                args[setdiff(names(args), "type")]
+            ))
+        } else {
+            do.call(Column, args)
+        }
+    }
+
+    stats::setNames(
+        lapply(seq_len(NROW(cols)), build_field),
+        as.character(cols$name)
+    )
+}
+
+#' @describeIn reflect_tables List base tables in a PostgreSQL schema
+#'   (defaults to `current_schema()`).
+reflect_tables.postgres <- function(x, .schema = NULL, ...) {
+    conn <- x$get_connection()
+    if (is.null(.schema)) {
+        .schema <- DBI::dbGetQuery(conn, "SELECT current_schema() AS s")$s[1]
+    }
+    res <- DBI::dbGetQuery(conn, paste0(
+        "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = ",
+        DBI::dbQuoteLiteral(conn, .schema),
+        " ORDER BY tablename"
+    ))
+    as.character(res$tablename)
+}

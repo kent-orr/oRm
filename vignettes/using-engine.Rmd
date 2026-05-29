@@ -57,6 +57,8 @@ The full API is documented in the Engine reference page, but here are the most c
 
 - `hydrate()` Builds a `TableModel` by introspecting an existing table, so you can do basic CRUD without declaring columns. See [Hydrating models from existing tables](#hydrating-models-from-existing-tables) below.
 
+- `hydrate_schema()` Hydrates all tables in a schema at once and auto-wires relationships from reflected foreign keys. See [Hydrating an entire schema](#hydrating-an-entire-schema) below.
+
 - `get_connection()` Returns the underlying DBI connection. You can use this directly for raw SQL or with `dplyr::tbl()` for custom queries.
 
 - `execute(sql)` A lightweight wrapper around `DBI::dbExecute()` using the Engine's connection.
@@ -93,24 +95,62 @@ Users$record(id = 3L, name = "Ada", age = 36L)$create()
 Users$read(.mode = "data.frame")
 ```
 
-This first implementation is intentionally simple:
+The depth of reflection depends on the dialect:
 
-- Reflection is **dialect-agnostic** and recovers column **names and
-  best-effort types** only. Primary keys, nullability, defaults, and foreign
-  keys are **not** reflected yet (a richer, per-dialect reflection is a natural
-  follow-up).
-- Because the primary key is not reflected, `update()` and `delete()` — which
-  key off declared primary-key fields — require you to supply the key column
-  via `...`. Arguments passed through `...` take precedence over reflected
-  columns, mirroring `model()`:
+- **Default (all dialects)**: column names and best-effort types only.
+- **PostgreSQL**: canonical types, primary key flags, nullability, column
+  defaults (server-side defaults such as `nextval()` are stored as
+  `dbplyr::sql()` and applied by the database at insert time), and foreign keys
+  returned as `ForeignKey` objects — schema-qualified when the target lives in
+  another schema.
+
+For dialects that do not reflect primary keys, `update()` and `delete()` (which
+key off declared PK fields) require you to supply the key column via `...`.
+Arguments in `...` take precedence over reflected columns, mirroring `model()`:
 
 ```{r, eval=FALSE}
 Users <- engine$hydrate(
   "users",
-  id = Column("INTEGER", primary_key = TRUE),
-  # ... can also attach Method()s or override reflected column types
+  id = Column("INTEGER", primary_key = TRUE)
+  # ... also accepts Method()s or column-type overrides
 )
 ```
+
+## Hydrating an entire schema
+
+`hydrate_schema()` hydrates every table in a schema in one call and
+automatically wires up `many_to_one` / `one_to_many` relationships implied by
+the reflected foreign keys. This is most useful with the PostgreSQL dialect,
+whose reflection captures foreign keys.
+
+```{r, eval=FALSE}
+# Hydrate all tables in the engine's default schema
+models <- engine$hydrate_schema()
+
+# Or target specific tables
+models <- engine$hydrate_schema(tables = c("users", "posts", "comments"))
+
+# Access individual models
+posts <- models$posts
+users <- models$users
+
+# Relationships are wired automatically from FK metadata
+post   <- posts$read(id == 1, .mode = "get")
+author <- post$relationship("users")   # traverses posts.user_id -> users.id
+```
+
+Key arguments:
+
+| Argument | Default | Description |
+|---|---|---|
+| `tables` | `NULL` | Tables to hydrate; `NULL` hydrates all in the schema |
+| `exclude` | `NULL` | Table names to skip |
+| `.schema` | engine schema | Schema to inspect |
+| `wire_relationships` | `TRUE` | Auto-wire FK-based relationships |
+
+Foreign keys pointing at tables outside the hydrated set are silently skipped
+with a warning. You can always call `define_relationship()` manually afterwards
+to wire additional relationships.
 
 ## Using with.Engine
 

@@ -45,13 +45,19 @@ Column <- function(
     class = "Column"
   )
 }
-validate_identifier <- function(x, arg = "identifier") {
-  if (!is.character(x) || length(x) != 1 ||
-      !grepl("^[A-Za-z_][A-Za-z0-9_]*$", x)) {
+validate_identifier <- function(x, arg = "identifier", qualified = FALSE) {
+  ok <- is.character(x) && length(x) == 1
+  if (ok) {
+    parts <- if (qualified) strsplit(x, "\\.")[[1]] else x
+    ok <- length(parts) >= 1 && (!qualified || length(parts) <= 2) &&
+      all(grepl("^[A-Za-z_][A-Za-z0-9_]*$", parts))
+  }
+  if (!ok) {
     stop(
       sprintf(
-        "Invalid %s '%s'. Identifiers must start with a letter or underscore and contain only letters, numbers, or underscores.",
-        arg, x
+        "Invalid %s '%s'. Identifiers must start with a letter or underscore and contain only letters, numbers, or underscores%s.",
+        arg, x,
+        if (qualified) " (optionally schema-qualified as 'schema.name')" else ""
       ),
       call. = FALSE
     )
@@ -65,11 +71,14 @@ validate_identifier <- function(x, arg = "identifier") {
 #'
 #' @inheritParams Column
 #' @param type SQL data type (e.g. "INTEGER")
-#' @param references "table.column" string specifying the referenced field.
-#'   This is the recommended way to declare the target.
+#' @param references "table.column" (or schema-qualified "schema.table.column")
+#'   string specifying the referenced field. This is the recommended way to
+#'   declare the target.
 #' @param ref_table Character. Name of the referenced table.
 #' @param ref_column Character. Name of the referenced column.
 #'   Used when specifying the pieces separately.
+#' @param ref_schema Character. Optional schema of the referenced table, for
+#'   foreign keys that point at a table in another schema.
 #' @param on_delete Optional ON DELETE behavior (e.g. "CASCADE")
 #' @param on_update Optional ON UPDATE behavior
 #'
@@ -93,17 +102,22 @@ validate_identifier <- function(x, arg = "identifier") {
 #'   nullable = TRUE, on_update = "SET NULL"
 #' )
 ForeignKey <- function(type, ref_table = NULL, ref_column = NULL, references = NULL,
-                       on_delete = NULL, on_update = NULL, ...) {
+                       ref_schema = NULL, on_delete = NULL, on_update = NULL, ...) {
   if (!is.null(references)) {
     if (!is.null(ref_table) || !is.null(ref_column)) {
       stop("Use either 'references' or 'ref_table'/'ref_column', not both.")
     }
     parts <- strsplit(references, "\\.")[[1]]
-    if (length(parts) != 2) {
-      stop("Invalid 'references' format. Expected 'table.column'.")
+    if (length(parts) == 3) {
+      ref_schema <- parts[1]
+      ref_table <- parts[2]
+      ref_column <- parts[3]
+    } else if (length(parts) == 2) {
+      ref_table <- parts[1]
+      ref_column <- parts[2]
+    } else {
+      stop("Invalid 'references' format. Expected 'table.column' or 'schema.table.column'.")
     }
-    ref_table <- parts[1]
-    ref_column <- parts[2]
   }
 
   if (is.null(ref_table) || is.null(ref_column)) {
@@ -112,12 +126,16 @@ ForeignKey <- function(type, ref_table = NULL, ref_column = NULL, references = N
 
   ref_table <- validate_identifier(ref_table, "ref_table")
   ref_column <- validate_identifier(ref_column, "ref_column")
+  if (!is.null(ref_schema)) ref_schema <- validate_identifier(ref_schema, "ref_schema")
 
   col <- Column(type, ...)
   class(col) <- c("ForeignKey", class(col))  # prepend class
+  col$ref_schema <- ref_schema
   col$ref_table <- ref_table
   col$ref_column <- ref_column
-  col$references <- paste(ref_table, ref_column, sep = ".")
+  # Keep references aligned with a (possibly schema-qualified) tablename so that
+  # define_relationship()'s reference check matches related_model$tablename.
+  col$references <- paste(c(ref_schema, ref_table, ref_column), collapse = ".")
   col$on_delete <- on_delete
   col$on_update <- on_update
   col

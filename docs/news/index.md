@@ -1,6 +1,59 @@
 # Changelog
 
-## oRm (development version)
+## oRm 0.5.0
+
+### New Features
+
+- **PostgreSQL rich table reflection** — `engine$hydrate()` now captures
+  full column metadata when using the PostgreSQL dialect:
+  - Canonical types (e.g. `integer`, `text`, `timestamp with time zone`)
+  - Primary key flags, nullability, and column defaults
+  - Server-side defaults (sequences, `now()`, etc.) stored as
+    `dbplyr::sql()` objects and applied by the database at insert time
+  - Foreign keys reflected as
+    [`ForeignKey`](https://kent-orr.github.io/oRm/reference/ForeignKey.html)
+    objects, schema-qualified when the target lives in another schema
+
+- **Schema-qualified foreign keys** —
+  [`ForeignKey()`](https://kent-orr.github.io/oRm/reference/ForeignKey.html)
+  now accepts cross-schema targets:
+  - New `ref_schema` argument:
+    `ForeignKey(“INTEGER”, ref_schema = “other”, ref_table = “users”, ref_column = “id”)`
+  - Three-part `references` shorthand:
+    `ForeignKey(“INTEGER”, references = “other.users.id”)`
+  - `render_constraint()` emits `REFERENCES “other”.”users” (“id”)` for
+    cross-schema FKs
+
+- **`Engine$hydrate_schema()`** — hydrate an entire schema in one call
+  and auto-wire relationships:
+  - Hydrates all (or a selected subset of) tables via `hydrate()`
+  - Turns every reflected `ForeignKey` into a `many_to_one` /
+    `one_to_many` relationship pair via `define_relationship()`
+  - Accepts `tables`, `exclude`, `.schema`, and `wire_relationships`
+    arguments
+  - Foreign keys pointing at tables outside the hydrated set emit a
+    warning and are skipped
+
+- **`reflect_tables()` generic** — new dialect-dispatched function
+  listing the tables available in a schema:
+  - Default implementation wraps `DBI::dbListTables()`
+  - PostgreSQL implementation queries `pg_catalog.pg_tables` for the
+    target schema
+
+### Improvements
+
+- `Record` now skips server-side defaults (`dbplyr::sql()` objects) at
+  insert time, letting the database compute the value and relying on
+  `flush()` to read it back
+
+### Documentation
+
+- Updated README and `vignette(“using-engine”)` to document PostgreSQL
+  rich reflection, schema-qualified foreign keys, and `hydrate_schema()`
+
+------------------------------------------------------------------------
+
+## oRm 0.4.0
 
 ### New Features
 

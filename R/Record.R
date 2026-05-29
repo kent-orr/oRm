@@ -76,6 +76,10 @@ Record <- R6::R6Class(
         if (!is.null(field[['default']])) {
           if (is.function(field[['default']])) {
             self$data[[field_name]] <- field[['default']]()
+          } else if (inherits(field[['default']], "sql")) {
+            # Server-side default (e.g. a sequence's nextval() or now()):
+            # leave it to the database to compute rather than inserting the
+            # expression as a literal. flush() reads the value back.
           } else {
             self$data[[field_name]] <- field[['default']]
           }

@@ -41,11 +41,23 @@ Users <- engine$hydrate("users")
 Users <- engine$hydrate("users", include = c("id", "name"))
 Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
 }
+
+## ------------------------------------------------
+## Method `Engine$hydrate_schema`
+## ------------------------------------------------
+
+\donttest{
+models <- engine$hydrate_schema()
+models <- engine$hydrate_schema(tables = c("users", "posts"))
+posts <- models$posts
+}
 }
 \seealso{
 [TableModel::new()]
 
 [Engine$model()], [reflect_columns()]
+
+[Engine$hydrate()], [define_relationship()], [reflect_tables()]
 
 [TableModel$print()], [Record$print()].
 }
@@ -80,6 +92,7 @@ Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
 \item \href{#method-Engine-check_schema_exists}{\code{Engine$check_schema_exists()}}
 \item \href{#method-Engine-model}{\code{Engine$model()}}
 \item \href{#method-Engine-hydrate}{\code{Engine$hydrate()}}
+\item \href{#method-Engine-hydrate_schema}{\code{Engine$hydrate_schema()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
 \item \href{#method-Engine-qualify}{\code{Engine$qualify()}}
@@ -326,9 +339,11 @@ Build a TableModel by introspecting an existing database table.
 
 Inspects the columns of an existing table and returns a ready-to-use
 TableModel, so basic CRUD is possible without pre-defining columns.
-Column types are read with a best-effort, dialect-agnostic approach
-(see [reflect_columns()]); primary keys, nullability, and foreign
-keys are not currently reflected.
+The default reflection is best-effort and dialect-agnostic (column
+names and reported types only; see [reflect_columns()]). The
+PostgreSQL dialect reflects richer metadata: canonical types, primary
+keys, nullability, defaults, and foreign keys (as [ForeignKey]
+objects).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Engine$hydrate(
   tablename,
@@ -369,6 +384,69 @@ A new TableModel object.
 Users <- engine$hydrate("users")
 Users <- engine$hydrate("users", include = c("id", "name"))
 Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-hydrate_schema"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-hydrate_schema}{}}}
+\subsection{Method \code{hydrate_schema()}}{
+Hydrate several tables from a schema at once and wire up the
+relationships implied by their foreign keys.
+
+Each table is hydrated via [Engine$hydrate()]; afterwards, every
+reflected [ForeignKey] whose target is also among the hydrated models
+is turned into a `many_to_one` relationship (with the reverse
+`one_to_many` backref) using [define_relationship()]. Foreign keys
+pointing at tables outside the hydrated set are skipped with a
+warning. This is most useful with the PostgreSQL dialect, whose
+reflection captures foreign keys.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$hydrate_schema(
+  tables = NULL,
+  ...,
+  .schema = NULL,
+  exclude = NULL,
+  .default_mode = "all",
+  wire_relationships = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{tables}}{Optional character vector limiting which tables to
+hydrate. When `NULL`, all tables in the schema are hydrated
+(see [reflect_tables()]).}
+
+\item{\code{...}}{Additional `Column`, `ForeignKey`, or `Method` objects
+passed to every `hydrate()` call (overrides of reflected columns).}
+
+\item{\code{.schema}}{Character. Schema to hydrate. Defaults to the engine
+schema.}
+
+\item{\code{exclude}}{Optional character vector of table names to drop.}
+
+\item{\code{.default_mode}}{Character. Default read mode for each TableModel.}
+
+\item{\code{wire_relationships}}{Logical. Whether to auto-wire relationships
+from reflected foreign keys. Defaults to TRUE.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A named list of TableModel objects, keyed by bare table name.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+models <- engine$hydrate_schema()
+models <- engine$hydrate_schema(tables = c("users", "posts"))
+posts <- models$posts
 }
 }
 \if{html}{\out{</div>}}

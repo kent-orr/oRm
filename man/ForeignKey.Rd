@@ -9,6 +9,7 @@ ForeignKey(
   ref_table = NULL,
   ref_column = NULL,
   references = NULL,
+  ref_schema = NULL,
   on_delete = NULL,
   on_update = NULL,
   ...
@@ -22,8 +23,12 @@ ForeignKey(
 \item{ref_column}{Character. Name of the referenced column.
 Used when specifying the pieces separately.}
 
-\item{references}{"table.column" string specifying the referenced field.
-This is the recommended way to declare the target.}
+\item{references}{"table.column" (or schema-qualified "schema.table.column")
+string specifying the referenced field. This is the recommended way to
+declare the target.}
+
+\item{ref_schema}{Character. Optional schema of the referenced table, for
+foreign keys that point at a table in another schema.}
 
 \item{on_delete}{Optional ON DELETE behavior (e.g. "CASCADE")}
 

@@ -115,3 +115,54 @@ test_that("Column handles NULL values for optional parameters", {
   expect_equal(col$extras, list(check = NULL))
 })
 
+test_that("ForeignKey parses a plain 'table.column' reference", {
+  fk <- ForeignKey("INTEGER", references = "users.id")
+  expect_s3_class(fk, "ForeignKey")
+  expect_null(fk$ref_schema)
+  expect_equal(fk$ref_table, "users")
+  expect_equal(fk$ref_column, "id")
+  expect_equal(fk$references, "users.id")
+})
+
+test_that("ForeignKey parses a schema-qualified 'schema.table.column' reference", {
+  fk <- ForeignKey("INTEGER", references = "other.users.id", on_delete = "CASCADE")
+  expect_equal(fk$ref_schema, "other")
+  expect_equal(fk$ref_table, "users")
+  expect_equal(fk$ref_column, "id")
+  expect_equal(fk$references, "other.users.id")
+  expect_equal(fk$on_delete, "CASCADE")
+})
+
+test_that("ForeignKey accepts ref_schema passed explicitly", {
+  fk <- ForeignKey("INTEGER", ref_schema = "other", ref_table = "users", ref_column = "id")
+  expect_equal(fk$references, "other.users.id")
+})
+
+test_that("ForeignKey rejects malformed references", {
+  expect_error(ForeignKey("INTEGER", references = "id"), "Expected")
+  expect_error(ForeignKey("INTEGER", references = "a.b.c.d"), "Expected")
+})
+
+test_that("validate_identifier accepts schema-qualified names only when qualified = TRUE", {
+  expect_equal(validate_identifier("users", qualified = FALSE), "users")
+  expect_equal(validate_identifier("other.users", qualified = TRUE), "other.users")
+  expect_error(validate_identifier("other.users", qualified = FALSE), "Invalid")
+  expect_error(validate_identifier("a.b.c", qualified = TRUE), "Invalid")
+})
+
+test_that("render_constraint qualifies a cross-schema foreign key target", {
+  fk <- ForeignKey("INTEGER", references = "other.users.id")
+  fk$name <- "author_id"
+  sql <- render_constraint(fk, DBI::ANSI())
+  expect_match(sql, 'REFERENCES "other"."users"')
+  expect_match(sql, '"id"')
+})
+
+test_that("render_constraint leaves a same-schema foreign key unqualified", {
+  fk <- ForeignKey("INTEGER", references = "users.id")
+  fk$name <- "user_id"
+  sql <- render_constraint(fk, DBI::ANSI())
+  expect_match(sql, 'REFERENCES "users"')
+  expect_no_match(sql, '"\\."')
+})
+

@@ -191,6 +191,29 @@ reflect_columns.default <- function(x, tablename, ...) {
 }
 
 
+#' List the tables available in a schema
+#'
+#' Returns the names of tables that can be hydrated, used by
+#' `Engine$hydrate_schema()`. The default implementation falls back to
+#' `DBI::dbListTables()` and ignores `.schema`; dialects with first-class
+#' schema support (e.g. PostgreSQL) provide a schema-scoped implementation.
+#'
+#' @param x An Engine (or other oRm object) used for dialect dispatch.
+#' @param .schema Character. Schema whose tables to list, or NULL.
+#' @param ... Additional arguments for dialect-specific implementations.
+#' @return A character vector of (bare) table names.
+#' @keywords internal
+reflect_tables <- function(x, .schema = NULL, ...) {
+    dispatch_method(x, "reflect_tables", .schema, ...)
+}
+
+#' @rdname reflect_tables
+#' @keywords internal
+reflect_tables.default <- function(x, .schema = NULL, ...) {
+    DBI::dbListTables(x$get_connection())
+}
+
+
 #' Filter reflected columns by include/exclude
 #'
 #' Applies optional `include` then `exclude` filters to a named list of
@@ -383,9 +406,17 @@ render_constraint.default <- function(field, conn, ...) {
         validate_identifier(field$ref_table, "ref_table")
         validate_identifier(field$ref_column, "ref_column")
 
+        ref_tbl_sql <- DBI::dbQuoteIdentifier(conn, field$ref_table)
+        if (!is.null(field$ref_schema)) {
+            validate_identifier(field$ref_schema, "ref_schema")
+            ref_tbl_sql <- paste0(
+                DBI::dbQuoteIdentifier(conn, field$ref_schema), ".", ref_tbl_sql
+            )
+        }
+
         fk_parts <- c(fk_parts, paste0(
             "FOREIGN KEY (", DBI::dbQuoteIdentifier(conn, field$name), ") REFERENCES ",
-            DBI::dbQuoteIdentifier(conn, field$ref_table), " (",
+            ref_tbl_sql, " (",
             DBI::dbQuoteIdentifier(conn, field$ref_column), ")"
         ))
         if (!is.null(field$on_delete))

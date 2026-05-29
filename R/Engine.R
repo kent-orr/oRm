@@ -244,9 +244,11 @@ Engine <- R6::R6Class(
         #'
         #' Inspects the columns of an existing table and returns a ready-to-use
         #' TableModel, so basic CRUD is possible without pre-defining columns.
-        #' Column types are read with a best-effort, dialect-agnostic approach
-        #' (see [reflect_columns()]); primary keys, nullability, and foreign
-        #' keys are not currently reflected.
+        #' The default reflection is best-effort and dialect-agnostic (column
+        #' names and reported types only; see [reflect_columns()]). The
+        #' PostgreSQL dialect reflects richer metadata: canonical types, primary
+        #' keys, nullability, defaults, and foreign keys (as [ForeignKey]
+        #' objects).
         #' @param tablename Name of the existing table to hydrate.
         #' @param ... Additional `Column`, `ForeignKey`, or `Method` objects to
         #'   merge in. These take precedence over reflected columns of the same
@@ -273,6 +275,100 @@ Engine <- R6::R6Class(
                 stop("hydrate: no columns remain after include/exclude filtering.", call. = FALSE)
             }
             TableModel$new(tablename = tablename, engine = self, ..., .data = cols, .schema = .schema, .default_mode = .default_mode)
+        },
+
+        #' @description
+        #' Hydrate several tables from a schema at once and wire up the
+        #' relationships implied by their foreign keys.
+        #'
+        #' Each table is hydrated via [Engine$hydrate()]; afterwards, every
+        #' reflected [ForeignKey] whose target is also among the hydrated models
+        #' is turned into a `many_to_one` relationship (with the reverse
+        #' `one_to_many` backref) using [define_relationship()]. Foreign keys
+        #' pointing at tables outside the hydrated set are skipped with a
+        #' warning. This is most useful with the PostgreSQL dialect, whose
+        #' reflection captures foreign keys.
+        #' @param tables Optional character vector limiting which tables to
+        #'   hydrate. When `NULL`, all tables in the schema are hydrated
+        #'   (see [reflect_tables()]).
+        #' @param ... Additional `Column`, `ForeignKey`, or `Method` objects
+        #'   passed to every `hydrate()` call (overrides of reflected columns).
+        #' @param .schema Character. Schema to hydrate. Defaults to the engine
+        #'   schema.
+        #' @param exclude Optional character vector of table names to drop.
+        #' @param .default_mode Character. Default read mode for each TableModel.
+        #' @param wire_relationships Logical. Whether to auto-wire relationships
+        #'   from reflected foreign keys. Defaults to TRUE.
+        #' @return A named list of TableModel objects, keyed by bare table name.
+        #' @seealso [Engine$hydrate()], [define_relationship()], [reflect_tables()]
+        #' @examples
+        #' \donttest{
+        #' models <- engine$hydrate_schema()
+        #' models <- engine$hydrate_schema(tables = c("users", "posts"))
+        #' posts <- models$posts
+        #' }
+        hydrate_schema = function(tables = NULL, ..., .schema = NULL, exclude = NULL,
+                                  .default_mode = "all", wire_relationships = TRUE) {
+            if (is.null(.schema)) .schema <- self$schema
+            if (is.null(tables)) tables <- reflect_tables(self, .schema)
+            if (!is.null(exclude)) tables <- setdiff(tables, exclude)
+            if (length(tables) == 0) {
+                stop("hydrate_schema: no tables to hydrate.", call. = FALSE)
+            }
+
+            models <- stats::setNames(
+                lapply(tables, function(t) {
+                    self$hydrate(t, ..., .schema = .schema, .default_mode = .default_mode)
+                }),
+                tables
+            )
+
+            if (isTRUE(wire_relationships)) {
+                for (local_name in names(models)) {
+                    local_model <- models[[local_name]]
+                    for (field_name in names(local_model$fields)) {
+                        field <- local_model$fields[[field_name]]
+                        if (!inherits(field, "ForeignKey")) next
+
+                        target <- models[[field$ref_table]]
+                        if (is.null(target)) {
+                            warning(sprintf(
+                                "hydrate_schema: foreign key %s.%s references '%s', which was not hydrated; skipping relationship.",
+                                local_name, field_name, field$ref_table
+                            ), call. = FALSE)
+                            next
+                        }
+
+                        # Align the reflected FK reference with the target model's
+                        # actual tablename so define_relationship()'s reference
+                        # check passes regardless of how the schema was applied
+                        # (qualified vs. unqualified) during hydration.
+                        local_model$fields[[field_name]]$references <-
+                            paste0(target$tablename, ".", field$ref_column)
+
+                        tryCatch(
+                            define_relationship(
+                                local_model  = local_model,
+                                local_key    = field_name,
+                                type         = "many_to_one",
+                                related_model = target,
+                                related_key  = field$ref_column,
+                                ref          = field$ref_table,
+                                backref      = local_name
+                            ),
+                            error = function(e) {
+                                warning(sprintf(
+                                    "hydrate_schema: could not wire %s.%s -> %s.%s (%s).",
+                                    local_name, field_name, field$ref_table, field$ref_column,
+                                    conditionMessage(e)
+                                ), call. = FALSE)
+                            }
+                        )
+                    }
+                }
+            }
+
+            models
         },
 
 
