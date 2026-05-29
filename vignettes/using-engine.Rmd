@@ -55,6 +55,8 @@ The full API is documented in the Engine reference page, but here are the most c
 
 - `model()` Creates a `TableModel` object from the Engine. [See the TableModel vignette](./using-tablemodels.html)
 
+- `hydrate()` Builds a `TableModel` by introspecting an existing table, so you can do basic CRUD without declaring columns. See [Hydrating models from existing tables](#hydrating-models-from-existing-tables) below.
+
 - `get_connection()` Returns the underlying DBI connection. You can use this directly for raw SQL or with `dplyr::tbl()` for custom queries.
 
 - `execute(sql)` A lightweight wrapper around `DBI::dbExecute()` using the Engine's connection.
@@ -70,6 +72,44 @@ engine$execute("CREATE TABLE things (id INTEGER PRIMARY KEY, name TEXT)")
 df <- engine$get_query("SELECT * FROM things")
 
 
+```
+
+## Hydrating models from existing tables
+
+When a table already exists in the database, `hydrate()` inspects its columns
+and returns a ready-to-use `TableModel`. This avoids re-declaring every column
+when you just need basic CRUD against an existing table.
+
+```{r, eval=FALSE}
+# Reflect every column of the existing "users" table
+Users <- engine$hydrate("users")
+names(Users$fields)
+
+# Narrow the model with include / exclude
+Users <- engine$hydrate("users", include = c("id", "name", "age"))
+Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+
+Users$record(id = 3L, name = "Ada", age = 36L)$create()
+Users$read(.mode = "data.frame")
+```
+
+This first implementation is intentionally simple:
+
+- Reflection is **dialect-agnostic** and recovers column **names and
+  best-effort types** only. Primary keys, nullability, defaults, and foreign
+  keys are **not** reflected yet (a richer, per-dialect reflection is a natural
+  follow-up).
+- Because the primary key is not reflected, `update()` and `delete()` — which
+  key off declared primary-key fields — require you to supply the key column
+  via `...`. Arguments passed through `...` take precedence over reflected
+  columns, mirroring `model()`:
+
+```{r, eval=FALSE}
+Users <- engine$hydrate(
+  "users",
+  id = Column("INTEGER", primary_key = TRUE),
+  # ... can also attach Method()s or override reflected column types
+)
 ```
 
 ## Using with.Engine

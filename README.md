@@ -141,6 +141,42 @@ UserView$read(.mode = "data.frame")
 
 Combine with `.read_only = TRUE` for safe, scoped access to production tables.
 
+### 9. Hydrating Models From Existing Tables
+
+When a table already exists, `engine$hydrate()` introspects its columns and
+returns a ready-to-use `TableModel`, so you can do basic CRUD without
+declaring every column by hand.
+
+```r
+# Reflect all columns of the existing "users" table
+Users <- engine$hydrate("users")
+names(Users$fields)
+#> [1] "id" "name" "age" "hash"
+
+# Keep or drop columns with include / exclude
+Users <- engine$hydrate("users", include = c("id", "name", "age"))
+Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+
+Users$record(id = 3L, name = "Ada", age = 36L)$create()
+Users$read(.mode = "data.frame")
+```
+
+Notes for this first pass:
+
+- Reflection is **dialect-agnostic** and captures column **names and
+  best-effort types** only. Primary keys, nullability, defaults, and foreign
+  keys are **not** reflected yet.
+- Because the primary key is not reflected, `update()` and `delete()` (which
+  key off declared primary-key fields) require you to supply the key column via
+  `...`, which takes precedence over reflected columns:
+
+  ```r
+  Users <- engine$hydrate("users", id = Column("INTEGER", primary_key = TRUE))
+  ```
+
+- The `...` argument also lets you attach `Method()`s or override reflected
+  column definitions at hydrate time, exactly like `engine$model()`.
+
 ---
 
 Early-stage project. Feedback welcome!

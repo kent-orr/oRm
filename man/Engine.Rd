@@ -30,9 +30,22 @@ engine$model(
     Column$new("name", "text")
 )
 }
+
+## ------------------------------------------------
+## Method `Engine$hydrate`
+## ------------------------------------------------
+
+\donttest{
+# Given a table "users" that already exists in the database:
+Users <- engine$hydrate("users")
+Users <- engine$hydrate("users", include = c("id", "name"))
+Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+}
 }
 \seealso{
 [TableModel::new()]
+
+[Engine$model()], [reflect_columns()]
 
 [TableModel$print()], [Record$print()].
 }
@@ -66,6 +79,7 @@ engine$model(
 \item \href{#method-Engine-create_schema}{\code{Engine$create_schema()}}
 \item \href{#method-Engine-check_schema_exists}{\code{Engine$check_schema_exists()}}
 \item \href{#method-Engine-model}{\code{Engine$model()}}
+\item \href{#method-Engine-hydrate}{\code{Engine$hydrate()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
 \item \href{#method-Engine-qualify}{\code{Engine$qualify()}}
@@ -84,6 +98,7 @@ Create an Engine object
   ...,
   conn_args = list(),
   .schema = NULL,
+  .read_only = FALSE,
   use_pool = FALSE,
   persist = FALSE
 )}\if{html}{\out{</div>}}
@@ -97,6 +112,12 @@ Create an Engine object
 \item{\code{conn_args}}{A list of arguments to be passed to DBI::dbConnect}
 
 \item{\code{.schema}}{Character. The default schema to apply to child TableModel objects}
+
+\item{\code{.read_only}}{Logical. If TRUE, the engine refuses non-SELECT
+statements and applies dialect-specific connection-level
+read-only enforcement (SQLite: `SQLITE_RO` open flag; PostgreSQL:
+`SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY`; MySQL:
+`SET SESSION TRANSACTION READ ONLY`).}
 
 \item{\code{use_pool}}{Logical. Whether or not to make use of the pool package for connections to this engine}
 
@@ -290,6 +311,64 @@ engine$model(
     Column$new("id", "integer"),
     Column$new("name", "text")
 )
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-hydrate"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-hydrate}{}}}
+\subsection{Method \code{hydrate()}}{
+Build a TableModel by introspecting an existing database table.
+
+Inspects the columns of an existing table and returns a ready-to-use
+TableModel, so basic CRUD is possible without pre-defining columns.
+Column types are read with a best-effort, dialect-agnostic approach
+(see [reflect_columns()]); primary keys, nullability, and foreign
+keys are not currently reflected.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$hydrate(
+  tablename,
+  ...,
+  include = NULL,
+  exclude = NULL,
+  .schema = NULL,
+  .default_mode = "all"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{tablename}}{Name of the existing table to hydrate.}
+
+\item{\code{...}}{Additional `Column`, `ForeignKey`, or `Method` objects to
+merge in. These take precedence over reflected columns of the same
+name, matching the behaviour of `model()`.}
+
+\item{\code{include}}{Optional character vector of column names to keep.}
+
+\item{\code{exclude}}{Optional character vector of column names to drop.}
+
+\item{\code{.schema}}{Character. The default schema to apply to the TableModel.}
+
+\item{\code{.default_mode}}{Character. Default read mode for the TableModel.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new TableModel object.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+# Given a table "users" that already exists in the database:
+Users <- engine$hydrate("users")
+Users <- engine$hydrate("users", include = c("id", "name"))
+Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
 }
 }
 \if{html}{\out{</div>}}

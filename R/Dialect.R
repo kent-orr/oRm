@@ -135,6 +135,93 @@ create_schema.default <- function(x, .schema) {
 }
 
 
+# Reflection -------------------------------------------------------------
+
+
+#' Reflect the columns of an existing table into Column objects
+#'
+#' Inspects an existing database table and returns a named list of [Column]
+#' objects, one per column. Used by `Engine$hydrate()` to build a TableModel
+#' from a table that already exists in the database.
+#'
+#' The default implementation is dialect-agnostic: it issues a zero-row query
+#' and reads `DBI::dbColumnInfo()` to recover column names and best-effort
+#' types. The reported type is backend-dependent (e.g. RSQLite reports R types
+#' such as "double"); since hydration targets existing tables, the type is not
+#' used to create the table and so is informational only. Dialects may provide
+#' richer implementations (capturing primary keys, nullability, and defaults).
+#'
+#' @param x An Engine (or other oRm object) used for dialect dispatch.
+#' @param tablename Character. Name of the table to reflect, already qualified.
+#' @param ... Additional arguments for dialect-specific implementations.
+#' @return A named list of [Column] objects, keyed by column name.
+#' @keywords internal
+reflect_columns <- function(x, tablename, ...) {
+    dispatch_method(x, "reflect_columns", tablename, ...)
+}
+
+#' @rdname reflect_columns
+#' @keywords internal
+reflect_columns.default <- function(x, tablename, ...) {
+    conn <- x$get_connection()
+    quoted <- x$format_tablename(tablename)
+
+    info <- tryCatch(
+        {
+            res <- DBI::dbSendQuery(conn, paste0("SELECT * FROM ", quoted, " WHERE 1 = 0"))
+            on.exit(DBI::dbClearResult(res), add = TRUE)
+            DBI::dbColumnInfo(res)
+        },
+        error = function(e) {
+            stop(
+                sprintf("hydrate: could not read table %s (%s).", tablename, conditionMessage(e)),
+                call. = FALSE
+            )
+        }
+    )
+
+    if (NROW(info) == 0) {
+        stop(sprintf("hydrate: table %s reports no columns.", tablename), call. = FALSE)
+    }
+
+    stats::setNames(
+        lapply(seq_len(NROW(info)), function(i) Column(type = as.character(info$type[i]))),
+        as.character(info$name)
+    )
+}
+
+
+#' Filter reflected columns by include/exclude
+#'
+#' Applies optional `include` then `exclude` filters to a named list of
+#' reflected [Column] objects. Table order is preserved. Requested `include`
+#' columns that are not present emit a warning and are ignored.
+#'
+#' @param cols Named list of Column objects.
+#' @param include Optional character vector of column names to keep.
+#' @param exclude Optional character vector of column names to drop.
+#' @return The filtered named list of Column objects.
+#' @keywords internal
+filter_reflected_columns <- function(cols, include = NULL, exclude = NULL) {
+    nms <- names(cols)
+    if (!is.null(include)) {
+        missing <- setdiff(include, nms)
+        if (length(missing)) {
+            warning(
+                "hydrate: include columns not found and ignored: ",
+                paste(missing, collapse = ", "),
+                call. = FALSE
+            )
+        }
+        cols <- cols[intersect(nms, include)]
+    }
+    if (!is.null(exclude)) {
+        cols <- cols[setdiff(names(cols), exclude)]
+    }
+    cols
+}
+
+
 # Read-only enforcement --------------------------------------------------
 
 

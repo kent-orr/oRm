@@ -234,8 +234,44 @@ Engine <- R6::R6Class(
             tablename <- qualify(self, tablename, .schema = .schema)
             TableModel$new(tablename = tablename, engine = self, ..., .data = .data, .schema = .schema, .default_mode = .default_mode)
         },
-        
-        
+
+        #' @description
+        #' Build a TableModel by introspecting an existing database table.
+        #'
+        #' Inspects the columns of an existing table and returns a ready-to-use
+        #' TableModel, so basic CRUD is possible without pre-defining columns.
+        #' Column types are read with a best-effort, dialect-agnostic approach
+        #' (see [reflect_columns()]); primary keys, nullability, and foreign
+        #' keys are not currently reflected.
+        #' @param tablename Name of the existing table to hydrate.
+        #' @param ... Additional `Column`, `ForeignKey`, or `Method` objects to
+        #'   merge in. These take precedence over reflected columns of the same
+        #'   name, matching the behaviour of `model()`.
+        #' @param include Optional character vector of column names to keep.
+        #' @param exclude Optional character vector of column names to drop.
+        #' @param .schema Character. The default schema to apply to the TableModel.
+        #' @param .default_mode Character. Default read mode for the TableModel.
+        #' @return A new TableModel object.
+        #' @seealso [Engine$model()], [reflect_columns()]
+        #' @examples
+        #' \donttest{
+        #' # Given a table "users" that already exists in the database:
+        #' Users <- engine$hydrate("users")
+        #' Users <- engine$hydrate("users", include = c("id", "name"))
+        #' Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+        #' }
+        hydrate = function(tablename, ..., include = NULL, exclude = NULL, .schema = NULL, .default_mode = "all") {
+            if (is.null(.schema)) .schema <- self$schema
+            tablename <- qualify(self, tablename, .schema = .schema)
+            cols <- reflect_columns(self, tablename)
+            cols <- filter_reflected_columns(cols, include = include, exclude = exclude)
+            if (length(cols) == 0) {
+                stop("hydrate: no columns remain after include/exclude filtering.", call. = FALSE)
+            }
+            TableModel$new(tablename = tablename, engine = self, ..., .data = cols, .schema = .schema, .default_mode = .default_mode)
+        },
+
+
         #' @description
         #' Set the internal transaction state
         #' @param state Logical. Indicates if a transaction is active

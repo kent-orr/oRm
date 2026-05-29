@@ -235,6 +235,7 @@ Create the associated table in the database.
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$create_table(
   if_not_exists = TRUE,
   overwrite = FALSE,
+  ask = TRUE,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -245,6 +246,10 @@ Create the associated table in the database.
 \item{\code{if_not_exists}}{Logical. If TRUE, only create the table if it doesn't exist. Default is TRUE.}
 
 \item{\code{overwrite}}{Logical. If TRUE, drop the table if it exists and recreate it. Default is FALSE.}
+
+\item{\code{ask}}{Logical. If TRUE (default) and `overwrite` is TRUE, prompt for
+confirmation in interactive sessions before dropping the table.
+Pass `ask = FALSE` to bypass the prompt (e.g. in scripts).}
 
 \item{\code{verbose}}{Logical. If TRUE, return the SQL statement instead of executing it. Default is FALSE.}
 }
