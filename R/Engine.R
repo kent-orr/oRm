@@ -58,8 +58,12 @@ Engine <- R6::R6Class(
         #' @param use_pool Logical. Whether or not to make use of the pool package for connections to this engine
         #' @param persist Logical. Whether to keep the connection open after operations (default: FALSE)
         initialize = function(..., conn_args = list(), .schema = NULL, .read_only = FALSE, use_pool = FALSE, persist = FALSE) {
-            # Combine dots and conn_args, with dots taking precedence
-            self$conn_args <- utils::modifyList(conn_args, rlang::list2(...))
+            dots <- rlang::list2(...)
+            # Normalize unnamed first argument as `drv` (mirrors DBI::dbConnect convention)
+            if (length(dots) >= 1 && !is.null(names(dots)) && names(dots)[1] == "" && is.null(dots[["drv"]])) {
+                names(dots)[1] <- "drv"
+            }
+            self$conn_args <- utils::modifyList(conn_args, dots)
             private$detect_dialect()
             self$schema <- .schema
             self$use_pool <- use_pool

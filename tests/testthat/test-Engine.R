@@ -421,7 +421,16 @@ test_that("with.Engine maintains transaction state correctly", {
   with.Engine(engine, {
     expect_true(engine$get_transaction_state())
   })
-  
+
   expect_false(engine$get_transaction_state())
+})
+
+test_that("dialect detected when driver passed as unnamed positional argument", {
+  engine <- Engine$new(
+    RSQLite::SQLite(),
+    dbname = ":memory:"
+  )
+  expect_equal(engine$dialect, "sqlite")
+  expect_equal(engine$conn_args[["drv"]], RSQLite::SQLite())
 })
 
