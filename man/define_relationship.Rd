@@ -38,6 +38,12 @@ It creates a Relationship object and adds it to the local model's relationships.
 If a backref is specified, it also creates a reverse relationship in the related model.
 As this uses R6 classes, the models are modified in place and do not need to be reassigned.
 }
+\details{
+Most users should prefer the method form, `local_model$define_relationship(...)`
+(see [TableModel]), which supplies `local_model` for you and is discoverable
+via autocomplete. This standalone function is retained for functional/pipe-style
+use and internal wiring (e.g. [Engine$hydrate()]).
+}
 \examples{
 \donttest{
 # Set up models

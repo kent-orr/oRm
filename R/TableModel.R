@@ -36,6 +36,7 @@ NULL
 #'     \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
 #'     \item{\code{update(..., .all = FALSE, .data = list())}}{Update matching rows; bare exprs are the WHERE filter, named args are the SET values.}
 #'     \item{\code{delete(..., .all = FALSE)}}{Delete matching rows; bare exprs are the WHERE filter.}
+#'     \item{\code{define_relationship(local_key, type, related_model, related_key, ref = NULL, backref = NULL)}}{Define a relationship from this model to a related model (method form of \code{define_relationship()}).}
 #'     \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
 #'     \item{\code{print()}}{Print a concise summary of the model, including its fields.}
 #' }
@@ -633,6 +634,35 @@ TableModel <- R6::R6Class(
 
         rel$related_model$read(..., .mode = mode)
 
+    },
+
+    #' @description
+    #' Define a relationship from this model to a related model.
+    #'
+    #' Method form of [define_relationship()] with this model supplied as the
+    #' `local_model`. Modifies both models in place (R6 semantics); the related
+    #' model gains the reverse relationship unless `backref = FALSE`.
+    #' @param local_key The key in this model that relates to `related_key`.
+    #' @param type The relationship type. One of 'one_to_one', 'one_to_many',
+    #'     'many_to_one', or 'many_to_many'.
+    #' @param related_model The model being related to.
+    #' @param related_key The key in the related model that `local_key` relates to.
+    #' @param ref Name for this relationship on this model. Defaults to the
+    #'     lowercase related table name.
+    #' @param backref Name for the reverse relationship on the related model.
+    #'     Defaults to the lowercase local table name; `FALSE` skips it.
+    #' @return The TableModel object, invisibly.
+    #' @seealso [define_relationship()], [TableModel$relationship()]
+    #' @examples
+    #' \donttest{
+    #' User$define_relationship("id", "one_to_many", Post, "user_id",
+    #'                          ref = "posts", backref = "user")
+    #' }
+    define_relationship = function(local_key, type, related_model, related_key,
+                                   ref = NULL, backref = NULL) {
+        define_relationship(self, local_key, type, related_model, related_key,
+                            ref = ref, backref = backref)
+        invisible(self)
     },
 
     #' @description

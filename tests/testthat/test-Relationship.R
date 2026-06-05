@@ -30,6 +30,26 @@ test_that("Should create a one-to-many relationship between two models correctly
   engine$close()
 })
 
+test_that("TableModel$define_relationship() mirrors the standalone function", {
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+  Post <- engine$model("posts",
+                       id = Column("INTEGER", primary_key = TRUE),
+                       user_id = Column("INTEGER"))
+
+  # Method form: this model is the local_model, returns self invisibly
+  result <- User$define_relationship("id", "one_to_many", Post, "user_id",
+                                     ref = "posts", backref = "user")
+  expect_identical(result, User)
+
+  expect_true("posts" %in% names(User$relationships))
+  expect_equal(User$relationships$posts$type, "one_to_many")
+  expect_true("user" %in% names(Post$relationships))
+  expect_equal(Post$relationships$user$type, "many_to_one")
+
+  engine$close()
+})
+
 test_that("Should error when local_key or related_key do not exist", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   User <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
