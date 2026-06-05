@@ -13,7 +13,7 @@ As this uses R6 classes, the models are modified in place and do not need to be 
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,6 +118,13 @@ As this uses R6 classes, the models are modified in place and do not need to be 
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly returns the local_model (although the model is modified in place).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Most users should prefer the method form, `local_model$define_relationship(...)`
+(see [TableModel]), which supplies `local_model` for you and is discoverable
+via autocomplete. This standalone function is retained for functional/pipe-style
+use and internal wiring (e.g. [Engine$hydrate()]).</p>
     </div>
 
     <div class="section level2">

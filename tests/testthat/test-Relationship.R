@@ -375,3 +375,44 @@ test_that("Relationships update when model schema changes", {
 
     engine$close()
 })
+
+test_that("Relationship defined before create_table() traverses correctly", {
+    engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+
+    User <- engine$model("users",
+        id = Column("INTEGER", primary_key = TRUE),
+        name = Column("VARCHAR", nullable = FALSE)
+    )
+    Post <- engine$model("posts",
+        id = Column("INTEGER", primary_key = TRUE),
+        user_id = ForeignKey("INTEGER", references = "users.id")
+    )
+
+    # Define the relationship BEFORE either table exists in the database.
+    define_relationship(User, "id", "one_to_many", Post, "user_id",
+                        ref = "posts", backref = "user")
+
+    # Now create the tables; create_table() builds DDL from $fields and must
+    # not depend on relationships having been (or not been) defined first.
+    expect_no_error(User$create_table())
+    expect_no_error(Post$create_table())
+
+    # Seed and exercise the relationship end to end.
+    User$record(id = 1, name = "Ada")$create()
+    Post$record(id = 10, user_id = 1)$create()
+    Post$record(id = 11, user_id = 1)$create()
+
+    user <- User$read(id == 1, .mode = "get")
+    user_posts <- user$relationship("posts")
+    expect_length(user_posts, 2)
+    post_ids <- as.integer(vapply(user_posts, function(r) r$data$id, numeric(1)))
+    expect_setequal(post_ids, c(10L, 11L))
+
+    # Backref traverses the other way.
+    post <- Post$read(id == 10, .mode = "get")
+    owner <- post$relationship("user")
+    expect_s3_class(owner, "Record")
+    expect_equal(owner$data$id, 1)
+
+    engine$close()
+})

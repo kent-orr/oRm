@@ -123,8 +123,7 @@ Foreign keys pointing at tables outside the hydrated set are skipped
 with a warning. You can always wire those manually afterwards:
 
 ``` r
-define_relationship(
-  local_model   = models$posts,
+models$posts$define_relationship(
   local_key     = "category_id",
   type          = "many_to_one",
   related_model = some_other_model,

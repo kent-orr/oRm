@@ -224,8 +224,7 @@ and Measurements. But oRm is not. We’ll now **model** a **relationship**
 between the two tables which oRm **objects** will use.
 
 ``` r
-define_relationship(
-    local_model = Plants,
+Plants$define_relationship(
     local_key = "id",
     type = "one_to_many",
     related_model = Measurement,
@@ -233,9 +232,6 @@ define_relationship(
     ref = "measurements",
     backref = "plant"
 )
-#> <TableModel>
-#> Table: plants
-#> Columns: id, plant_type
 ```
 
 And after we’ve made that mapping, we can find all the related

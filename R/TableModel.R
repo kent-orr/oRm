@@ -526,17 +526,17 @@ TableModel <- R6::R6Class(
 
         if (.mode == "get") {
         if (nrow(rows) != 1) stop("Expected exactly one row, got: ", nrow(rows))
-        return(create_record(rows[1, , drop = TRUE]))
+        return(create_record(rows[1, , drop = FALSE]))
         }
 
         if (.mode == "one_or_none") {
         if (nrow(rows) > 1) stop("Expected zero or one row, got multiple")
-        if (nrow(rows) == 1) return(create_record(rows[1, , drop = TRUE]))
+        if (nrow(rows) == 1) return(create_record(rows[1, , drop = FALSE]))
         return(NULL)
         }
 
         # .mode == "all"
-        lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
+        lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = FALSE]))
     },
 
     #' @description

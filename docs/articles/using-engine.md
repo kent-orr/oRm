@@ -159,8 +159,8 @@ Key arguments:
 
 Foreign keys pointing at tables outside the hydrated set are silently
 skipped with a warning. You can always call
-[`define_relationship()`](https://kent-orr.github.io/oRm/reference/define_relationship.md)
-manually afterwards to wire additional relationships.
+`model$define_relationship()` manually afterwards to wire additional
+relationships.
 
 ## Using with.Engine
 

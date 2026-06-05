@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,23 @@
       <small>Source: <a href="https://github.com/kent-orr/oRm/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="orm-060">oRm 0.6.0<a class="anchor" aria-label="anchor" href="#orm-060"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-6-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-6-0"></a></h3>
+<ul><li>
+<strong>Set-level CRUD on <code>TableModel</code></strong> — the CRUD spine is now complete and discoverable at the model level, mirroring the row-level <code>Record</code> verbs:
+<ul><li>
+<code>Model$create(...)</code> inserts a row (sugar over <code>Model$record(...)$create()</code>) and returns the persisted <code>Record</code>.</li>
+<li>
+<code>Model$update(...)</code> issues a single <code>UPDATE ... WHERE</code>. Bare expressions are the WHERE filter (like <code>read()</code>); named arguments are the SET values (like <code>create()</code>), e.g. <code>User$update(id == 1, name = "Kent", age = 35)</code>.</li>
+<li>
+<code>Model$delete(...)</code> issues a single <code>DELETE ... WHERE</code> from bare-expression filters.</li>
+<li>
+<code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code>/<code>delete()</code> return the affected-row count invisibly and refuse a filterless whole-table write unless <code>.all = TRUE</code>. Both require a primary key.</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="orm-050">oRm 0.5.0<a class="anchor" aria-label="anchor" href="#orm-050"></a></h2>
 <div class="section level3">

@@ -60,7 +60,7 @@ User$create_table()
 ### 3. Add Relationship
 
 ``` r
-User |> define_relationship(
+User$define_relationship(
   local_key = "organization_id",
   type = "belongs_to",
   related_model = Organization,
@@ -92,10 +92,19 @@ org$relationship("users")  # list of user records
 
 ### 6. CRUD API
 
+Verbs follow CRUD throughout: `create`/`read`/`update`/`delete` live on
+the `TableModel` at the set level and reappear on `Record` for a single
+row — so autocomplete on `c`, `r`, `u`, `d` gets you where you need to
+go on either noun.
+
 ``` r
-u <- User$record(id = 5, name = "hogan")
-u$create()
-u <- User$read(id == 5)
+# Set-level: operate on the table
+User$create(id = 5, name = "hogan")
+User$update(id == 5, name = "Hogan")
+User$delete(id == 5)
+
+# Row-level: operate on a single Record
+u <- User$record(id = 5, name = "hogan")$create()
 u$data$name <- "Hogan"
 u$update()
 u$delete()

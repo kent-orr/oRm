@@ -56,10 +56,29 @@ Throws an error if multiple records are found.
 
   Create a new Record object associated with this model.
 
+- `create(..., .data = list())`:
+
+  Insert a new row (set-level counterpart to `Record$create()`).
+
 - `read(..., .mode = NULL, .limit = NULL)`:
 
   Read records from the table using dynamic filters. If \`.mode\` is
   NULL, uses \`default_mode\`.
+
+- `update(..., .all = FALSE, .data = list())`:
+
+  Update matching rows; bare exprs are the WHERE filter, named args are
+  the SET values.
+
+- `delete(..., .all = FALSE)`:
+
+  Delete matching rows; bare exprs are the WHERE filter.
+
+- `define_relationship(local_key, type, related_model, related_key, ref = NULL, backref = NULL)`:
+
+  Define a relationship from this model to a related model (method form
+  of
+  [`define_relationship()`](https://kent-orr.github.io/oRm/reference/define_relationship.md)).
 
 - `relationship(rel_name, ...)`:
 
@@ -79,6 +98,8 @@ Throws an error if multiple records are found.
 Engine::get_connection
 
 \[Record\$relationship()\]
+
+\[define_relationship()\], \[TableModel\$relationship()\]
 
 \[Engine\$print()\], \[Record\$print()\].
 
@@ -124,6 +145,12 @@ Engine::get_connection
 
 - [`TableModel$record()`](#method-TableModel-record)
 
+- [`TableModel$create()`](#method-TableModel-create)
+
+- [`TableModel$update()`](#method-TableModel-update)
+
+- [`TableModel$delete()`](#method-TableModel-delete)
+
 - [`TableModel$tbl()`](#method-TableModel-tbl)
 
 - [`TableModel$read()`](#method-TableModel-read)
@@ -135,6 +162,8 @@ Engine::get_connection
 - [`TableModel$one_or_none()`](#method-TableModel-one_or_none)
 
 - [`TableModel$relationship()`](#method-TableModel-relationship)
+
+- [`TableModel$define_relationship()`](#method-TableModel-define_relationship)
 
 - [`TableModel$print()`](#method-TableModel-print)
 
@@ -317,6 +346,116 @@ Create a new Record object with this model.
 - `.data`:
 
   a named list of field values.
+
+------------------------------------------------------------------------
+
+### Method `create()`
+
+Insert a new row into the table.
+
+Convenience wrapper over \`model\$record(...)\$create()\`: builds a
+Record from the supplied values and immediately persists it. This is the
+set-level counterpart to \`Record\$create()\`.
+
+#### Usage
+
+    TableModel$create(..., .data = list())
+
+#### Arguments
+
+- `...`:
+
+  Named values for the new row.
+
+- `.data`:
+
+  A named list of field values (alternative to \`...\`).
+
+#### Returns
+
+The persisted Record (carrying any server-generated keys).
+
+#### Examples
+
+    \donttest{
+    User$create(id = 1L, name = "Kent")
+    }
+
+------------------------------------------------------------------------
+
+### Method [`update()`](https://rdrr.io/r/stats/update.html)
+
+Update matching rows in the table (set-level \`UPDATE ... WHERE\`).
+
+Bare expressions are treated as the WHERE filter (exactly like
+\`read()\`), while named arguments are treated as the SET assignments
+(like \`create()\`/\`record()\`). For example, \`User\$update(id == 1,
+name = "Kent")\` sets \`name\` on the row(s) where \`id == 1\`.
+
+#### Usage
+
+    TableModel$update(..., .all = FALSE, .data = list())
+
+#### Arguments
+
+- `...`:
+
+  A mix of unquoted filter expressions (WHERE) and named values (SET).
+
+- `.all`:
+
+  Logical. Must be \`TRUE\` to update every row when no filter is
+  supplied; guards against accidental whole-table updates.
+
+- `.data`:
+
+  A named list of SET values (combined with named \`...\`, which takes
+  precedence).
+
+#### Returns
+
+The number of rows affected, invisibly.
+
+#### Examples
+
+    \donttest{
+    User$update(id == 1, name = "Kent", age = 35)
+    }
+
+------------------------------------------------------------------------
+
+### Method `delete()`
+
+Delete matching rows from the table (set-level \`DELETE ... WHERE\`).
+
+Bare expressions are treated as the WHERE filter, exactly like
+\`read()\`. This is the set-level counterpart to \`Record\$delete()\`.
+
+#### Usage
+
+    TableModel$delete(..., .all = FALSE)
+
+#### Arguments
+
+- `...`:
+
+  Unquoted filter expressions (WHERE).
+
+- `.all`:
+
+  Logical. Must be \`TRUE\` to delete every row when no filter is
+  supplied; guards against accidental whole-table deletes.
+
+#### Returns
+
+The number of rows affected, invisibly.
+
+#### Examples
+
+    \donttest{
+    User$delete(id == 1)
+    User$delete(.all = TRUE)
+    }
 
 ------------------------------------------------------------------------
 
@@ -507,6 +646,67 @@ For per-record filtering based on existing data, use
 
 A single Record, a list of Records, or NULL, depending on the
 relationship type.
+
+------------------------------------------------------------------------
+
+### Method [`define_relationship()`](https://kent-orr.github.io/oRm/reference/define_relationship.md)
+
+Define a relationship from this model to a related model.
+
+Method form of \[define_relationship()\] with this model supplied as the
+\`local_model\`. Modifies both models in place (R6 semantics); the
+related model gains the reverse relationship unless \`backref = FALSE\`.
+
+#### Usage
+
+    TableModel$define_relationship(
+      local_key,
+      type,
+      related_model,
+      related_key,
+      ref = NULL,
+      backref = NULL
+    )
+
+#### Arguments
+
+- `local_key`:
+
+  The key in this model that relates to \`related_key\`.
+
+- `type`:
+
+  The relationship type. One of 'one_to_one', 'one_to_many',
+  'many_to_one', or 'many_to_many'.
+
+- `related_model`:
+
+  The model being related to.
+
+- `related_key`:
+
+  The key in the related model that \`local_key\` relates to.
+
+- `ref`:
+
+  Name for this relationship on this model. Defaults to the lowercase
+  related table name.
+
+- `backref`:
+
+  Name for the reverse relationship on the related model. Defaults to
+  the lowercase local table name; \`FALSE\` skips it.
+
+#### Returns
+
+The TableModel object, invisibly.
+
+#### Examples
+
+    \donttest{
+    User$define_relationship("id", "one_to_many", Post, "user_id",
+                             ref = "posts", backref = "user")
+    }
 
 ------------------------------------------------------------------------
 

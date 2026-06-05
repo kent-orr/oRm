@@ -11,7 +11,7 @@ with the database table."><meta property="og:image" content="https://kent-orr.gi
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -104,8 +104,20 @@ with the database table.</p>
     <dt><code>record(..., .data = list())</code></dt>
 <dd><p>Create a new Record object associated with this model.</p></dd>
 
+    <dt><code>create(..., .data = list())</code></dt>
+<dd><p>Insert a new row (set-level counterpart to <code>Record$create()</code>).</p></dd>
+
     <dt><code>read(..., .mode = NULL, .limit = NULL)</code></dt>
 <dd><p>Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.</p></dd>
+
+    <dt><code>update(..., .all = FALSE, .data = list())</code></dt>
+<dd><p>Update matching rows; bare exprs are the WHERE filter, named args are the SET values.</p></dd>
+
+    <dt><code>delete(..., .all = FALSE)</code></dt>
+<dd><p>Delete matching rows; bare exprs are the WHERE filter.</p></dd>
+
+    <dt><code>define_relationship(local_key, type, related_model, related_key, ref = NULL, backref = NULL)</code></dt>
+<dd><p>Define a relationship from this model to a related model (method form of <code><a href="define_relationship.html">define_relationship()</a></code>).</p></dd>
 
     <dt><code>relationship(rel_name, ...)</code></dt>
 <dd><p>Query related records based on defined relationships.</p></dd>
@@ -120,6 +132,7 @@ with the database table.</p>
     <div class="dont-index"><p><code><a href="Engine.html">Engine</a></code>, <code><a href="Record.html">Record</a></code>, <code><a href="Column.html">Column</a></code>, <code><a href="ForeignKey.html">ForeignKey</a></code></p>
 <p>Engine::get_connection</p>
 <p>[Record$relationship()]</p>
+<p>[define_relationship()], [TableModel$relationship()]</p>
 <p>[Engine$print()], [Record$print()].</p></div>
     </div>
     <div class="section level2">
@@ -162,12 +175,16 @@ with the database table.</p>
 <li><p><a href="#method-TableModel-create_table"><code>TableModel$create_table()</code></a></p></li>
 <li><p><a href="#method-TableModel-drop_table"><code>TableModel$drop_table()</code></a></p></li>
 <li><p><a href="#method-TableModel-record"><code>TableModel$record()</code></a></p></li>
+<li><p><a href="#method-TableModel-create"><code>TableModel$create()</code></a></p></li>
+<li><p><a href="#method-TableModel-update"><code>TableModel$update()</code></a></p></li>
+<li><p><a href="#method-TableModel-delete"><code>TableModel$delete()</code></a></p></li>
 <li><p><a href="#method-TableModel-tbl"><code>TableModel$tbl()</code></a></p></li>
 <li><p><a href="#method-TableModel-read"><code>TableModel$read()</code></a></p></li>
 <li><p><a href="#method-TableModel-get"><code>TableModel$get()</code></a></p></li>
 <li><p><a href="#method-TableModel-all"><code>TableModel$all()</code></a></p></li>
 <li><p><a href="#method-TableModel-one_or_none"><code>TableModel$one_or_none()</code></a></p></li>
 <li><p><a href="#method-TableModel-relationship"><code>TableModel$relationship()</code></a></p></li>
+<li><p><a href="#method-TableModel-define_relationship"><code>TableModel$define_relationship()</code></a></p></li>
 <li><p><a href="#method-TableModel-print"><code>TableModel$print()</code></a></p></li>
 <li><p><a href="#method-TableModel-clone"><code>TableModel$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-TableModel-new"></a><div class="section">
@@ -346,10 +363,124 @@ User$drop_table(ask = FALSE)
 </dl><p></p></div>
 </div>
 
+</div><p></p><hr><a id="method-TableModel-create"></a><div class="section">
+<h3 id="method-create-">Method <code>create()</code><a class="anchor" aria-label="anchor" href="#method-create-"></a></h3>
+<p>Insert a new row into the table.</p>
+<p>Convenience wrapper over `model$record(...)$create()`: builds a Record
+from the supplied values and immediately persists it. This is the
+set-level counterpart to `Record$create()`.</p><div class="section">
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="va">...</span>, .data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>...</code></dt>
+<dd><p>Named values for the new row.</p></dd>
+
+
+<dt><code>.data</code></dt>
+<dd><p>A named list of field values (alternative to `...`).</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-3">Returns<a class="anchor" aria-label="anchor" href="#returns-3"></a></h4>
+<p>The persisted Record (carrying any server-generated keys).</p>
+</div>
+<div class="section">
+<h4 id="examples-1">Examples<a class="anchor" aria-label="anchor" href="#examples-1"></a></h4>
+<p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
+User$create(id = 1L, name = "Kent")
+}
+</code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-TableModel-update"></a><div class="section">
+<h3 id="method-update-">Method <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code><a class="anchor" aria-label="anchor" href="#method-update-"></a></h3>
+<p>Update matching rows in the table (set-level `UPDATE ... WHERE`).</p>
+<p>Bare expressions are treated as the WHERE filter (exactly like `read()`),
+while named arguments are treated as the SET assignments (like
+`create()`/`record()`). For example, `User$update(id == 1, name = "Kent")`
+sets `name` on the row(s) where `id == 1`.</p><div class="section">
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span><span class="va">...</span>, .all <span class="op">=</span> <span class="cn">FALSE</span>, .data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>...</code></dt>
+<dd><p>A mix of unquoted filter expressions (WHERE) and named values
+(SET).</p></dd>
+
+
+<dt><code>.all</code></dt>
+<dd><p>Logical. Must be `TRUE` to update every row when no filter is
+supplied; guards against accidental whole-table updates.</p></dd>
+
+
+<dt><code>.data</code></dt>
+<dd><p>A named list of SET values (combined with named `...`, which
+takes precedence).</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<p>The number of rows affected, invisibly.</p>
+</div>
+<div class="section">
+<h4 id="examples-2">Examples<a class="anchor" aria-label="anchor" href="#examples-2"></a></h4>
+<p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
+User$update(id == 1, name = "Kent", age = 35)
+}
+</code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-TableModel-delete"></a><div class="section">
+<h3 id="method-delete-">Method <code>delete()</code><a class="anchor" aria-label="anchor" href="#method-delete-"></a></h3>
+<p>Delete matching rows from the table (set-level `DELETE ... WHERE`).</p>
+<p>Bare expressions are treated as the WHERE filter, exactly like `read()`.
+This is the set-level counterpart to `Record$delete()`.</p><div class="section">
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">delete</span><span class="op">(</span><span class="va">...</span>, .all <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>...</code></dt>
+<dd><p>Unquoted filter expressions (WHERE).</p></dd>
+
+
+<dt><code>.all</code></dt>
+<dd><p>Logical. Must be `TRUE` to delete every row when no filter is
+supplied; guards against accidental whole-table deletes.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
+<p>The number of rows affected, invisibly.</p>
+</div>
+<div class="section">
+<h4 id="examples-3">Examples<a class="anchor" aria-label="anchor" href="#examples-3"></a></h4>
+<p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
+User$delete(id == 1)
+User$delete(.all = TRUE)
+}
+</code></pre></div><p></p></div>
+</div>
+
+
 </div><p></p><hr><a id="method-TableModel-tbl"></a><div class="section">
 <h3 id="method-tbl-">Method <code>tbl()</code><a class="anchor" aria-label="anchor" href="#method-tbl-"></a></h3>
 <p>Generate a dbplyr tbl() object to be consumed by the model.</p><div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">tbl</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -357,7 +488,7 @@ User$drop_table(ask = FALSE)
 </div><p></p><hr><a id="method-TableModel-read"></a><div class="section">
 <h3 id="method-read-">Method <code>read()</code><a class="anchor" aria-label="anchor" href="#method-read-"></a></h3>
 <p>Read records using dynamic filters and return in the specified mode.</p><div class="section">
-<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span></span>
 <span>  <span class="va">...</span>,</span>
 <span>  .mode <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -368,7 +499,7 @@ User$drop_table(ask = FALSE)
 </div>
 
 <div class="section">
-<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unquoted expressions for filtering.</p></dd>
 
@@ -398,12 +529,12 @@ Positive values return the first N records, negative values return the last N re
 </div><p></p><hr><a id="method-TableModel-get"></a><div class="section">
 <h3 id="method-get-">Method <code><a href="https://rdrr.io/r/base/get.html" class="external-link">get()</a></code><a class="anchor" aria-label="anchor" href="#method-get-"></a></h3>
 <p>Shortcut for retrieving a single record. Expects exactly one matching record.</p><div class="section">
-<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">get</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unquoted expressions for filtering. For models with a single primary key,
 the first unnamed argument can be the primary key value.</p></dd>
@@ -412,11 +543,11 @@ the first unnamed argument can be the primary key value.</p></dd>
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-3">Returns<a class="anchor" aria-label="anchor" href="#returns-3"></a></h4>
+<h4 id="returns-6">Returns<a class="anchor" aria-label="anchor" href="#returns-6"></a></h4>
 <p>A Record object if exactly one record is found.</p>
 </div>
 <div class="section">
-<h4 id="examples-1">Examples<a class="anchor" aria-label="anchor" href="#examples-1"></a></h4>
+<h4 id="examples-4">Examples<a class="anchor" aria-label="anchor" href="#examples-4"></a></h4>
 <p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
 # Get by primary key value (if single primary key exists)
 user &lt;- User$get(123)
@@ -434,12 +565,12 @@ user &lt;- User$get(name == "John", active == 1)
 </div><p></p><hr><a id="method-TableModel-all"></a><div class="section">
 <h3 id="method-all-">Method <code><a href="https://rdrr.io/r/base/all.html" class="external-link">all()</a></code><a class="anchor" aria-label="anchor" href="#method-all-"></a></h3>
 <p>Retrieve all records matching the given filters.</p><div class="section">
-<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
+<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">all</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unquoted expressions for filtering.</p></dd>
 
@@ -447,11 +578,11 @@ user &lt;- User$get(name == "John", active == 1)
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<h4 id="returns-7">Returns<a class="anchor" aria-label="anchor" href="#returns-7"></a></h4>
 <p>A list of Record objects, or NULL if no records are found.</p>
 </div>
 <div class="section">
-<h4 id="examples-2">Examples<a class="anchor" aria-label="anchor" href="#examples-2"></a></h4>
+<h4 id="examples-5">Examples<a class="anchor" aria-label="anchor" href="#examples-5"></a></h4>
 <p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
 # Get all users
 users &lt;- User$all()
@@ -469,12 +600,12 @@ admin_users &lt;- User$all(role == "admin", active == 1)
 </div><p></p><hr><a id="method-TableModel-one_or_none"></a><div class="section">
 <h3 id="method-one-or-none-">Method <code>one_or_none()</code><a class="anchor" aria-label="anchor" href="#method-one-or-none-"></a></h3>
 <p>Retrieve zero or one record matching the given filters.</p><div class="section">
-<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
+<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">one_or_none</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
+<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unquoted expressions for filtering.</p></dd>
 
@@ -482,11 +613,11 @@ admin_users &lt;- User$all(role == "admin", active == 1)
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
+<h4 id="returns-8">Returns<a class="anchor" aria-label="anchor" href="#returns-8"></a></h4>
 <p>A Record object if exactly one record is found, NULL if no records are found.</p>
 </div>
 <div class="section">
-<h4 id="examples-3">Examples<a class="anchor" aria-label="anchor" href="#examples-3"></a></h4>
+<h4 id="examples-6">Examples<a class="anchor" aria-label="anchor" href="#examples-6"></a></h4>
 <p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
 # Get user by email (expects 0 or 1 result)
 user &lt;- User$one_or_none(email == "user@example.com")
@@ -507,12 +638,12 @@ Retrieve related records based on a defined relationship.
 <h3 id="method-relationship-">Method <code>relationship()</code><a class="anchor" aria-label="anchor" href="#method-relationship-"></a></h3>
 
 <div class="section">
-<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
+<h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="va">rel_name</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
+<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>rel_name</code></dt>
 <dd><p>The name of the relationship to query.</p></dd>
 
@@ -532,20 +663,82 @@ Retrieve related records based on a defined relationship.
 </div>
 
 <div class="section">
-<h4 id="returns-6">Returns<a class="anchor" aria-label="anchor" href="#returns-6"></a></h4>
+<h4 id="returns-9">Returns<a class="anchor" aria-label="anchor" href="#returns-9"></a></h4>
 <p>A single Record, a list of Records, or NULL, depending on the relationship type.</p>
 </div>
+
+</div><p></p><hr><a id="method-TableModel-define_relationship"></a><div class="section">
+<h3 id="method-define-relationship-">Method <code><a href="define_relationship.html">define_relationship()</a></code><a class="anchor" aria-label="anchor" href="#method-define-relationship-"></a></h3>
+<p>Define a relationship from this model to a related model.</p>
+<p>Method form of [define_relationship()] with this model supplied as the
+`local_model`. Modifies both models in place (R6 semantics); the related
+model gains the reverse relationship unless `backref = FALSE`.</p><div class="section">
+<h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">define_relationship</span><span class="op">(</span></span>
+<span>  <span class="va">local_key</span>,</span>
+<span>  <span class="va">type</span>,</span>
+<span>  <span class="va">related_model</span>,</span>
+<span>  <span class="va">related_key</span>,</span>
+<span>  ref <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  backref <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-14">Arguments<a class="anchor" aria-label="anchor" href="#arguments-14"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>local_key</code></dt>
+<dd><p>The key in this model that relates to `related_key`.</p></dd>
+
+
+<dt><code>type</code></dt>
+<dd><p>The relationship type. One of 'one_to_one', 'one_to_many',
+'many_to_one', or 'many_to_many'.</p></dd>
+
+
+<dt><code>related_model</code></dt>
+<dd><p>The model being related to.</p></dd>
+
+
+<dt><code>related_key</code></dt>
+<dd><p>The key in the related model that `local_key` relates to.</p></dd>
+
+
+<dt><code>ref</code></dt>
+<dd><p>Name for this relationship on this model. Defaults to the
+lowercase related table name.</p></dd>
+
+
+<dt><code>backref</code></dt>
+<dd><p>Name for the reverse relationship on the related model.
+Defaults to the lowercase local table name; `FALSE` skips it.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-10">Returns<a class="anchor" aria-label="anchor" href="#returns-10"></a></h4>
+<p>The TableModel object, invisibly.</p>
+</div>
+<div class="section">
+<h4 id="examples-7">Examples<a class="anchor" aria-label="anchor" href="#examples-7"></a></h4>
+<p></p><div class="r example copy"><div class="sourceCode"><pre><code>\donttest{
+User$define_relationship("id", "one_to_many", Post, "user_id",
+                         ref = "posts", backref = "user")
+}
+</code></pre></div><p></p></div>
+</div>
+
 
 </div><p></p><hr><a id="method-TableModel-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p>Print a concise summary of the model, including the table name and
 column names.</p><div class="section">
-<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
+<h4 id="usage-16">Usage<a class="anchor" aria-label="anchor" href="#usage-16"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
+<h4 id="arguments-15">Arguments<a class="anchor" aria-label="anchor" href="#arguments-15"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Unused, present for compatibility.</p></dd>
 
@@ -553,19 +746,19 @@ column names.</p><div class="section">
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="returns-7">Returns<a class="anchor" aria-label="anchor" href="#returns-7"></a></h4>
+<h4 id="returns-11">Returns<a class="anchor" aria-label="anchor" href="#returns-11"></a></h4>
 <p>The TableModel object, invisibly.</p>
 </div>
 
 </div><p></p><hr><a id="method-TableModel-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
+<h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
+<h4 id="arguments-16">Arguments<a class="anchor" aria-label="anchor" href="#arguments-16"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
