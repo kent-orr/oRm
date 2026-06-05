@@ -1,5 +1,17 @@
 # oRm 0.6.0
 
+## Breaking Changes
+
+* **`Engine$hydrate()` renamed to `Engine$reflect()`** (and
+  `Engine$hydrate_schema()` to `Engine$reflect_schema()`). The public verb now
+  matches the internal reflection vocabulary it has always used
+  (`reflect_columns()`, `reflect_tables()`) and the established ORM term for
+  schema introspection (SQLAlchemy's `MetaData.reflect()`). "Hydrate"
+  conventionally means populating an object instance from a row, which is not
+  what this method does — it builds a model from table metadata. There is no
+  deprecation shim; update calls from `engine$hydrate(...)` to
+  `engine$reflect(...)`.
+
 ## New Features
 
 * **Set-level CRUD on `TableModel`** — the CRUD spine is now complete and
@@ -14,6 +26,31 @@
     - `update()`/`delete()` return the affected-row count invisibly and refuse a
       filterless whole-table write unless `.all = TRUE`. Both require a primary
       key.
+
+* **`TableModel$define_relationship()` method form** — `define_relationship()`
+  is now exposed as a model method that supplies the local model as `self`,
+  making it discoverable via `$`-autocomplete per the verb-mirroring
+  convention. The standalone `define_relationship()` function is retained for
+  functional/pipe-style use and internal wiring; both share one implementation.
+
+## Bug Fixes
+
+* **Double-qualification of table names in `Engine`** — `Engine$model()` and
+  `Engine$reflect()` qualified the tablename before passing it to
+  `TableModel$new()`, which qualified it again. Qualification now happens once,
+  inside `TableModel$new()`; `reflect()` keeps a locally qualified name only for
+  column reflection.
+
+* **Single-column `read()`** — reads that project to a single column no longer
+  collapse to an unnamed vector when building a `Record`. The `get`,
+  `one_or_none`, and `all` modes now use `drop = FALSE` so the column name is
+  preserved.
+
+## Documentation
+
+* Renamed the "Hydrating Models from Existing Tables" vignette to "Reflecting
+  Models from Existing Tables" and updated the README and
+  `vignette("using-engine")` for the `reflect()` / `reflect_schema()` naming.
 
 # oRm 0.5.0
 
