@@ -275,37 +275,14 @@ Record <- R6::R6Class(
         stop("No non-key fields to update.")
       }
 
-      # Identify JSON/JSONB columns for PostgreSQL
-      json_fields <- character(0)
-      if (self$model$engine$dialect == "postgres") {
-        json_fields <- names(self$model$fields)[vapply(self$model$fields, function(f) {
-          toupper(f$type) %in% c("JSON", "JSONB")
-        }, logical(1))]
-      }
+      # Build SET clause (shared with TableModel$update via build_set_clause)
+      set_clause <- build_set_clause(
+        con,
+        self$model$fields,
+        update_data[non_key_fields],
+        self$model$engine$dialect
+      )
 
-      # Build SET clause with proper JSON serialization
-      set_parts <- vapply(non_key_fields, function(field_name) {
-        val <- update_data[[field_name]]
-
-        # Serialize JSON fields
-        if (field_name %in% json_fields) {
-          if (is.character(val) && length(val) == 1 && jsonlite::validate(val)) {
-            # Already valid JSON string
-            formatted_val <- val
-          } else {
-            # Serialize R objects to JSON
-            formatted_val <- jsonlite::toJSON(val, auto_unbox = TRUE)
-          }
-          quoted_val <- DBI::dbQuoteLiteral(con, as.character(formatted_val))
-        } else {
-          quoted_val <- DBI::dbQuoteLiteral(con, val)
-        }
-
-        paste0(field_name, " = ", quoted_val)
-      }, character(1))
-
-      set_clause <- paste(set_parts, collapse = ", ")
-      
       where_clause <- paste0(
         key_fields, " = ",
         sapply(self$data[key_fields], DBI::dbQuoteLiteral, conn = con),

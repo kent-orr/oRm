@@ -1,3 +1,20 @@
+# oRm 0.6.0
+
+## New Features
+
+* **Set-level CRUD on `TableModel`** — the CRUD spine is now complete and
+  discoverable at the model level, mirroring the row-level `Record` verbs:
+    - `Model$create(...)` inserts a row (sugar over `Model$record(...)$create()`)
+      and returns the persisted `Record`.
+    - `Model$update(...)` issues a single `UPDATE ... WHERE`. Bare expressions
+      are the WHERE filter (like `read()`); named arguments are the SET values
+      (like `create()`), e.g. `User$update(id == 1, name = "Kent", age = 35)`.
+    - `Model$delete(...)` issues a single `DELETE ... WHERE` from bare-expression
+      filters.
+    - `update()`/`delete()` return the affected-row count invisibly and refuse a
+      filterless whole-table write unless `.all = TRUE`. Both require a primary
+      key.
+
 # oRm 0.5.0
 
 ## New Features

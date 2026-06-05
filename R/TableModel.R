@@ -32,7 +32,10 @@ NULL
 #'     \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
 #'     \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
 #'     \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
+#'     \item{\code{create(..., .data = list())}}{Insert a new row (set-level counterpart to \code{Record$create()}).}
 #'     \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
+#'     \item{\code{update(..., .all = FALSE, .data = list())}}{Update matching rows; bare exprs are the WHERE filter, named args are the SET values.}
+#'     \item{\code{delete(..., .all = FALSE)}}{Delete matching rows; bare exprs are the WHERE filter.}
 #'     \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
 #'     \item{\code{print()}}{Print a concise summary of the model, including its fields.}
 #' }
@@ -269,6 +272,113 @@ TableModel <- R6::R6Class(
     #'
     record = function(..., .data = list()) {
         Record$new(self, ..., .data = .data)
+    },
+
+    #' @description
+    #' Insert a new row into the table.
+    #'
+    #' Convenience wrapper over `model$record(...)$create()`: builds a Record
+    #' from the supplied values and immediately persists it. This is the
+    #' set-level counterpart to `Record$create()`.
+    #' @param ... Named values for the new row.
+    #' @param .data A named list of field values (alternative to `...`).
+    #' @return The persisted Record (carrying any server-generated keys).
+    #' @examples
+    #' \donttest{
+    #' User$create(id = 1L, name = "Kent")
+    #' }
+    create = function(..., .data = list()) {
+        self$record(..., .data = .data)$create()
+    },
+
+    #' @description
+    #' Update matching rows in the table (set-level `UPDATE ... WHERE`).
+    #'
+    #' Bare expressions are treated as the WHERE filter (exactly like `read()`),
+    #' while named arguments are treated as the SET assignments (like
+    #' `create()`/`record()`). For example, `User$update(id == 1, name = "Kent")`
+    #' sets `name` on the row(s) where `id == 1`.
+    #' @param ... A mix of unquoted filter expressions (WHERE) and named values
+    #'     (SET).
+    #' @param .all Logical. Must be `TRUE` to update every row when no filter is
+    #'     supplied; guards against accidental whole-table updates.
+    #' @param .data A named list of SET values (combined with named `...`, which
+    #'     takes precedence).
+    #' @return The number of rows affected, invisibly.
+    #' @examples
+    #' \donttest{
+    #' User$update(id == 1, name = "Kent", age = 35)
+    #' }
+    update = function(..., .all = FALSE, .data = list()) {
+        if (isTRUE(self$engine$read_only)) {
+            stop("Engine is read-only; cannot update records.", call. = FALSE)
+        }
+        quos <- rlang::enquos(...)
+        nms <- names(quos)
+        if (is.null(nms)) nms <- rep("", length(quos))
+        is_set <- nzchar(nms)
+        where_quos <- quos[!is_set]
+        set_vals <- utils::modifyList(.data, lapply(quos[is_set], rlang::eval_tidy))
+
+        if (length(set_vals) == 0) {
+            stop("No values to set; pass at least one `name = value` assignment.", call. = FALSE)
+        }
+        if (length(where_quos) == 0 && !isTRUE(.all)) {
+            stop("Refusing to update all rows; pass a filter or .all = TRUE.", call. = FALSE)
+        }
+
+        con <- self$get_connection()
+        set_clause <- build_set_clause(con, self$fields, set_vals, self$engine$dialect)
+        tbl_name <- self$engine$format_tablename(self$tablename)
+
+        if (length(where_quos) == 0) {
+            sql <- sprintf("UPDATE %s SET %s", tbl_name, set_clause)
+        } else {
+            key_fields <- pk_fields(self)
+            keys <- self$read(!!!where_quos, .mode = "data.frame", .limit = NULL)[key_fields]
+            if (nrow(keys) == 0) return(invisible(0L))
+            where_clause <- build_key_where(con, key_fields, keys)
+            sql <- sprintf("UPDATE %s SET %s WHERE %s", tbl_name, set_clause, where_clause)
+        }
+        invisible(self$engine$execute(sql))
+    },
+
+    #' @description
+    #' Delete matching rows from the table (set-level `DELETE ... WHERE`).
+    #'
+    #' Bare expressions are treated as the WHERE filter, exactly like `read()`.
+    #' This is the set-level counterpart to `Record$delete()`.
+    #' @param ... Unquoted filter expressions (WHERE).
+    #' @param .all Logical. Must be `TRUE` to delete every row when no filter is
+    #'     supplied; guards against accidental whole-table deletes.
+    #' @return The number of rows affected, invisibly.
+    #' @examples
+    #' \donttest{
+    #' User$delete(id == 1)
+    #' User$delete(.all = TRUE)
+    #' }
+    delete = function(..., .all = FALSE) {
+        if (isTRUE(self$engine$read_only)) {
+            stop("Engine is read-only; cannot delete records.", call. = FALSE)
+        }
+        where_quos <- rlang::enquos(...)
+        if (length(where_quos) == 0 && !isTRUE(.all)) {
+            stop("Refusing to delete all rows; pass a filter or .all = TRUE.", call. = FALSE)
+        }
+
+        con <- self$get_connection()
+        tbl_name <- self$engine$format_tablename(self$tablename)
+
+        if (length(where_quos) == 0) {
+            sql <- sprintf("DELETE FROM %s", tbl_name)
+        } else {
+            key_fields <- pk_fields(self)
+            keys <- self$read(!!!where_quos, .mode = "data.frame", .limit = NULL)[key_fields]
+            if (nrow(keys) == 0) return(invisible(0L))
+            where_clause <- build_key_where(con, key_fields, keys)
+            sql <- sprintf("DELETE FROM %s WHERE %s", tbl_name, where_clause)
+        }
+        invisible(self$engine$execute(sql))
     },
 
     #' @description
