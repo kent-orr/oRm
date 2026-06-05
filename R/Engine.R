@@ -248,7 +248,7 @@ Engine <- R6::R6Class(
         #' PostgreSQL dialect reflects richer metadata: canonical types, primary
         #' keys, nullability, defaults, and foreign keys (as [ForeignKey]
         #' objects).
-        #' @param tablename Name of the existing table to hydrate.
+        #' @param tablename Name of the existing table to reflect.
         #' @param ... Additional `Column`, `ForeignKey`, or `Method` objects to
         #'   merge in. These take precedence over reflected columns of the same
         #'   name, matching the behaviour of `model()`.
@@ -261,11 +261,11 @@ Engine <- R6::R6Class(
         #' @examples
         #' \donttest{
         #' # Given a table "users" that already exists in the database:
-        #' Users <- engine$hydrate("users")
-        #' Users <- engine$hydrate("users", include = c("id", "name"))
-        #' Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+        #' Users <- engine$reflect("users")
+        #' Users <- engine$reflect("users", include = c("id", "name"))
+        #' Users <- engine$reflect("users", exclude = c("hash", "configuration"))
         #' }
-        hydrate = function(tablename, ..., include = NULL, exclude = NULL, .schema = NULL, .default_mode = "all") {
+        reflect = function(tablename, ..., include = NULL, exclude = NULL, .schema = NULL, .default_mode = "all") {
             if (is.null(.schema)) .schema <- self$schema
             # Reflection needs the qualified name; TableModel$new() re-qualifies
             # the raw name itself, so pass the unqualified tablename onward.
@@ -273,53 +273,53 @@ Engine <- R6::R6Class(
             cols <- reflect_columns(self, qualified)
             cols <- filter_reflected_columns(cols, include = include, exclude = exclude)
             if (length(cols) == 0) {
-                stop("hydrate: no columns remain after include/exclude filtering.", call. = FALSE)
+                stop("reflect: no columns remain after include/exclude filtering.", call. = FALSE)
             }
             TableModel$new(tablename = tablename, engine = self, ..., .data = cols, .schema = .schema, .default_mode = .default_mode)
         },
 
         #' @description
-        #' Hydrate several tables from a schema at once and wire up the
+        #' Reflect several tables from a schema at once and wire up the
         #' relationships implied by their foreign keys.
         #'
-        #' Each table is hydrated via [Engine$hydrate()]; afterwards, every
-        #' reflected [ForeignKey] whose target is also among the hydrated models
+        #' Each table is reflected via [Engine$reflect()]; afterwards, every
+        #' reflected [ForeignKey] whose target is also among the reflected models
         #' is turned into a `many_to_one` relationship (with the reverse
         #' `one_to_many` backref) using [define_relationship()]. Foreign keys
-        #' pointing at tables outside the hydrated set are skipped with a
+        #' pointing at tables outside the reflected set are skipped with a
         #' warning. This is most useful with the PostgreSQL dialect, whose
         #' reflection captures foreign keys.
         #' @param tables Optional character vector limiting which tables to
-        #'   hydrate. When `NULL`, all tables in the schema are hydrated
+        #'   reflect. When `NULL`, all tables in the schema are reflected
         #'   (see [reflect_tables()]).
         #' @param ... Additional `Column`, `ForeignKey`, or `Method` objects
-        #'   passed to every `hydrate()` call (overrides of reflected columns).
-        #' @param .schema Character. Schema to hydrate. Defaults to the engine
+        #'   passed to every `reflect()` call (overrides of reflected columns).
+        #' @param .schema Character. Schema to reflect. Defaults to the engine
         #'   schema.
         #' @param exclude Optional character vector of table names to drop.
         #' @param .default_mode Character. Default read mode for each TableModel.
         #' @param wire_relationships Logical. Whether to auto-wire relationships
         #'   from reflected foreign keys. Defaults to TRUE.
         #' @return A named list of TableModel objects, keyed by bare table name.
-        #' @seealso [Engine$hydrate()], [define_relationship()], [reflect_tables()]
+        #' @seealso [Engine$reflect()], [define_relationship()], [reflect_tables()]
         #' @examples
         #' \donttest{
-        #' models <- engine$hydrate_schema()
-        #' models <- engine$hydrate_schema(tables = c("users", "posts"))
+        #' models <- engine$reflect_schema()
+        #' models <- engine$reflect_schema(tables = c("users", "posts"))
         #' posts <- models$posts
         #' }
-        hydrate_schema = function(tables = NULL, ..., .schema = NULL, exclude = NULL,
+        reflect_schema = function(tables = NULL, ..., .schema = NULL, exclude = NULL,
                                   .default_mode = "all", wire_relationships = TRUE) {
             if (is.null(.schema)) .schema <- self$schema
             if (is.null(tables)) tables <- reflect_tables(self, .schema)
             if (!is.null(exclude)) tables <- setdiff(tables, exclude)
             if (length(tables) == 0) {
-                stop("hydrate_schema: no tables to hydrate.", call. = FALSE)
+                stop("reflect_schema: no tables to reflect.", call. = FALSE)
             }
 
             models <- stats::setNames(
                 lapply(tables, function(t) {
-                    self$hydrate(t, ..., .schema = .schema, .default_mode = .default_mode)
+                    self$reflect(t, ..., .schema = .schema, .default_mode = .default_mode)
                 }),
                 tables
             )
@@ -334,7 +334,7 @@ Engine <- R6::R6Class(
                         target <- models[[field$ref_table]]
                         if (is.null(target)) {
                             warning(sprintf(
-                                "hydrate_schema: foreign key %s.%s references '%s', which was not hydrated; skipping relationship.",
+                                "reflect_schema: foreign key %s.%s references '%s', which was not reflected; skipping relationship.",
                                 local_name, field_name, field$ref_table
                             ), call. = FALSE)
                             next
@@ -343,7 +343,7 @@ Engine <- R6::R6Class(
                         # Align the reflected FK reference with the target model's
                         # actual tablename so define_relationship()'s reference
                         # check passes regardless of how the schema was applied
-                        # (qualified vs. unqualified) during hydration.
+                        # (qualified vs. unqualified) during reflection.
                         local_model$fields[[field_name]]$references <-
                             paste0(target$tablename, ".", field$ref_column)
 
@@ -359,7 +359,7 @@ Engine <- R6::R6Class(
                             ),
                             error = function(e) {
                                 warning(sprintf(
-                                    "hydrate_schema: could not wire %s.%s -> %s.%s (%s).",
+                                    "reflect_schema: could not wire %s.%s -> %s.%s (%s).",
                                     local_name, field_name, field$ref_table, field$ref_column,
                                     conditionMessage(e)
                                 ), call. = FALSE)

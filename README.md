@@ -149,21 +149,21 @@ UserView$read(.mode = "data.frame")
 
 Combine with `.read_only = TRUE` for safe, scoped access to production tables.
 
-### 9. Hydrating Models From Existing Tables
+### 9. Reflecting Models From Existing Tables
 
-When a table already exists, `engine$hydrate()` introspects its columns and
+When a table already exists, `engine$reflect()` introspects its columns and
 returns a ready-to-use `TableModel`, so you can do basic CRUD without
 declaring every column by hand.
 
 ```r
 # Reflect all columns of the existing "users" table
-Users <- engine$hydrate("users")
+Users <- engine$reflect("users")
 names(Users$fields)
 #> [1] "id" "name" "age" "hash"
 
 # Keep or drop columns with include / exclude
-Users <- engine$hydrate("users", include = c("id", "name", "age"))
-Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+Users <- engine$reflect("users", include = c("id", "name", "age"))
+Users <- engine$reflect("users", exclude = c("hash", "configuration"))
 
 Users$record(id = 3L, name = "Ada", age = 36L)$create()
 Users$read(.mode = "data.frame")
@@ -184,25 +184,25 @@ For other dialects, because the primary key is not reflected, `update()` and
 `delete()` require you to supply the key column via `...`:
 
 ```r
-Users <- engine$hydrate("users", id = Column("INTEGER", primary_key = TRUE))
+Users <- engine$reflect("users", id = Column("INTEGER", primary_key = TRUE))
 ```
 
 The `...` argument also lets you attach `Method()`s or override any reflected
 column definition, exactly like `engine$model()`.
 
-### 10. Hydrating an Entire Schema
+### 10. Reflecting an Entire Schema
 
-`engine$hydrate_schema()` hydrates every table in a schema in one call and
+`engine$reflect_schema()` reflects every table in a schema in one call and
 automatically wires up the `many_to_one` / `one_to_many` relationships implied
 by the reflected foreign keys. This is most useful with the PostgreSQL dialect,
 whose reflection captures foreign keys.
 
 ```r
-# Hydrate all tables in the engine's default schema
-models <- engine$hydrate_schema()
+# Reflect all tables in the engine's default schema
+models <- engine$reflect_schema()
 
 # Or restrict to a specific set of tables
-models <- engine$hydrate_schema(tables = c("users", "posts", "comments"))
+models <- engine$reflect_schema(tables = c("users", "posts", "comments"))
 
 # Access individual models
 posts  <- models$posts
@@ -217,7 +217,7 @@ Options:
 
 | Argument | Default | Description |
 |---|---|---|
-| `tables` | `NULL` | Tables to hydrate; `NULL` hydrates all in the schema |
+| `tables` | `NULL` | Tables to reflect; `NULL` reflects all in the schema |
 | `exclude` | `NULL` | Table names to skip |
 | `.schema` | engine schema | Schema to inspect |
 | `wire_relationships` | `TRUE` | Auto-wire FK relationships |

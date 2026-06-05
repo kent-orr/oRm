@@ -67,7 +67,7 @@ Relationship = R6::R6Class(
 #' Most users should prefer the method form, `local_model$define_relationship(...)`
 #' (see [TableModel]), which supplies `local_model` for you and is discoverable
 #' via autocomplete. This standalone function is retained for functional/pipe-style
-#' use and internal wiring (e.g. [Engine$hydrate()]).
+#' use and internal wiring (e.g. [Engine$reflect()]).
 #'
 #' @param local_model The model that owns the relationship.
 #' @param local_key The key in the local model that relates to the foreign key in the related model.
