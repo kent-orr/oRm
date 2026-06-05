@@ -35,6 +35,19 @@
 
 ## Bug Fixes
 
+* **`with.Engine()` transactions now nest, pool, and respect read-only** —
+  three long-standing transaction bugs are fixed:
+    - *Nesting*: a `with.Engine()` block opened inside another (directly or via
+      a helper) used to hit `dbBegin()` on a connection already in a
+      transaction and error out. Nested blocks now run as savepoints and commit
+      together with the outer transaction.
+    - *Pooling*: with `use_pool = TRUE`, `dbBegin()` was called on the `Pool`
+      object itself (and the writes scattered across checkouts). A single
+      connection is now checked out for the life of the transaction and pinned
+      so every operation inside the block lands on it.
+    - *Read-only*: a transaction on a `.read_only` engine opened anyway and only
+      failed mid-block on the first write. `with.Engine()` now refuses upfront.
+
 * **Double-qualification of table names in `Engine`** — `Engine$model()` and
   `Engine$reflect()` qualified the tablename before passing it to
   `TableModel$new()`, which qualified it again. Qualification now happens once,

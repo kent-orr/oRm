@@ -95,6 +95,9 @@ posts <- models$posts
 \item \href{#method-Engine-reflect_schema}{\code{Engine$reflect_schema()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
+\item \href{#method-Engine-set_transaction_connection}{\code{Engine$set_transaction_connection()}}
+\item \href{#method-Engine-push_savepoint}{\code{Engine$push_savepoint()}}
+\item \href{#method-Engine-pop_savepoint}{\code{Engine$pop_savepoint()}}
 \item \href{#method-Engine-qualify}{\code{Engine$qualify()}}
 \item \href{#method-Engine-format_tablename}{\code{Engine$format_tablename()}}
 \item \href{#method-Engine-print}{\code{Engine$print()}}
@@ -485,6 +488,56 @@ Retrieve the current transaction state
 
 \subsection{Returns}{
 Logical indicating if a transaction is active
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-set_transaction_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-set_transaction_connection}{}}}
+\subsection{Method \code{set_transaction_connection()}}{
+Pin a single connection for the duration of a transaction so that
+[with.Engine()] and every operation inside the block share one
+connection. Used internally for pooled engines, where each call would
+otherwise check out a different connection. Pass `NULL` to clear.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$set_transaction_connection(conn)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{conn}}{A DBIConnection, or NULL to release the pin.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The Engine object, invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-push_savepoint"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-push_savepoint}{}}}
+\subsection{Method \code{push_savepoint()}}{
+Reserve a fresh savepoint name for a nested transaction block and
+bump the nesting depth.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$push_savepoint()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A unique savepoint name (character).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-pop_savepoint"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-pop_savepoint}{}}}
+\subsection{Method \code{pop_savepoint()}}{
+Release the most recently reserved savepoint name.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$pop_savepoint()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+NULL, invisibly.
 }
 }
 \if{html}{\out{<hr>}}

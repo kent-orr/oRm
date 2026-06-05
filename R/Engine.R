@@ -116,6 +116,13 @@ Engine <- R6::R6Class(
         #'
         #' @return A DBIConnection object or a pool object
         get_connection = function() {
+            # While a transaction holds a pinned connection (e.g. one checked
+            # out from a pool), every operation must run on that same
+            # connection so BEGIN/COMMIT and the writes between them agree.
+            if (!is.null(private$tx_conn)) {
+                return(private$tx_conn)
+            }
+
             fresh <- FALSE
             if (is.null(self$conn) || (!self$use_pool && !DBI::dbIsValid(self$conn))) {
                 if (self$use_pool) {
@@ -389,6 +396,37 @@ Engine <- R6::R6Class(
         },
 
         #' @description
+        #' Pin a single connection for the duration of a transaction so that
+        #' [with.Engine()] and every operation inside the block share one
+        #' connection. Used internally for pooled engines, where each call would
+        #' otherwise check out a different connection. Pass `NULL` to clear.
+        #' @param conn A DBIConnection, or NULL to release the pin.
+        #' @return The Engine object, invisibly.
+        set_transaction_connection = function(conn) {
+            private$tx_conn <- conn
+            invisible(self)
+        },
+
+        #' @description
+        #' Reserve a fresh savepoint name for a nested transaction block and
+        #' bump the nesting depth.
+        #' @return A unique savepoint name (character).
+        push_savepoint = function() {
+            private$savepoint_depth <- private$savepoint_depth + 1L
+            paste0("orm_savepoint_", private$savepoint_depth)
+        },
+
+        #' @description
+        #' Release the most recently reserved savepoint name.
+        #' @return NULL, invisibly.
+        pop_savepoint = function() {
+            if (private$savepoint_depth > 0L) {
+                private$savepoint_depth <- private$savepoint_depth - 1L
+            }
+            invisible(NULL)
+        },
+
+        #' @description
         #' Qualify a table name with a schema
         #' @param tablename Character. Table name to qualify
         #' @param .schema Character. Schema name to prepend
@@ -440,7 +478,9 @@ Engine <- R6::R6Class(
     ),
     private = list(
         in_transaction = FALSE,
-        
+        tx_conn = NULL,
+        savepoint_depth = 0L,
+
         exit_check = function() {
             !private$in_transaction && !self$persist && !self$use_pool
         },
@@ -543,64 +583,109 @@ Engine <- R6::R6Class(
 #' @export
 with.Engine <- function(data, expr, auto_commit = TRUE, ...) {
     engine <- data
-    # Open a connection
-    engine$set_transaction_state(TRUE)
-    conn <- engine$get_connection()
-    
-    # Begin transaction
-    DBI::dbBegin(conn)
-    
+
+    # A transaction implies writes; refuse upfront on a read-only engine rather
+    # than opening one that only blows up mid-block on the first write.
+    if (isTRUE(engine$read_only)) {
+        stop(
+            "Engine is read-only; refusing to open a writable transaction.",
+            call. = FALSE
+        )
+    }
+
+    # A with.Engine nested inside another runs as a savepoint on the already
+    # open transaction, committing together with the outer block. The outermost
+    # block opens the real transaction.
+    nested <- isTRUE(engine$get_transaction_state())
+
+    # Resolve the single connection that carries this transaction. Pooled
+    # engines must check one out so BEGIN/COMMIT and every write in between land
+    # on the same connection instead of being scattered across the pool.
+    checked_out <- FALSE
+    if (nested) {
+        conn <- engine$get_connection()
+    } else if (isTRUE(engine$use_pool)) {
+        conn <- pool::poolCheckout(engine$get_connection())
+        engine$set_transaction_connection(conn)
+        checked_out <- TRUE
+    } else {
+        conn <- engine$get_connection()
+    }
+
+    sp_name <- if (nested) engine$push_savepoint() else NULL
+    if (nested) {
+        DBI::dbBegin(conn, name = sp_name)
+    } else {
+        DBI::dbBegin(conn)
+        engine$set_transaction_state(TRUE)
+    }
+
+    do_commit <- function() {
+        if (is.null(sp_name)) DBI::dbCommit(conn) else DBI::dbCommit(conn, name = sp_name)
+    }
+    do_rollback <- function() {
+        if (is.null(sp_name)) DBI::dbRollback(conn) else DBI::dbRollback(conn, name = sp_name)
+    }
+
     # Create a transaction environment with commit/rollback functions
     tx_env <- new.env(parent = parent.frame())
     tx_env$committed <- FALSE
     tx_env$rolled_back <- FALSE
-    
-    # Add transaction functions to the environment
+
     tx_env$commit <- function() {
-        DBI::dbCommit(conn)
+        do_commit()
         tx_env$committed <- TRUE
         invisible(NULL)
     }
-    
+
     tx_env$rollback <- function() {
-        DBI::dbRollback(conn)
+        do_rollback()
         tx_env$rolled_back <- TRUE
         invisible(NULL)
     }
-    
+
     result <- NULL
     # Execute the expression within the transaction
     tryCatch({
         # Evaluate the expression in the transaction environment
         result <- eval(substitute(expr), tx_env)
-        
+
         # Auto-commit if requested and not already committed/rolled back
         if (auto_commit && !tx_env$committed && !tx_env$rolled_back) {
-            DBI::dbCommit(conn)
+            do_commit()
         } else if (!auto_commit && !tx_env$committed && !tx_env$rolled_back) {
             warning("Transaction was neither committed nor rolled back. Rolling back by default.")
-            DBI::dbRollback(conn)
+            do_rollback()
         }
-        
+
         # Return the result
         return(result)
-        
+
     }, error = function(e) {
         # Roll back if not already committed/rolled back
         if (!tx_env$committed && !tx_env$rolled_back) {
-            DBI::dbRollback(conn)
-            warning("Transaction failed, rolling back: ", e$message)
+            do_rollback()
+            warning("Transaction failed, rolling back: ", conditionMessage(e))
         }
-        
+
         # Re-throw the error
         stop(e)
-        
+
     }, finally = {
-        # Clean up
-        if (!engine$persist) {
-            engine$close()
+        # Clean up. Nested blocks leave the outer transaction (and its pinned
+        # connection) untouched -- only release the savepoint name.
+        if (nested) {
+            engine$pop_savepoint()
+        } else {
+            engine$set_transaction_state(FALSE)
+            if (checked_out) {
+                engine$set_transaction_connection(NULL)
+                pool::poolReturn(conn)
+            }
+            if (!engine$persist && !engine$use_pool) {
+                engine$close()
+            }
         }
-        engine$set_transaction_state(FALSE)
     })
 }
 
