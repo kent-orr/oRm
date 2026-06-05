@@ -64,6 +64,11 @@ Relationship = R6::R6Class(
 #' If a backref is specified, it also creates a reverse relationship in the related model.
 #' As this uses R6 classes, the models are modified in place and do not need to be reassigned.
 #'
+#' Most users should prefer the method form, `local_model$define_relationship(...)`
+#' (see [TableModel]), which supplies `local_model` for you and is discoverable
+#' via autocomplete. This standalone function is retained for functional/pipe-style
+#' use and internal wiring (e.g. [Engine$reflect()]).
+#'
 #' @param local_model The model that owns the relationship.
 #' @param local_key The key in the local model that relates to the foreign key in the related model.
 #' @param type The type of relationship. Must be one of 'one_to_one', 'one_to_many', 'many_to_one', or 'many_to_many'.

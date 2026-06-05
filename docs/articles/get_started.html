@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
-    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/reflecting-tables.html">Reflecting Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -112,6 +112,11 @@ joins and nested querying.</li>
 <code>Method</code>: Attaches custom behavior to models at table or
 record level.</li>
 </ul>
+<p>The verbs follow CRUD throughout, so once you have a
+<code>TableModel</code> or <code>Record</code> in hand, autocompleting
+on <code>c</code>, <code>r</code>, <code>u</code>, or <code>d</code>
+will surface create, read, update, and delete right where you expect
+them — set-level on the model, row-level on the record.</p>
 <p>We’ll walk through each concept, starting with the
 <code>Engine</code>.</p>
 <hr>
@@ -188,8 +193,11 @@ engine for use in relationships and queries.</p>
 <div class="section level2">
 <h2 id="what-tablemodels-do">What TableModels Do<a class="anchor" aria-label="anchor" href="#what-tablemodels-do"></a>
 </h2>
-<p>A <code>TableModel</code> instance gives you access to common
-operations on your table:</p>
+<p>A <code>TableModel</code> exposes the full set of CRUD verbs at the
+table (set) level. The same verbs reappear on <code>Record</code> for
+single rows, so whichever noun you have in hand, autocompleting on
+<code>c</code>, <code>r</code>, <code>u</code>, or <code>d</code> lands
+you in the right place.</p>
 <div class="section level3">
 <h3 id="create-the-table-in-your-database">Create the table in your database<a class="anchor" aria-label="anchor" href="#create-the-table-in-your-database"></a>
 </h3>
@@ -197,42 +205,64 @@ operations on your table:</p>
 <code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt; Table: users</span></span>
-<span><span class="co">#&gt; Columns: id, organization_id, name, age</span></span>
-<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name<span class="op">=</span><span class="st">'John'</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">2</span>, name<span class="op">=</span><span class="st">'Jane'</span>, age <span class="op">=</span> <span class="fl">35</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; Columns: id, organization_id, name, age</span></span></code></pre></div>
 <p>This creates the table based on your column definitions if it doesn’t
 already exist.</p>
 </div>
 <div class="section level3">
-<h3 id="read-rows-from-the-table">Read rows from the table<a class="anchor" aria-label="anchor" href="#read-rows-from-the-table"></a>
+<h3 id="create-rows">Create rows<a class="anchor" aria-label="anchor" href="#create-rows"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"John"</span><span class="op">)</span></span>
+<span><span class="va">Users</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">2</span>, name <span class="op">=</span> <span class="st">"Jane"</span>, age <span class="op">=</span> <span class="fl">35</span><span class="op">)</span></span></code></pre></div>
+<p><code>create()</code> builds a row and inserts it in a single step —
+the set-level counterpart to <code>Record$create()</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="read-rows-from-the-table">Read rows from the table<a class="anchor" aria-label="anchor" href="#read-rows-from-the-table"></a>
+</h3>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">all_users</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">young_users</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">age</span> <span class="op">&lt;</span> <span class="fl">30</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>read()</code> method accepts <code>dbplyr</code>-style
 filter conditions through <code>...</code>, allowing flexible querying
 using R expressions. It returns a list of <code>Record</code> objects,
 or a single record if <code>.mode = "get"</code> is specified.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">specific_user</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, .mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="update-rows">Update rows<a class="anchor" aria-label="anchor" href="#update-rows"></a>
+</h3>
+<p>Bare expressions are the <code>WHERE</code> filter; named values are
+the <code>SET</code> assignments:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, age <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="delete-rows">Delete rows<a class="anchor" aria-label="anchor" href="#delete-rows"></a>
+</h3>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">delete</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="what-records-do">What Records Do<a class="anchor" aria-label="anchor" href="#what-records-do"></a>
 </h2>
 <p>Each row in a table is represented by a <code>Record</code>. Records
-provide methods for creating, updating, deleting, and accessing
-individual rows.</p>
+mirror the same
+<code>create</code>/<code>read</code>/<code>update</code>/<code>delete</code>
+verbs, but scoped to a single row rather than the whole set.</p>
 <div class="section level3">
 <h3 id="create-a-new-record">Create a new record<a class="anchor" aria-label="anchor" href="#create-a-new-record"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3</span>, organization_id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Alice"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="update-a-record">Update a record<a class="anchor" aria-label="anchor" href="#update-a-record"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">alice</span> <span class="op">&lt;-</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, .mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span>
 <span><span class="va">alice</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span> <span class="op">&lt;-</span> <span class="st">"Alicia"</span></span>
 <span><span class="va">alice</span><span class="op">$</span><span class="fu">update</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -240,14 +270,14 @@ individual rows.</p>
 <div class="section level3">
 <h3 id="delete-a-record">Delete a record<a class="anchor" aria-label="anchor" href="#delete-a-record"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">alice</span><span class="op">$</span><span class="fu">delete</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="access-record-data">Access record data<a class="anchor" aria-label="anchor" href="#access-record-data"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">alice</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Alicia"</span></span></code></pre></div>
 </div>
@@ -260,19 +290,15 @@ navigation between related records.</p>
 <div class="section level3">
 <h3 id="define-a-relationship">Define a relationship<a class="anchor" aria-label="anchor" href="#define-a-relationship"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/define_relationship.html">define_relationship</a></span><span class="op">(</span></span>
-<span>  <span class="va">Users</span>,</span>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Users</span><span class="op">$</span><span class="fu">define_relationship</span><span class="op">(</span></span>
 <span>  local_key <span class="op">=</span> <span class="st">"organization_id"</span>,</span>
 <span>  type <span class="op">=</span> <span class="st">"many_to_one"</span>,</span>
 <span>  related_model <span class="op">=</span> <span class="va">Organization</span>,</span>
 <span>  related_key <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>  ref <span class="op">=</span> <span class="st">"organization"</span>,</span>
 <span>  backref <span class="op">=</span> <span class="st">"users"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
-<span><span class="co">#&gt; Table: users</span></span>
-<span><span class="co">#&gt; Columns: id, organization_id, name, age</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 <p>This allows records in <code>Users</code> to access their related
 <code>Organization</code>, and records in <code>Organization</code> to
 access all related <code>Users</code>.</p>
@@ -283,13 +309,13 @@ access all related <code>Users</code>.</p>
 <p>We defined the Organization earlier, but the table itself was nevver
 created. Let’s create our table and give it an Organization to work
 with.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Organization</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
 <span><span class="co">#&gt; Table: organizations</span></span>
 <span><span class="co">#&gt; Columns: id, name</span></span>
 <span><span class="va">Organization</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span>, name <span class="op">=</span> <span class="st">"Widgets, Inc"</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3</span>, name <span class="op">=</span> <span class="st">'Alice'</span>, organization_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">alice</span> <span class="op">=</span> <span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">3</span>, .mode<span class="op">=</span><span class="st">'get'</span><span class="op">)</span></span>
@@ -300,7 +326,7 @@ with.</p>
 <div class="section level3">
 <h3 id="accessing-relationships-through-a-tablemodel">Accessing relationships through a TableModel<a class="anchor" aria-label="anchor" href="#accessing-relationships-through-a-tablemodel"></a>
 </h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">young_orgs</span> <span class="op">&lt;-</span> <span class="va">Organization</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">"users"</span>, <span class="va">age</span> <span class="op">&lt;</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="va">young_orgs</span></span>
 <span><span class="co">#&gt; list()</span></span></code></pre></div>
@@ -320,7 +346,7 @@ function.</p>
 </h3>
 <p>Table-level methods operate on the entire table and are useful for
 custom queries or bulk operations:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>  <span class="st">"users"</span>,</span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -361,7 +387,7 @@ custom queries or bulk operations:</p>
 </h3>
 <p>Record-level methods operate on individual records and are useful for
 instance-specific operations:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>  <span class="st">"users"</span>,</span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>

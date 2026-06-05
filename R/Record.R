@@ -257,55 +257,27 @@ Record <- R6::R6Class(
         # Update the record's data with the new values
         self$data <- utils::modifyList(self$data, update_data)
       }
-      key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
-      ]
-      if (length(key_fields) == 0) {
-        stop("No primary key fields defined in model.")
-      }
-      
+      key_fields <- pk_fields(self$model)
+
       missing_keys <- setdiff(key_fields, names(self$data))
       if (length(missing_keys) > 0) {
         stop("Cannot update without all primary key fields: ",
         paste(missing_keys, collapse = ", "))
       }
-      
+
       non_key_fields <- setdiff(names(update_data), key_fields)
       if (length(non_key_fields) == 0) {
         stop("No non-key fields to update.")
       }
 
-      # Identify JSON/JSONB columns for PostgreSQL
-      json_fields <- character(0)
-      if (self$model$engine$dialect == "postgres") {
-        json_fields <- names(self$model$fields)[vapply(self$model$fields, function(f) {
-          toupper(f$type) %in% c("JSON", "JSONB")
-        }, logical(1))]
-      }
+      # Build SET clause (shared with TableModel$update via build_set_clause)
+      set_clause <- build_set_clause(
+        con,
+        self$model$fields,
+        update_data[non_key_fields],
+        self$model$engine$dialect
+      )
 
-      # Build SET clause with proper JSON serialization
-      set_parts <- vapply(non_key_fields, function(field_name) {
-        val <- update_data[[field_name]]
-
-        # Serialize JSON fields
-        if (field_name %in% json_fields) {
-          if (is.character(val) && length(val) == 1 && jsonlite::validate(val)) {
-            # Already valid JSON string
-            formatted_val <- val
-          } else {
-            # Serialize R objects to JSON
-            formatted_val <- jsonlite::toJSON(val, auto_unbox = TRUE)
-          }
-          quoted_val <- DBI::dbQuoteLiteral(con, as.character(formatted_val))
-        } else {
-          quoted_val <- DBI::dbQuoteLiteral(con, val)
-        }
-
-        paste0(field_name, " = ", quoted_val)
-      }, character(1))
-
-      set_clause <- paste(set_parts, collapse = ", ")
-      
       where_clause <- paste0(
         key_fields, " = ",
         sapply(self$data[key_fields], DBI::dbQuoteLiteral, conn = con),
@@ -332,13 +304,8 @@ Record <- R6::R6Class(
       }
       con <- self$model$get_connection()
 
-      key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
-      ]
-      if (length(key_fields) == 0) {
-        stop("No primary key fields defined in model.")
-      }
-      
+      key_fields <- pk_fields(self$model)
+
       missing_keys <- setdiff(key_fields, names(self$data))
       if (length(missing_keys) > 0) {
         stop("Cannot delete without all primary key fields: ",
@@ -369,14 +336,8 @@ Record <- R6::R6Class(
     #' changes are discarded, and an error is raised if the record cannot be
     #' found.
     refresh = function() {
-      key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
-      ]
-      
-      if (length(key_fields) == 0) {
-        stop("No primary key fields defined in model.")
-      }
-      
+      key_fields <- pk_fields(self$model)
+
       # Create key_args as a list of expressions
       key_args <- lapply(key_fields, function(field) {
         rlang::expr(!!rlang::sym(field) == !!self$data[[field]])

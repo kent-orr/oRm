@@ -137,18 +137,14 @@ get our joins right, or, we could rely on a previously described
 relationship to get the necessary records and apply the curve.
 
 ``` r
-define_relationship(
-    local_model = Classes, 
+Classes$define_relationship(
     local_key = 'id',
     type = 'one_to_many',
-    related_model = Students, 
+    related_model = Students,
     related_key = 'class_id',
     ref = 'students',
     backref = 'class'
 )
-#> <TableModel>
-#> Table: classes
-#> Columns: id, subject, teacher_id
 ```
 
 The possible types are ‘one_to_many’, ‘one_to_one’, ‘many_to_many’, or
@@ -271,8 +267,7 @@ Teachers to TeacherAssignments, and ‘many_to_one’ from
 TeacherAssignments to Classes.
 
 ``` r
-define_relationship(
-    local_model = Teachers, 
+Teachers$define_relationship(
     local_key = 'id',
     type = 'one_to_many',
     related_model = TeacherAssignments,
@@ -280,12 +275,8 @@ define_relationship(
     ref = 'teacher_assignments',
     backref = 'teacher'
 )
-#> <TableModel>
-#> Table: teachers
-#> Columns: id, name
 
-define_relationship(
-    local_model = TeacherAssignments, 
+TeacherAssignments$define_relationship(
     local_key = 'class_id',
     type ='one_to_one',
     related_model = Classes,
@@ -293,9 +284,6 @@ define_relationship(
     ref = 'class',
     backref = 'teacher_assignment'
 )
-#> <TableModel>
-#> Table: teacher_assignments
-#> Columns: id, teacher_id, class_id
 ```
 
 You can now traverse from `Teachers` -\> `TeacherAssignments` -\>

@@ -60,6 +60,14 @@ define_relationship(
 Invisibly returns the local_model (although the model is modified in
 place).
 
+## Details
+
+Most users should prefer the method form,
+\`local_model\$define_relationship(...)\` (see \[TableModel\]), which
+supplies \`local_model\` for you and is discoverable via autocomplete.
+This standalone function is retained for functional/pipe-style use and
+internal wiring (e.g. \[Engine\$reflect()\]).
+
 ## Examples
 
 ``` r

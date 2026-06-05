@@ -225,6 +225,38 @@ test_that(".mode='tbl' handles empty query", {
     engine$close()
 })
 
+test_that("read() preserves column names on single-column tables", {
+    engine <- Engine$new(
+        drv = RSQLite::SQLite(),
+        dbname = ":memory:",
+        persist = TRUE
+    )
+
+    tag <- engine$model(
+        "tags",
+        name = Column("TEXT", primary_key = TRUE, nullable = FALSE)
+    )
+
+    tag$create_table()
+    tag$record(name = "alpha")$create()
+    tag$record(name = "beta")$create()
+
+    got <- tag$read(name == "alpha", .mode = "get")
+    expect_named(got$data, "name")
+    expect_equal(got$data$name, "alpha")
+
+    one <- tag$read(name == "beta", .mode = "one_or_none")
+    expect_named(one$data, "name")
+    expect_equal(one$data$name, "beta")
+
+    all_recs <- tag$read(.mode = "all")
+    expect_equal(length(all_recs), 2)
+    expect_named(all_recs[[1]]$data, "name")
+    expect_equal(all_recs[[1]]$data$name, "alpha")
+
+    engine$close()
+})
+
 test_that("$get, $one_or_none, $all methods work equivalently", {
     engine <- Engine$new(
         drv = RSQLite::SQLite(),

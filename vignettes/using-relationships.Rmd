@@ -93,11 +93,10 @@ That is a beutiful join that finds all students in class 1. Ready for all kinds 
 
 
 ```{r}
-define_relationship(
-    local_model = Classes, 
+Classes$define_relationship(
     local_key = 'id',
     type = 'one_to_many',
-    related_model = Students, 
+    related_model = Students,
     related_key = 'class_id',
     ref = 'students',
     backref = 'class'
@@ -179,8 +178,7 @@ We have two relationships we need to deine now: 'one_to_many' from Teachers to T
 
 
 ```{r}
-define_relationship(
-    local_model = Teachers, 
+Teachers$define_relationship(
     local_key = 'id',
     type = 'one_to_many',
     related_model = TeacherAssignments,
@@ -189,8 +187,7 @@ define_relationship(
     backref = 'teacher'
 )
 
-define_relationship(
-    local_model = TeacherAssignments, 
+TeacherAssignments$define_relationship(
     local_key = 'class_id',
     type ='one_to_one',
     related_model = Classes,
@@ -198,7 +195,7 @@ define_relationship(
     ref = 'class',
     backref = 'teacher_assignment'
 )
-    
+
 ```
 
 You can now traverse from `Teachers` -> `TeacherAssignments` -> `Classes` and back again. TO demonstrate that, we'll make a deck of info cards for a teacher showing each class and the students in each class.

@@ -235,14 +235,14 @@ reflect_columns.postgres <- function(x, tablename, ...) {
         )),
         error = function(e) {
             stop(
-                sprintf("hydrate: could not read table %s (%s).", tablename, conditionMessage(e)),
+                sprintf("reflect: could not read table %s (%s).", tablename, conditionMessage(e)),
                 call. = FALSE
             )
         }
     )
 
     if (NROW(cols) == 0) {
-        stop(sprintf("hydrate: table %s reports no columns.", tablename), call. = FALSE)
+        stop(sprintf("reflect: table %s reports no columns.", tablename), call. = FALSE)
     }
 
     pk <- DBI::dbGetQuery(conn, paste0(

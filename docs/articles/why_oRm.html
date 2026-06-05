@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
-    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/reflecting-tables.html">Reflecting Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -301,18 +301,14 @@ Plants and Measurements. But oRm is not. We’ll now
 <strong>model</strong> a <strong>relationship</strong> between the two
 tables which oRm <strong>objects</strong> will use.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/define_relationship.html">define_relationship</a></span><span class="op">(</span></span>
-<span>    local_model <span class="op">=</span> <span class="va">Plants</span>,</span>
+<code class="sourceCode R"><span><span class="va">Plants</span><span class="op">$</span><span class="fu">define_relationship</span><span class="op">(</span></span>
 <span>    local_key <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>    type <span class="op">=</span> <span class="st">"one_to_many"</span>,</span>
 <span>    related_model <span class="op">=</span> <span class="va">Measurement</span>,</span>
 <span>    related_key <span class="op">=</span> <span class="st">"plant_id"</span>,</span>
 <span>    ref <span class="op">=</span> <span class="st">"measurements"</span>,</span>
 <span>    backref <span class="op">=</span> <span class="st">"plant"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;TableModel&gt;</span></span>
-<span><span class="co">#&gt; Table: plants</span></span>
-<span><span class="co">#&gt; Columns: id, plant_type</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 <p>And after we’ve made that mapping, we can find all the related
 measurements for a specific plant.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">

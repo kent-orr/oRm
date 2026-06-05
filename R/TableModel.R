@@ -32,7 +32,11 @@ NULL
 #'     \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
 #'     \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
 #'     \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
+#'     \item{\code{create(..., .data = list())}}{Insert a new row (set-level counterpart to \code{Record$create()}).}
 #'     \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
+#'     \item{\code{update(..., .all = FALSE, .data = list())}}{Update matching rows; bare exprs are the WHERE filter, named args are the SET values.}
+#'     \item{\code{delete(..., .all = FALSE)}}{Delete matching rows; bare exprs are the WHERE filter.}
+#'     \item{\code{define_relationship(local_key, type, related_model, related_key, ref = NULL, backref = NULL)}}{Define a relationship from this model to a related model (method form of \code{define_relationship()}).}
 #'     \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
 #'     \item{\code{print()}}{Print a concise summary of the model, including its fields.}
 #' }
@@ -272,6 +276,133 @@ TableModel <- R6::R6Class(
     },
 
     #' @description
+    #' Insert a new row into the table.
+    #'
+    #' Convenience wrapper over `model$record(...)$create()`: builds a Record
+    #' from the supplied values and immediately persists it. This is the
+    #' set-level counterpart to `Record$create()`.
+    #' @param ... Named values for the new row.
+    #' @param .data A named list of field values (alternative to `...`).
+    #' @return The persisted Record (carrying any server-generated keys).
+    #' @examples
+    #' \donttest{
+    #' User$create(id = 1L, name = "Kent")
+    #' }
+    create = function(..., .data = list()) {
+        self$record(..., .data = .data)$create()
+    },
+
+    #' @description
+    #' Update matching rows in the table (set-level `UPDATE ... WHERE`).
+    #'
+    #' Bare expressions are treated as the WHERE filter (exactly like `read()`),
+    #' while named arguments are treated as the SET assignments (like
+    #' `create()`/`record()`). For example, `User$update(id == 1, name = "Kent")`
+    #' sets `name` on the row(s) where `id == 1`.
+    #' @param ... A mix of unquoted filter expressions (WHERE) and named values
+    #'     (SET).
+    #' @param .all Logical. Must be `TRUE` to update every row when no filter is
+    #'     supplied; guards against accidental whole-table updates.
+    #' @param .data A named list of SET values (combined with named `...`, which
+    #'     takes precedence).
+    #' @return The number of rows affected, invisibly.
+    #' @note When a filter is supplied, this resolves it with two round-trips:
+    #'     first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    #'     filter machinery as `read()`), then an `UPDATE ... WHERE pk IN (...)`.
+    #'     This reuses the query builder instead of re-translating NSE filters to
+    #'     raw SQL, at the cost of being non-atomic: rows that start matching the
+    #'     filter between the two statements are not updated. Wrap the call in a
+    #'     transaction if you need isolation.
+    #' @examples
+    #' \donttest{
+    #' User$update(id == 1, name = "Kent", age = 35)
+    #' }
+    update = function(..., .all = FALSE, .data = list()) {
+        if (isTRUE(self$engine$read_only)) {
+            stop("Engine is read-only; cannot update records.", call. = FALSE)
+        }
+        quos <- rlang::enquos(...)
+        nms <- names(quos)
+        if (is.null(nms)) nms <- rep("", length(quos))
+        is_set <- nzchar(nms)
+        where_quos <- quos[!is_set]
+        set_vals <- utils::modifyList(.data, lapply(quos[is_set], rlang::eval_tidy))
+
+        if (length(set_vals) == 0) {
+            stop("No values to set; pass at least one `name = value` assignment.", call. = FALSE)
+        }
+        if (length(where_quos) == 0 && !isTRUE(.all)) {
+            stop("Refusing to update all rows; pass a filter or .all = TRUE.", call. = FALSE)
+        }
+
+        con <- self$get_connection()
+        set_clause <- build_set_clause(con, self$fields, set_vals, self$engine$dialect)
+        tbl_name <- self$engine$format_tablename(self$tablename)
+
+        if (length(where_quos) == 0) {
+            sql <- sprintf("UPDATE %s SET %s", tbl_name, set_clause)
+        } else {
+            # Two round-trips: resolve the NSE filter to primary keys via read()
+            # (reusing the dbplyr query builder), then target those keys directly.
+            # Non-atomic by design; see @note. Wrap in a transaction for isolation.
+            key_fields <- pk_fields(self)
+            keys <- self$read(!!!where_quos, .mode = "data.frame", .limit = NULL)[key_fields]
+            if (nrow(keys) == 0) return(invisible(0L))
+            where_clause <- build_key_where(con, key_fields, keys)
+            sql <- sprintf("UPDATE %s SET %s WHERE %s", tbl_name, set_clause, where_clause)
+        }
+        invisible(self$engine$execute(sql))
+    },
+
+    #' @description
+    #' Delete matching rows from the table (set-level `DELETE ... WHERE`).
+    #'
+    #' Bare expressions are treated as the WHERE filter, exactly like `read()`.
+    #' This is the set-level counterpart to `Record$delete()`.
+    #' @param ... Unquoted filter expressions (WHERE).
+    #' @param .all Logical. Must be `TRUE` to delete every row when no filter is
+    #'     supplied; guards against accidental whole-table deletes.
+    #' @return The number of rows affected, invisibly.
+    #' @note When a filter is supplied, this resolves it with two round-trips:
+    #'     first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    #'     filter machinery as `read()`), then a `DELETE ... WHERE pk IN (...)`.
+    #'     This reuses the query builder instead of re-translating NSE filters to
+    #'     raw SQL, at the cost of being non-atomic: rows that start matching the
+    #'     filter between the two statements are not deleted. Wrap the call in a
+    #'     transaction if you need isolation.
+    #' @examples
+    #' \donttest{
+    #' User$delete(id == 1)
+    #' User$delete(.all = TRUE)
+    #' }
+    delete = function(..., .all = FALSE) {
+        if (isTRUE(self$engine$read_only)) {
+            stop("Engine is read-only; cannot delete records.", call. = FALSE)
+        }
+        where_quos <- rlang::enquos(...)
+        if (length(where_quos) == 0 && !isTRUE(.all)) {
+            stop("Refusing to delete all rows; pass a filter or .all = TRUE.", call. = FALSE)
+        }
+
+        con <- self$get_connection()
+        tbl_name <- self$engine$format_tablename(self$tablename)
+
+        if (length(where_quos) == 0) {
+            sql <- sprintf("DELETE FROM %s", tbl_name)
+        } else {
+            # Two round-trips: resolve the NSE filter to primary keys via read()
+            # (reusing the dbplyr query builder), then target those keys directly.
+            # Non-atomic by design; see @note. Wrap in a transaction for isolation.
+            key_fields <- pk_fields(self)
+            keys <- self$read(!!!where_quos, .mode = "data.frame", .limit = NULL)[key_fields]
+            if (nrow(keys) == 0) return(invisible(0L))
+            where_clause <- build_key_where(con, key_fields, keys)
+            sql <- sprintf("DELETE FROM %s WHERE %s", tbl_name, where_clause)
+        }
+        invisible(self$engine$execute(sql))
+    },
+
+    #' @description
     #' Generate a dbplyr tbl() object to be consumed by the model.
     tbl = function() {
         con = self$get_connection()
@@ -415,17 +546,17 @@ TableModel <- R6::R6Class(
 
         if (.mode == "get") {
         if (nrow(rows) != 1) stop("Expected exactly one row, got: ", nrow(rows))
-        return(create_record(rows[1, , drop = TRUE]))
+        return(create_record(rows[1, , drop = FALSE]))
         }
 
         if (.mode == "one_or_none") {
         if (nrow(rows) > 1) stop("Expected zero or one row, got multiple")
-        if (nrow(rows) == 1) return(create_record(rows[1, , drop = TRUE]))
+        if (nrow(rows) == 1) return(create_record(rows[1, , drop = FALSE]))
         return(NULL)
         }
 
         # .mode == "all"
-        lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = TRUE]))
+        lapply(seq_len(nrow(rows)), function(i) create_record(rows[i, , drop = FALSE]))
     },
 
     #' @description
@@ -523,6 +654,35 @@ TableModel <- R6::R6Class(
 
         rel$related_model$read(..., .mode = mode)
 
+    },
+
+    #' @description
+    #' Define a relationship from this model to a related model.
+    #'
+    #' Method form of [define_relationship()] with this model supplied as the
+    #' `local_model`. Modifies both models in place (R6 semantics); the related
+    #' model gains the reverse relationship unless `backref = FALSE`.
+    #' @param local_key The key in this model that relates to `related_key`.
+    #' @param type The relationship type. One of 'one_to_one', 'one_to_many',
+    #'     'many_to_one', or 'many_to_many'.
+    #' @param related_model The model being related to.
+    #' @param related_key The key in the related model that `local_key` relates to.
+    #' @param ref Name for this relationship on this model. Defaults to the
+    #'     lowercase related table name.
+    #' @param backref Name for the reverse relationship on the related model.
+    #'     Defaults to the lowercase local table name; `FALSE` skips it.
+    #' @return The TableModel object, invisibly.
+    #' @seealso [define_relationship()], [TableModel$relationship()]
+    #' @examples
+    #' \donttest{
+    #' User$define_relationship("id", "one_to_many", Post, "user_id",
+    #'                          ref = "posts", backref = "user")
+    #' }
+    define_relationship = function(local_key, type, related_model, related_key,
+                                   ref = NULL, backref = NULL) {
+        define_relationship(self, local_key, type, related_model, related_key,
+                            ref = ref, backref = backref)
+        invisible(self)
     },
 
     #' @description

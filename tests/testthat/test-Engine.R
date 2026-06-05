@@ -307,12 +307,18 @@ test_that("Engine stores schema and passes it to TableModel", {
 
   expect_equal(engine$schema, "analytics")
 
-  model <- engine$model("users", id = Column("INTEGER", primary_key = TRUE))
+  # SQLite ignores schema qualification and warns exactly once.
+  expect_warning(
+    model <- engine$model("users", id = Column("INTEGER", primary_key = TRUE)),
+    "does not support schema qualification"
+  )
 
   expect_s3_class(model, "TableModel")
   expect_equal(model$schema, "analytics")
   # For this test, we don't care about the exact tablename format - that's dialect-specific
   expect_true(grepl("users", model$tablename))
+
+  engine$close()
 })
 
 
@@ -368,6 +374,8 @@ test_that("with.Engine executes successful transactions", {
   # Verify the record was actually inserted
   saved_record <- model$read(id == 1)
   expect_equal(saved_record[[1]]$data$name, "Alice")
+
+  engine$close()
 })
 
 test_that("with.Engine rolls back failed transactions", {
@@ -386,17 +394,22 @@ test_that("with.Engine rolls back failed transactions", {
   
   model$create_table()
   
-  # Test
-  expect_error(
-    with.Engine(engine, {
-      model$record(id = 1, name = "Alice")$create()
-      model$record(id = 2, name = NULL)$create()  # This should fail
-    })
+  # Test: with.Engine warns about the rollback, then re-raises the error.
+  expect_warning(
+    expect_error(
+      with.Engine(engine, {
+        model$record(id = 1, name = "Alice")$create()
+        model$record(id = 2, name = NULL)$create()  # This should fail
+      })
+    ),
+    "Transaction failed, rolling back"
   )
   
   # Verify that no records were inserted due to rollback
   all_records <- model$read()
   expect_equal(length(all_records), 0)
+
+  engine$close()
 })
 
 test_that("with.Engine maintains transaction state correctly", {
@@ -407,13 +420,15 @@ test_that("with.Engine maintains transaction state correctly", {
     persist = TRUE
   )
   
-  # Test
-  tryCatch(
-    with.Engine(engine, {
-      expect_true(engine$get_transaction_state())
-      stop("Forced error")
-    }),
-    error = function(e) {}
+  # Test: the forced error triggers a rollback warning before propagating.
+  suppressWarnings(
+    tryCatch(
+      with.Engine(engine, {
+        expect_true(engine$get_transaction_state())
+        stop("Forced error")
+      }),
+      error = function(e) {}
+    )
   )
   
   expect_false(engine$get_transaction_state())
@@ -423,6 +438,8 @@ test_that("with.Engine maintains transaction state correctly", {
   })
 
   expect_false(engine$get_transaction_state())
+
+  engine$close()
 })
 
 test_that("dialect detected when driver passed as unnamed positional argument", {

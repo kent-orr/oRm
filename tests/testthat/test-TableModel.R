@@ -314,3 +314,147 @@ test_that("create_table(overwrite=TRUE, ask=FALSE) bypasses the prompt", {
   expect_no_error(Model$create_table(overwrite = TRUE, ask = FALSE))
   expect_false(readline_called)
 })
+
+# --- Set-level CRUD (TableModel$create/update/delete) ---------------------
+
+# Build an engine + seeded model for the set-level CRUD tests.
+setup_crud_model <- function(read_only = FALSE) {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE,
+    .read_only = read_only
+  )
+  Model <- engine$model(
+    "test_set_crud",
+    id   = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    name = Column("TEXT"),
+    age  = Column("INTEGER")
+  )
+  list(engine = engine, model = Model)
+}
+
+seed_rows <- function(Model) {
+  Model$record(id = 1L, name = "Kent",  age = 34L)$create()
+  Model$record(id = 2L, name = "Dylan", age = 25L)$create()
+  Model$record(id = 3L, name = "Ada",   age = 36L)$create()
+}
+
+test_that("TableModel$create() inserts a row and returns a Record", {
+  ctx <- setup_crud_model()
+  on.exit(ctx$engine$close())
+  ctx$model$create_table()
+
+  rec <- ctx$model$create(id = 1L, name = "Kent", age = 34L)
+  expect_s3_class(rec, "Record")
+  expect_equal(rec$data$name, "Kent")
+
+  # Parity with record(...)$create()
+  rec2 <- ctx$model$record(id = 2L, name = "Dylan", age = 25L)$create()
+  got <- ctx$model$read(.mode = "data.frame")
+  expect_setequal(got$id, c(1L, 2L))
+})
+
+test_that("TableModel$update() applies NSE split (bare = WHERE, named = SET)", {
+  ctx <- setup_crud_model()
+  on.exit(ctx$engine$close())
+  ctx$model$create_table()
+  seed_rows(ctx$model)
+
+  n <- ctx$model$update(id == 1, name = "Kent O", age = 35L)
+  expect_equal(n, 1L)
+
+  row1 <- ctx$model$read(id == 1, .mode = "data.frame")
+  expect_equal(row1$name, "Kent O")
+  expect_equal(row1$age, 35L)
+
+  # Unaffected rows are untouched
+  others <- ctx$model$read(id != 1, .mode = "data.frame")
+  expect_setequal(others$name, c("Dylan", "Ada"))
+
+  # `name == "x"` would be a filter, not a SET — prove the split:
+  # set age on the row WHERE name == "Ada"
+  n2 <- ctx$model$update(name == "Ada", age = 99L)
+  expect_equal(n2, 1L)
+  expect_equal(ctx$model$read(name == "Ada", .mode = "data.frame")$age, 99L)
+})
+
+test_that("TableModel$delete() removes only matching rows", {
+  ctx <- setup_crud_model()
+  on.exit(ctx$engine$close())
+  ctx$model$create_table()
+  seed_rows(ctx$model)
+
+  n <- ctx$model$delete(age < 30)
+  expect_equal(n, 1L)
+  remaining <- ctx$model$read(.mode = "data.frame")
+  expect_setequal(remaining$name, c("Kent", "Ada"))
+})
+
+test_that("filterless update/delete are guarded but .all = TRUE proceeds", {
+  ctx <- setup_crud_model()
+  on.exit(ctx$engine$close())
+  ctx$model$create_table()
+  seed_rows(ctx$model)
+
+  expect_error(ctx$model$update(age = 0L), "Refusing to update all rows")
+  expect_error(ctx$model$delete(), "Refusing to delete all rows")
+
+  expect_equal(ctx$model$update(age = 0L, .all = TRUE), 3L)
+  expect_true(all(ctx$model$read(.mode = "data.frame")$age == 0L))
+
+  expect_equal(ctx$model$delete(.all = TRUE), 3L)
+  expect_equal(nrow(ctx$model$read(.mode = "data.frame")), 0L)
+})
+
+test_that("update() requires at least one SET value", {
+  ctx <- setup_crud_model()
+  on.exit(ctx$engine$close())
+  ctx$model$create_table()
+  seed_rows(ctx$model)
+
+  expect_error(ctx$model$update(id == 1), "No values to set")
+})
+
+test_that("set-level update/delete error without a primary key", {
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  on.exit(engine$close())
+  Model <- engine$model(
+    "test_no_pk",
+    name = Column("TEXT"),
+    age  = Column("INTEGER")
+  )
+  Model$create_table()
+  Model$record(name = "Kent", age = 34L)$create()
+
+  expect_error(Model$update(name == "Kent", age = 1L), "primary key")
+  expect_error(Model$delete(name == "Kent"), "primary key")
+})
+
+test_that("set-level writes are blocked on a read-only engine", {
+  # Seed with a writable engine first, then reopen read-only on the same file.
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path), add = TRUE)
+
+  w <- Engine$new(drv = RSQLite::SQLite(), dbname = path, persist = TRUE)
+  Wm <- w$model(
+    "test_ro",
+    id   = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT")
+  )
+  Wm$create_table()
+  Wm$record(id = 1L, name = "Kent")$create()
+  w$close()
+
+  ro <- Engine$new(drv = RSQLite::SQLite(), dbname = path, persist = TRUE, .read_only = TRUE)
+  on.exit(ro$close(), add = TRUE)
+  Rm <- ro$model(
+    "test_ro",
+    id   = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT")
+  )
+
+  expect_error(Rm$create(id = 2L, name = "Ghost"), "read-only")
+  expect_error(Rm$update(id == 1, name = "X"), "read-only")
+  expect_error(Rm$delete(id == 1), "read-only")
+})

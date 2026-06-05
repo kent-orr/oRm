@@ -1,12 +1,12 @@
-# Hydrating Models from Existing Tables
+# Reflecting Models from Existing Tables
 
 When a database already exists, `oRm` can introspect its tables and
 return ready-to-use `TableModel` objects — no need to re-declare every
-column by hand. This is called *hydration*.
+column by hand. This is called *reflection*.
 
-## Single-table hydration with `hydrate()`
+## Single-table reflection with `reflect()`
 
-`engine$hydrate()` inspects one table and returns a `TableModel`:
+`engine$reflect()` inspects one table and returns a `TableModel`:
 
 ``` r
 library(oRm)
@@ -18,13 +18,13 @@ engine <- Engine$new(
 )
 
 # Reflect every column of the existing "users" table
-Users <- engine$hydrate("users")
+Users <- engine$reflect("users")
 names(Users$fields)
 #> [1] "id" "name" "email" "created_at"
 
 # Narrow the model with include / exclude
-Users <- engine$hydrate("users", include = c("id", "name", "email"))
-Users <- engine$hydrate("users", exclude = c("password_hash", "internal_notes"))
+Users <- engine$reflect("users", include = c("id", "name", "email"))
+Users <- engine$reflect("users", exclude = c("password_hash", "internal_notes"))
 
 Users$read(.mode = "data.frame")
 ```
@@ -36,7 +36,7 @@ Users$read(.mode = "data.frame")
 | Default (all) | Column names and best-effort types only |
 | **PostgreSQL** | Canonical types, primary keys, nullability, column defaults, and foreign keys |
 
-With PostgreSQL, `hydrate()` captures:
+With PostgreSQL, `reflect()` captures:
 
 - **Canonical types** — e.g. `integer`, `text`,
   `timestamp with time zone`
@@ -62,13 +62,13 @@ that don’t reflect one, override a type, or add a
 
 ``` r
 # Supply the PK explicitly on a non-PostgreSQL backend
-Users <- engine$hydrate(
+Users <- engine$reflect(
   "users",
   id = Column("INTEGER", primary_key = TRUE)
 )
 
 # Attach a custom method alongside the reflected columns
-Users <- engine$hydrate(
+Users <- engine$reflect(
   "users",
   display_name = Method("table", function(self) {
     self$read(.mode = "data.frame")$name
@@ -76,26 +76,26 @@ Users <- engine$hydrate(
 )
 ```
 
-## Schema-wide hydration with `hydrate_schema()`
+## Schema-wide reflection with `reflect_schema()`
 
-`engine$hydrate_schema()` hydrates every table in a schema at once and
+`engine$reflect_schema()` reflects every table in a schema at once and
 automatically wires the `many_to_one` / `one_to_many` relationships
 implied by the reflected foreign keys.
 
 ``` r
-# Hydrate all tables in the engine's default schema
-models <- engine$hydrate_schema()
+# Reflect all tables in the engine's default schema
+models <- engine$reflect_schema()
 
 # Or restrict to a subset
-models <- engine$hydrate_schema(tables = c("users", "posts", "comments"))
+models <- engine$reflect_schema(tables = c("users", "posts", "comments"))
 
 # Exclude tables you don't need
-models <- engine$hydrate_schema(exclude = c("schema_migrations", "audit_log"))
+models <- engine$reflect_schema(exclude = c("schema_migrations", "audit_log"))
 ```
 
 ### Accessing models
 
-`hydrate_schema()` returns a named list keyed by bare table name:
+`reflect_schema()` returns a named list keyed by bare table name:
 
 ``` r
 posts  <- models$posts
@@ -104,7 +104,7 @@ users  <- models$users
 
 ### Auto-wired relationships
 
-Every reflected `ForeignKey` whose target was also hydrated is turned
+Every reflected `ForeignKey` whose target was also reflected is turned
 into a `many_to_one` relationship (with the reverse `one_to_many`
 backref):
 
@@ -119,7 +119,7 @@ length(all_posts)
 #> [1] 12
 ```
 
-Foreign keys pointing at tables outside the hydrated set are skipped
+Foreign keys pointing at tables outside the reflected set are skipped
 with a warning. You can always wire those manually afterwards:
 
 ``` r
@@ -137,7 +137,7 @@ models$posts$define_relationship(
 
 | Argument | Default | Description |
 |----|----|----|
-| `tables` | `NULL` | Tables to hydrate; `NULL` = all in schema |
+| `tables` | `NULL` | Tables to reflect; `NULL` = all in schema |
 | `exclude` | `NULL` | Table names to skip |
 | `.schema` | engine schema | Schema to inspect |
 | `wire_relationships` | `TRUE` | Auto-wire FK-based relationships |
@@ -165,5 +165,5 @@ The generated SQL qualifies the target correctly:
 `REFERENCES "audit"."users" ("id")`.
 
 PostgreSQL reflection automatically schema-qualifies foreign keys when
-the target lives in a different schema, so `hydrate_schema()` handles
+the target lives in a different schema, so `reflect_schema()` handles
 cross-schema FK wiring transparently.
