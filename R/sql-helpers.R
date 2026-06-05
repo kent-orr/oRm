@@ -45,6 +45,9 @@ build_set_clause <- function(con, fields, values, dialect = NULL) {
 
 #' Primary-key field names for a model, erroring if none are defined
 #'
+#' Shared by row-level (`Record`) and set-level (`TableModel`) write/refresh
+#' operations, all of which key on the primary key.
+#'
 #' @param model A TableModel.
 #' @return Character vector of primary-key column names.
 #' @noRd
@@ -53,7 +56,7 @@ pk_fields <- function(model) {
     keys <- names(fields)[vapply(fields, function(x) isTRUE(x$primary_key), logical(1))]
     if (length(keys) == 0) {
         stop(
-            "No primary key fields defined in model; set-level update/delete requires a primary key.",
+            "No primary key fields defined in model; update/delete/refresh requires a primary key.",
             call. = FALSE
         )
     }

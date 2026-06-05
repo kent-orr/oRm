@@ -257,19 +257,14 @@ Record <- R6::R6Class(
         # Update the record's data with the new values
         self$data <- utils::modifyList(self$data, update_data)
       }
-      key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
-      ]
-      if (length(key_fields) == 0) {
-        stop("No primary key fields defined in model.")
-      }
-      
+      key_fields <- pk_fields(self$model)
+
       missing_keys <- setdiff(key_fields, names(self$data))
       if (length(missing_keys) > 0) {
         stop("Cannot update without all primary key fields: ",
         paste(missing_keys, collapse = ", "))
       }
-      
+
       non_key_fields <- setdiff(names(update_data), key_fields)
       if (length(non_key_fields) == 0) {
         stop("No non-key fields to update.")
@@ -309,13 +304,8 @@ Record <- R6::R6Class(
       }
       con <- self$model$get_connection()
 
-      key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
-      ]
-      if (length(key_fields) == 0) {
-        stop("No primary key fields defined in model.")
-      }
-      
+      key_fields <- pk_fields(self$model)
+
       missing_keys <- setdiff(key_fields, names(self$data))
       if (length(missing_keys) > 0) {
         stop("Cannot delete without all primary key fields: ",
@@ -346,14 +336,8 @@ Record <- R6::R6Class(
     #' changes are discarded, and an error is raised if the record cannot be
     #' found.
     refresh = function() {
-      key_fields <- names(self$model$fields)[
-        vapply(self$model$fields, function(x) isTRUE(x$primary_key), logical(1))
-      ]
-      
-      if (length(key_fields) == 0) {
-        stop("No primary key fields defined in model.")
-      }
-      
+      key_fields <- pk_fields(self$model)
+
       # Create key_args as a list of expressions
       key_args <- lapply(key_fields, function(field) {
         rlang::expr(!!rlang::sym(field) == !!self$data[[field]])

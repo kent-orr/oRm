@@ -28,6 +28,22 @@ Key features:
 \note{
 Errors if the table's schema does not exist.
 
+When a filter is supplied, this resolves it with two round-trips:
+    first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    filter machinery as `read()`), then an `UPDATE ... WHERE pk IN (...)`.
+    This reuses the query builder instead of re-translating NSE filters to
+    raw SQL, at the cost of being non-atomic: rows that start matching the
+    filter between the two statements are not updated. Wrap the call in a
+    transaction if you need isolation.
+
+When a filter is supplied, this resolves it with two round-trips:
+    first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    filter machinery as `read()`), then a `DELETE ... WHERE pk IN (...)`.
+    This reuses the query builder instead of re-translating NSE filters to
+    raw SQL, at the cost of being non-atomic: rows that start matching the
+    filter between the two statements are not deleted. Wrap the call in a
+    transaction if you need isolation.
+
 Throws an error if zero or multiple records are found.
 
 Throws an error if multiple records are found.

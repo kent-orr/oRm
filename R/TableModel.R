@@ -306,6 +306,13 @@ TableModel <- R6::R6Class(
     #' @param .data A named list of SET values (combined with named `...`, which
     #'     takes precedence).
     #' @return The number of rows affected, invisibly.
+    #' @note When a filter is supplied, this resolves it with two round-trips:
+    #'     first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    #'     filter machinery as `read()`), then an `UPDATE ... WHERE pk IN (...)`.
+    #'     This reuses the query builder instead of re-translating NSE filters to
+    #'     raw SQL, at the cost of being non-atomic: rows that start matching the
+    #'     filter between the two statements are not updated. Wrap the call in a
+    #'     transaction if you need isolation.
     #' @examples
     #' \donttest{
     #' User$update(id == 1, name = "Kent", age = 35)
@@ -335,6 +342,9 @@ TableModel <- R6::R6Class(
         if (length(where_quos) == 0) {
             sql <- sprintf("UPDATE %s SET %s", tbl_name, set_clause)
         } else {
+            # Two round-trips: resolve the NSE filter to primary keys via read()
+            # (reusing the dbplyr query builder), then target those keys directly.
+            # Non-atomic by design; see @note. Wrap in a transaction for isolation.
             key_fields <- pk_fields(self)
             keys <- self$read(!!!where_quos, .mode = "data.frame", .limit = NULL)[key_fields]
             if (nrow(keys) == 0) return(invisible(0L))
@@ -353,6 +363,13 @@ TableModel <- R6::R6Class(
     #' @param .all Logical. Must be `TRUE` to delete every row when no filter is
     #'     supplied; guards against accidental whole-table deletes.
     #' @return The number of rows affected, invisibly.
+    #' @note When a filter is supplied, this resolves it with two round-trips:
+    #'     first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    #'     filter machinery as `read()`), then a `DELETE ... WHERE pk IN (...)`.
+    #'     This reuses the query builder instead of re-translating NSE filters to
+    #'     raw SQL, at the cost of being non-atomic: rows that start matching the
+    #'     filter between the two statements are not deleted. Wrap the call in a
+    #'     transaction if you need isolation.
     #' @examples
     #' \donttest{
     #' User$delete(id == 1)
@@ -373,6 +390,9 @@ TableModel <- R6::R6Class(
         if (length(where_quos) == 0) {
             sql <- sprintf("DELETE FROM %s", tbl_name)
         } else {
+            # Two round-trips: resolve the NSE filter to primary keys via read()
+            # (reusing the dbplyr query builder), then target those keys directly.
+            # Non-atomic by design; see @note. Wrap in a transaction for isolation.
             key_fields <- pk_fields(self)
             keys <- self$read(!!!where_quos, .mode = "data.frame", .limit = NULL)[key_fields]
             if (nrow(keys) == 0) return(invisible(0L))
