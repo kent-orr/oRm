@@ -234,8 +234,7 @@ Engine <- R6::R6Class(
         #' )
         #' }
         model = function(tablename, ..., .data = list(), .schema = NULL, .default_mode = "all") {
-            if (is.null(.schema)) .schema <- self$schema
-            tablename <- qualify(self, tablename, .schema = .schema)
+            # Qualification is handled once, inside TableModel$new().
             TableModel$new(tablename = tablename, engine = self, ..., .data = .data, .schema = .schema, .default_mode = .default_mode)
         },
 
@@ -268,8 +267,10 @@ Engine <- R6::R6Class(
         #' }
         hydrate = function(tablename, ..., include = NULL, exclude = NULL, .schema = NULL, .default_mode = "all") {
             if (is.null(.schema)) .schema <- self$schema
-            tablename <- qualify(self, tablename, .schema = .schema)
-            cols <- reflect_columns(self, tablename)
+            # Reflection needs the qualified name; TableModel$new() re-qualifies
+            # the raw name itself, so pass the unqualified tablename onward.
+            qualified <- qualify(self, tablename, .schema = .schema)
+            cols <- reflect_columns(self, qualified)
             cols <- filter_reflected_columns(cols, include = include, exclude = exclude)
             if (length(cols) == 0) {
                 stop("hydrate: no columns remain after include/exclude filtering.", call. = FALSE)
