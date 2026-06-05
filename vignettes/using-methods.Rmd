@@ -136,8 +136,8 @@ Students$create_table(overwrite = TRUE)
 With both tables in place, define the relationship so records can find their grades:
 
 ```{r}
-define_relationship(
-    Students, 'id', 'one_to_many', Grades, 'student_id',
+Students$define_relationship(
+    'id', 'one_to_many', Grades, 'student_id',
     ref = 'grades',
     backref = 'student'
 )

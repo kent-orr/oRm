@@ -149,8 +149,8 @@ Key arguments:
 | `wire_relationships` | `TRUE` | Auto-wire FK-based relationships |
 
 Foreign keys pointing at tables outside the hydrated set are silently skipped
-with a warning. You can always call `define_relationship()` manually afterwards
-to wire additional relationships.
+with a warning. You can always call `model$define_relationship()` manually
+afterwards to wire additional relationships.
 
 ## Using with.Engine
 
