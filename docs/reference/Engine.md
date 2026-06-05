@@ -21,7 +21,7 @@ Key features:
 
 \[Engine\$model()\], \[reflect_columns()\]
 
-\[Engine\$hydrate()\], \[define_relationship()\], \[reflect_tables()\]
+\[Engine\$reflect()\], \[define_relationship()\], \[reflect_tables()\]
 
 \[TableModel\$print()\], \[Record\$print()\].
 
@@ -75,9 +75,9 @@ Key features:
 
 - [`Engine$model()`](#method-Engine-model)
 
-- [`Engine$hydrate()`](#method-Engine-hydrate)
+- [`Engine$reflect()`](#method-Engine-reflect)
 
-- [`Engine$hydrate_schema()`](#method-Engine-hydrate_schema)
+- [`Engine$reflect_schema()`](#method-Engine-reflect_schema)
 
 - [`Engine$set_transaction_state()`](#method-Engine-set_transaction_state)
 
@@ -339,7 +339,7 @@ A new TableModel object
 
 ------------------------------------------------------------------------
 
-### Method `hydrate()`
+### Method `reflect()`
 
 Build a TableModel by introspecting an existing database table.
 
@@ -352,7 +352,7 @@ defaults, and foreign keys (as \[ForeignKey\] objects).
 
 #### Usage
 
-    Engine$hydrate(
+    Engine$reflect(
       tablename,
       ...,
       include = NULL,
@@ -365,7 +365,7 @@ defaults, and foreign keys (as \[ForeignKey\] objects).
 
 - `tablename`:
 
-  Name of the existing table to hydrate.
+  Name of the existing table to reflect.
 
 - `...`:
 
@@ -397,29 +397,29 @@ A new TableModel object.
 
     \donttest{
     # Given a table "users" that already exists in the database:
-    Users <- engine$hydrate("users")
-    Users <- engine$hydrate("users", include = c("id", "name"))
-    Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+    Users <- engine$reflect("users")
+    Users <- engine$reflect("users", include = c("id", "name"))
+    Users <- engine$reflect("users", exclude = c("hash", "configuration"))
     }
 
 ------------------------------------------------------------------------
 
-### Method `hydrate_schema()`
+### Method `reflect_schema()`
 
-Hydrate several tables from a schema at once and wire up the
+Reflect several tables from a schema at once and wire up the
 relationships implied by their foreign keys.
 
-Each table is hydrated via \[Engine\$hydrate()\]; afterwards, every
-reflected \[ForeignKey\] whose target is also among the hydrated models
+Each table is reflected via \[Engine\$reflect()\]; afterwards, every
+reflected \[ForeignKey\] whose target is also among the reflected models
 is turned into a \`many_to_one\` relationship (with the reverse
 \`one_to_many\` backref) using \[define_relationship()\]. Foreign keys
-pointing at tables outside the hydrated set are skipped with a warning.
+pointing at tables outside the reflected set are skipped with a warning.
 This is most useful with the PostgreSQL dialect, whose reflection
 captures foreign keys.
 
 #### Usage
 
-    Engine$hydrate_schema(
+    Engine$reflect_schema(
       tables = NULL,
       ...,
       .schema = NULL,
@@ -432,18 +432,18 @@ captures foreign keys.
 
 - `tables`:
 
-  Optional character vector limiting which tables to hydrate. When
-  \`NULL\`, all tables in the schema are hydrated (see
+  Optional character vector limiting which tables to reflect. When
+  \`NULL\`, all tables in the schema are reflected (see
   \[reflect_tables()\]).
 
 - `...`:
 
   Additional \`Column\`, \`ForeignKey\`, or \`Method\` objects passed to
-  every \`hydrate()\` call (overrides of reflected columns).
+  every \`reflect()\` call (overrides of reflected columns).
 
 - `.schema`:
 
-  Character. Schema to hydrate. Defaults to the engine schema.
+  Character. Schema to reflect. Defaults to the engine schema.
 
 - `exclude`:
 
@@ -465,8 +465,8 @@ A named list of TableModel objects, keyed by bare table name.
 #### Examples
 
     \donttest{
-    models <- engine$hydrate_schema()
-    models <- engine$hydrate_schema(tables = c("users", "posts"))
+    models <- engine$reflect_schema()
+    models <- engine$reflect_schema(tables = c("users", "posts"))
     posts <- models$posts
     }
 
@@ -602,27 +602,27 @@ engine$model(
 # }
 
 ## ------------------------------------------------
-## Method `Engine$hydrate`
+## Method `Engine$reflect`
 ## ------------------------------------------------
 
 # \donttest{
 # Given a table "users" that already exists in the database:
-Users <- engine$hydrate("users")
+Users <- engine$reflect("users")
 #> Error: object 'engine' not found
-Users <- engine$hydrate("users", include = c("id", "name"))
+Users <- engine$reflect("users", include = c("id", "name"))
 #> Error: object 'engine' not found
-Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+Users <- engine$reflect("users", exclude = c("hash", "configuration"))
 #> Error: object 'engine' not found
 # }
 
 ## ------------------------------------------------
-## Method `Engine$hydrate_schema`
+## Method `Engine$reflect_schema`
 ## ------------------------------------------------
 
 # \donttest{
-models <- engine$hydrate_schema()
+models <- engine$reflect_schema()
 #> Error: object 'engine' not found
-models <- engine$hydrate_schema(tables = c("users", "posts"))
+models <- engine$reflect_schema(tables = c("users", "posts"))
 #> Error: object 'engine' not found
 posts <- models$posts
 #> Error: object 'models' not found

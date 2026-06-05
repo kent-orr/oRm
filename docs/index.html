@@ -50,7 +50,7 @@
     <li><a class="dropdown-item" href="articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="articles/using-records.html">Using Records</a></li>
-    <li><a class="dropdown-item" href="articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
+    <li><a class="dropdown-item" href="articles/reflecting-tables.html">Reflecting Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -224,18 +224,18 @@
 <p>Combine with <code>.read_only = TRUE</code> for safe, scoped access to production tables.</p>
 </div>
 <div class="section level3">
-<h3 id="id_9-hydrating-models-from-existing-tables">9. Hydrating Models From Existing Tables<a class="anchor" aria-label="anchor" href="#id_9-hydrating-models-from-existing-tables"></a>
+<h3 id="id_9-reflecting-models-from-existing-tables">9. Reflecting Models From Existing Tables<a class="anchor" aria-label="anchor" href="#id_9-reflecting-models-from-existing-tables"></a>
 </h3>
-<p>When a table already exists, <code>engine$hydrate()</code> introspects its columns and returns a ready-to-use <code>TableModel</code>, so you can do basic CRUD without declaring every column by hand.</p>
+<p>When a table already exists, <code>engine$reflect()</code> introspects its columns and returns a ready-to-use <code>TableModel</code>, so you can do basic CRUD without declaring every column by hand.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Reflect all columns of the existing "users" table</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">Users</span><span class="op">$</span><span class="va">fields</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "id" "name" "age" "hash"</span></span>
 <span></span>
 <span><span class="co"># Keep or drop columns with include / exclude</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"age"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hash"</span>, <span class="st">"configuration"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span><span class="st">"users"</span>, include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"age"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span><span class="st">"users"</span>, exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hash"</span>, <span class="st">"configuration"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">Users</span><span class="op">$</span><span class="fu">record</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">3L</span>, name <span class="op">=</span> <span class="st">"Ada"</span>, age <span class="op">=</span> <span class="fl">36L</span><span class="op">)</span><span class="op">$</span><span class="fu">create</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span></code></pre></div>
@@ -248,19 +248,19 @@
 </ul>
 <p>For other dialects, because the primary key is not reflected, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code>delete()</code> require you to supply the key column via <code>...</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, id <span class="op">=</span> <span class="fu"><a href="reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span><span class="st">"users"</span>, id <span class="op">=</span> <span class="fu"><a href="reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>...</code> argument also lets you attach <code><a href="reference/Method.html">Method()</a></code>s or override any reflected column definition, exactly like <code>engine$model()</code>.</p>
 </div>
 <div class="section level3">
-<h3 id="id_10-hydrating-an-entire-schema">10. Hydrating an Entire Schema<a class="anchor" aria-label="anchor" href="#id_10-hydrating-an-entire-schema"></a>
+<h3 id="id_10-reflecting-an-entire-schema">10. Reflecting an Entire Schema<a class="anchor" aria-label="anchor" href="#id_10-reflecting-an-entire-schema"></a>
 </h3>
-<p><code>engine$hydrate_schema()</code> hydrates every table in a schema in one call and automatically wires up the <code>many_to_one</code> / <code>one_to_many</code> relationships implied by the reflected foreign keys. This is most useful with the PostgreSQL dialect, whose reflection captures foreign keys.</p>
+<p><code>engine$reflect_schema()</code> reflects every table in a schema in one call and automatically wires up the <code>many_to_one</code> / <code>one_to_many</code> relationships implied by the reflected foreign keys. This is most useful with the PostgreSQL dialect, whose reflection captures foreign keys.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Hydrate all tables in the engine's default schema</span></span>
-<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Reflect all tables in the engine's default schema</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect_schema</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Or restrict to a specific set of tables</span></span>
-<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"users"</span>, <span class="st">"posts"</span>, <span class="st">"comments"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect_schema</span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"users"</span>, <span class="st">"posts"</span>, <span class="st">"comments"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Access individual models</span></span>
 <span><span class="va">posts</span>  <span class="op">&lt;-</span> <span class="va">models</span><span class="op">$</span><span class="va">posts</span></span>
@@ -285,7 +285,7 @@
 <tr>
 <td><code>tables</code></td>
 <td><code>NULL</code></td>
-<td>Tables to hydrate; <code>NULL</code> hydrates all in the schema</td>
+<td>Tables to reflect; <code>NULL</code> reflects all in the schema</td>
 </tr>
 <tr>
 <td><code>exclude</code></td>

@@ -15,6 +15,7 @@
 ^oRm_diagram\.svg$
 ^NEWS\.md$
 ^README\.md$
+^ROADMAP\.md$
 ^\.aider\.chat\.history\.md$
 ^\.aider\.input\.history$
 ^\.aider\.tags\.cache\.v4$

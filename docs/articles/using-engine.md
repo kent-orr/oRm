@@ -50,14 +50,14 @@ the most commonly used methods:
   TableModel
   vignette](https://kent-orr.github.io/oRm/articles/using-tablemodels.md)
 
-- `hydrate()` Builds a `TableModel` by introspecting an existing table,
-  so you can do basic CRUD without declaring columns. See [Hydrating
-  models from existing tables](#hydrating-models-from-existing-tables)
+- `reflect()` Builds a `TableModel` by introspecting an existing table,
+  so you can do basic CRUD without declaring columns. See [Reflecting
+  models from existing tables](#reflecting-models-from-existing-tables)
   below.
 
-- `hydrate_schema()` Hydrates all tables in a schema at once and
-  auto-wires relationships from reflected foreign keys. See [Hydrating
-  an entire schema](#hydrating-an-entire-schema) below.
+- `reflect_schema()` Reflects all tables in a schema at once and
+  auto-wires relationships from reflected foreign keys. See [Reflecting
+  an entire schema](#reflecting-an-entire-schema) below.
 
 - `get_connection()` Returns the underlying DBI connection. You can use
   this directly for raw SQL or with
@@ -81,21 +81,21 @@ engine$execute("CREATE TABLE things (id INTEGER PRIMARY KEY, name TEXT)")
 df <- engine$get_query("SELECT * FROM things")
 ```
 
-## Hydrating models from existing tables
+## Reflecting models from existing tables
 
-When a table already exists in the database, `hydrate()` inspects its
+When a table already exists in the database, `reflect()` inspects its
 columns and returns a ready-to-use `TableModel`. This avoids
 re-declaring every column when you just need basic CRUD against an
 existing table.
 
 ``` r
 # Reflect every column of the existing "users" table
-Users <- engine$hydrate("users")
+Users <- engine$reflect("users")
 names(Users$fields)
 
 # Narrow the model with include / exclude
-Users <- engine$hydrate("users", include = c("id", "name", "age"))
-Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+Users <- engine$reflect("users", include = c("id", "name", "age"))
+Users <- engine$reflect("users", exclude = c("hash", "configuration"))
 
 Users$record(id = 3L, name = "Ada", age = 36L)$create()
 Users$read(.mode = "data.frame")
@@ -118,26 +118,26 @@ key off declared PK fields) require you to supply the key column via
 mirroring `model()`:
 
 ``` r
-Users <- engine$hydrate(
+Users <- engine$reflect(
   "users",
   id = Column("INTEGER", primary_key = TRUE)
   # ... also accepts Method()s or column-type overrides
 )
 ```
 
-## Hydrating an entire schema
+## Reflecting an entire schema
 
-`hydrate_schema()` hydrates every table in a schema in one call and
+`reflect_schema()` reflects every table in a schema in one call and
 automatically wires up `many_to_one` / `one_to_many` relationships
 implied by the reflected foreign keys. This is most useful with the
 PostgreSQL dialect, whose reflection captures foreign keys.
 
 ``` r
-# Hydrate all tables in the engine's default schema
-models <- engine$hydrate_schema()
+# Reflect all tables in the engine's default schema
+models <- engine$reflect_schema()
 
 # Or target specific tables
-models <- engine$hydrate_schema(tables = c("users", "posts", "comments"))
+models <- engine$reflect_schema(tables = c("users", "posts", "comments"))
 
 # Access individual models
 posts <- models$posts
@@ -152,12 +152,12 @@ Key arguments:
 
 | Argument | Default | Description |
 |----|----|----|
-| `tables` | `NULL` | Tables to hydrate; `NULL` hydrates all in the schema |
+| `tables` | `NULL` | Tables to reflect; `NULL` reflects all in the schema |
 | `exclude` | `NULL` | Table names to skip |
 | `.schema` | engine schema | Schema to inspect |
 | `wire_relationships` | `TRUE` | Auto-wire FK-based relationships |
 
-Foreign keys pointing at tables outside the hydrated set are silently
+Foreign keys pointing at tables outside the reflected set are silently
 skipped with a warning. You can always call
 `model$define_relationship()` manually afterwards to wire additional
 relationships.

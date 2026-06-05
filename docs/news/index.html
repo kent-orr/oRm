@@ -27,7 +27,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
-    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/reflecting-tables.html">Reflecting Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -59,6 +59,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="orm-060">oRm 0.6.0<a class="anchor" aria-label="anchor" href="#orm-060"></a></h2>
 <div class="section level3">
+<h3 id="breaking-changes-0-6-0">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-6-0"></a></h3>
+<ul><li>
+<strong><code>Engine$hydrate()</code> renamed to <code>Engine$reflect()</code></strong> (and <code>Engine$hydrate_schema()</code> to <code>Engine$reflect_schema()</code>). The public verb now matches the internal reflection vocabulary it has always used (<code><a href="../reference/reflect_columns.html">reflect_columns()</a></code>, <code><a href="../reference/reflect_tables.html">reflect_tables()</a></code>) and the established ORM term for schema introspection (SQLAlchemy’s <code>MetaData.reflect()</code>). “Hydrate” conventionally means populating an object instance from a row, which is not what this method does — it builds a model from table metadata. There is no deprecation shim; update calls from <code>engine$hydrate(...)</code> to <code>engine$reflect(...)</code>.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="new-features-0-6-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-6-0"></a></h3>
 <ul><li>
 <strong>Set-level CRUD on <code>TableModel</code></strong> — the CRUD spine is now complete and discoverable at the model level, mirroring the row-level <code>Record</code> verbs:
@@ -71,6 +76,17 @@
 <li>
 <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code>/<code>delete()</code> return the affected-row count invisibly and refuse a filterless whole-table write unless <code>.all = TRUE</code>. Both require a primary key.</li>
 </ul></li>
+<li>
+<strong><code>TableModel$define_relationship()</code> method form</strong> — <code><a href="../reference/define_relationship.html">define_relationship()</a></code> is now exposed as a model method that supplies the local model as <code>self</code>, making it discoverable via <code>$</code>-autocomplete per the verb-mirroring convention. The standalone <code><a href="../reference/define_relationship.html">define_relationship()</a></code> function is retained for functional/pipe-style use and internal wiring; both share one implementation.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-6-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-0"></a></h3>
+<ul><li><p><strong>Double-qualification of table names in <code>Engine</code></strong> — <code>Engine$model()</code> and <code>Engine$reflect()</code> qualified the tablename before passing it to <code>TableModel$new()</code>, which qualified it again. Qualification now happens once, inside <code>TableModel$new()</code>; <code>reflect()</code> keeps a locally qualified name only for column reflection.</p></li>
+<li><p><strong>Single-column <code>read()</code></strong> — reads that project to a single column no longer collapse to an unnamed vector when building a <code>Record</code>. The <code>get</code>, <code>one_or_none</code>, and <code>all</code> modes now use <code>drop = FALSE</code> so the column name is preserved.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-6-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-6-0"></a></h3>
+<ul><li>Renamed the “Hydrating Models from Existing Tables” vignette to “Reflecting Models from Existing Tables” and updated the README and <code><a href="../articles/using-engine.html">vignette("using-engine")</a></code> for the <code>reflect()</code> / <code>reflect_schema()</code> naming.</li>
 </ul></div>
 </div>
     <div class="section level2">

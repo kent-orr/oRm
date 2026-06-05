@@ -1,7 +1,7 @@
 # List the tables available in a schema
 
-Returns the names of tables that can be hydrated, used by
-\`Engine\$hydrate_schema()\`. The default implementation falls back to
+Returns the names of tables that can be reflected, used by
+\`Engine\$reflect_schema()\`. The default implementation falls back to
 \`DBI::dbListTables()\` and ignores \`.schema\`; dialects with
 first-class schema support (e.g. PostgreSQL) provide a schema-scoped
 implementation.
