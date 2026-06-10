@@ -458,3 +458,66 @@ test_that("set-level writes are blocked on a read-only engine", {
   expect_error(Rm$update(id == 1, name = "X"), "read-only")
   expect_error(Rm$delete(id == 1), "read-only")
 })
+
+# =============================================================================
+# REVIEW BUGS: TableModel$read()/all() silent row cap and unquoted identifiers
+# =============================================================================
+# These tests assert the intended contract and currently fail, documenting bugs
+# surfaced in review.
+
+# REVIEW BUG: read()/all() silently cap at 100 rows (R/TableModel.R:419,598).
+# A method literally named all() should return every matching row, not silently
+# the first 100. (If the design intent is a hard cap, all() at minimum ought to
+# warn on truncation rather than drop rows quietly.)
+test_that("Model$all() returns every row, not a silent 100-row cap", {
+  skip_if_not_installed("RSQLite")
+
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  on.exit(engine$close(), add = TRUE)
+
+  Item <- engine$model(
+    "items_cap",
+    id = Column("INTEGER", primary_key = TRUE),
+    name = Column("TEXT")
+  )
+  Item$create_table(overwrite = TRUE, ask = FALSE)
+
+  for (i in seq_len(150)) {
+    Item$record(id = i, name = paste0("n", i))$create()
+  }
+
+  expect_equal(length(Item$all()), 150L)
+})
+
+# REVIEW BUG: column identifiers are interpolated bare in WHERE/SET clauses
+# (R/Record.R:281-285,315-319; R/sql-helpers.R), while the table name is quoted
+# via format_tablename(). A column whose name is a reserved word (e.g. "order")
+# produces invalid SQL. They should be quoted with DBI::dbQuoteIdentifier.
+test_that("update/delete handle a reserved-word column name", {
+  skip_if_not_installed("RSQLite")
+
+  engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+  on.exit(engine$close(), add = TRUE)
+
+  Item <- engine$model(
+    "items_reserved",
+    id    = Column("INTEGER", primary_key = TRUE),
+    order = Column("INTEGER")
+  )
+  Item$create_table(overwrite = TRUE, ask = FALSE)
+  Item$record(id = 1L, order = 5L)$create()
+
+  rec <- Item$get(id == 1L)
+
+  # Row-level update of a reserved-word column.
+  expect_no_error(rec$update(order = 10L))
+  expect_equal(Item$get(id == 1L)$data$order, 10L)
+
+  # Set-level update targeting the same column.
+  expect_no_error(Item$update(id == 1L, order = 20L))
+  expect_equal(Item$get(id == 1L)$data$order, 20L)
+
+  # Row-level delete builds its WHERE from the (quoted) key column.
+  expect_no_error(rec$delete())
+  expect_null(Item$one_or_none(id == 1L))
+})

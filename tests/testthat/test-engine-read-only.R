@@ -25,6 +25,73 @@ test_that("is_read_sql classifies common statements correctly", {
   expect_false(is_read_sql("TRUNCATE t"))
 })
 
+# REVIEW BUG: data-modifying CTEs slip past is_read_sql (R/Dialect.R:280).
+# A statement that begins with WITH is treated as read-only, but PostgreSQL
+# allows the CTE body to DELETE/UPDATE/INSERT (... RETURNING) and feed the result
+# into the outer SELECT. The whole statement writes, yet is_read_sql() returns
+# TRUE. This asserts the intended contract and currently fails, documenting the
+# bug. (For postgres/sqlite the connection-level flag backstops it; for MySQL
+# this regex is the only guard on Engine$execute.)
+test_that("is_read_sql rejects a data-modifying CTE", {
+  is_read_sql <- oRm:::is_read_sql
+
+  expect_false(
+    is_read_sql("WITH t AS (DELETE FROM foo RETURNING *) SELECT * FROM t")
+  )
+  expect_false(
+    is_read_sql("WITH t AS (INSERT INTO foo VALUES (1) RETURNING *) SELECT * FROM t")
+  )
+  expect_false(
+    is_read_sql("WITH t AS (UPDATE foo SET x = 1 RETURNING *) SELECT * FROM t")
+  )
+})
+
+# REVIEW BUG: flush.mysql returns a scalar id, not the inserted row
+# (R/Dialect-mysql.R:5). flush.sqlite / flush.postgres both return a one-row
+# data.frame (the re-fetched row), which Record$flush() consumes via
+# `nrow(result) > 0` (R/Record.R:221). A scalar makes that guard error
+# (`nrow(<scalar>)` is NULL), so Record$create()/Model$create() is broken for
+# MySQL. We mock DBI (mirroring the apply_read_only.mysql mock test below) so
+# this runs without a live MySQL server. Asserts the intended contract; fails
+# against current code.
+test_that("flush.mysql returns the inserted row as a one-row data.frame", {
+  skip_if_not_installed("testthat", "3.1.7")  # local_mocked_bindings()
+
+  # Mock all DBI touchpoints so no live MySQL (or any connection) is needed.
+  # Quoting is reduced to identity; the emitted SQL text is irrelevant because
+  # dbExecute/dbGetQuery are mocked.
+  testthat::local_mocked_bindings(
+    dbQuoteLiteral    = function(conn, x, ...) as.character(x),
+    dbQuoteIdentifier = function(conn, x, ...) as.character(x),
+    dbExecute         = function(conn, statement, ...) 1L,
+    dbGetQuery = function(conn, statement, ...) {
+      # Emulate MySQL: LAST_INSERT_ID() yields the new key; a row re-fetch
+      # (which the fix should perform) yields the full row.
+      if (grepl("LAST_INSERT_ID", statement, ignore.case = TRUE)) {
+        data.frame(`LAST_INSERT_ID()` = 7L, check.names = FALSE)
+      } else {
+        data.frame(id = 7L, name = "alpha", stringsAsFactors = FALSE)
+      }
+    },
+    .package = "DBI"
+  )
+
+  fake_engine <- structure(list(dialect = "mysql"), class = "Engine")
+  fake_con <- structure(list(), class = "FakeConn")
+
+  result <- oRm:::flush.mysql(
+    fake_engine, "things", list(name = "alpha"), fake_con, commit = FALSE
+  )
+
+  # Current code returns the bare LAST_INSERT_ID() scalar; the contract (matching
+  # flush.sqlite/flush.postgres) is a one-row data.frame carrying the new row.
+  # The name guard keeps the failure clean (a scalar has no $id) under current code.
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 1L)
+  expect_true("id" %in% names(result))
+  expect_true("id" %in% names(result) && isTRUE(result[["id"]][1] == 7L))
+})
+
 # ---------------------------------------------------------------------------
 # SQLite: full coverage (app-level guard + driver-level SQLITE_RO flag)
 # ---------------------------------------------------------------------------

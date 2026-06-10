@@ -166,3 +166,27 @@ test_that("render_constraint leaves a same-schema foreign key unqualified", {
   expect_no_match(sql, '"\\."')
 })
 
+# =============================================================================
+# REVIEW BUG: primary_key = FALSE wipes an explicit nullable (R/Column.R:32)
+# =============================================================================
+# Column() does `if (is.logical(primary_key)) nullable <- NULL`, which fires for
+# FALSE as well as TRUE. The "a PK is implicitly NOT NULL" intent should only
+# apply to TRUE (the guard should be isTRUE()). These tests assert the intended
+# contract and currently fail, documenting the bug.
+
+test_that("Column keeps nullable = FALSE when primary_key is explicitly FALSE", {
+  col <- Column("INTEGER", primary_key = FALSE, nullable = FALSE)
+
+  expect_s3_class(col, "Column")
+  expect_false(col$primary_key)
+  # nullable must survive: this column is non-PK but NOT NULL.
+  expect_false(col$nullable)
+})
+
+test_that("render_field emits NOT NULL for a non-PK column declared nullable = FALSE", {
+  col <- Column("INTEGER", primary_key = FALSE, nullable = FALSE)
+  col$name <- "qty"
+  sql <- render_field(col, DBI::ANSI())
+  expect_match(sql, "NOT NULL")
+})
+
