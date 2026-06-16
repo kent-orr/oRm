@@ -25,4 +25,5 @@ articles:
       navbar: "Advanced Topics"
       contents:
         - with_shiny
+        - database-agent
         - developing-dialects
