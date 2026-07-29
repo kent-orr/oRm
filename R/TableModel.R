@@ -187,8 +187,7 @@ TableModel <- R6::R6Class(
                     )
                 }
             }
-            conn <- self$get_connection()
-            drop_sql <- paste0("DROP TABLE IF EXISTS ", DBI::dbQuoteIdentifier(conn, self$tablename))
+            drop_sql <- paste0("DROP TABLE IF EXISTS ", self$engine$format_tablename(self$tablename))
             if (verbose) {
                 cat(drop_sql, "\n")
             } else {

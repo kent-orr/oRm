@@ -145,10 +145,12 @@ Record <- R6::R6Class(
         # Use flush to get returning values
         return(self$flush(commit = NULL))  # Let flush determine commit behavior
       } else {
-        # Use standard insert without returning values
+        # Use standard insert without returning values. tablename may be
+        # schema-qualified ("schema.table"); pass it pre-quoted so DBI does
+        # not treat the whole string as a single identifier containing a dot.
         DBI::dbAppendTable(
           conn = con,
-          name = self$model$tablename,
+          name = DBI::SQL(self$model$engine$format_tablename(self$model$tablename)),
           value = as.data.frame(self$data, stringsAsFactors = FALSE)
         )
         return(self)
