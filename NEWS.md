@@ -1,3 +1,32 @@
+# oRm 0.6.2
+
+## Bug Fixes
+
+* **Schema-qualified writes no longer break on the non-flush paths.**
+  `model$tablename` is stored as a plain `"schema.table"` string, and two
+  write paths passed it directly to DBI, which quotes a character string as a
+  single identifier — producing a relation whose name literally contains a
+  dot. On PostgreSQL this surfaced as
+  `Failed to initialise COPY : ERROR: relation "schema.table" does not exist`.
+    - `Record$create()` on its non-flush branch (the default inside a
+      transaction, or explicit `flush_record = FALSE`) passed the raw string
+      to `DBI::dbAppendTable()`. It now passes the name through
+      `engine$format_tablename()`, which quotes each dotted part separately.
+    - `TableModel$create_table(overwrite = TRUE)` built its `DROP TABLE`
+      statement the same way. Because of `IF EXISTS`, the drop silently
+      missed the qualified table and "overwrite" left the old table and its
+      data in place. It now uses `format_tablename()` like `drop_table()`
+      already did.
+
+# oRm 0.6.1
+
+## New Features
+
+* **Optional ellmer database-agent integration** — `register_db_tools()`
+  augments an ellmer Chat with generic CRUD tools (`db_read`/`db_create`/
+  `db_update`/`db_delete`) backed by oRm models or a reflected Engine. ellmer
+  is in Suggests; the package loads without it.
+
 # oRm 0.6.0
 
 ## Breaking Changes
