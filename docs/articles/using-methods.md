@@ -149,14 +149,11 @@ With both tables in place, define the relationship so records can find
 their grades:
 
 ``` r
-define_relationship(
-    Students, 'id', 'one_to_many', Grades, 'student_id',
+Students$define_relationship(
+    'id', 'one_to_many', Grades, 'student_id',
     ref = 'grades',
     backref = 'student'
 )
-#> <TableModel>
-#> Table: students
-#> Columns: id, name, age
 ```
 
 And now we can use the methods on a record:

@@ -1,11 +1,11 @@
-# Tests for Engine$hydrate() and the reflection helpers it relies on.
+# Tests for Engine$reflect() and the reflection helpers it relies on.
 #
 # These tests deliberately verify persistence with direct DBI queries rather
-# than TableModel$read(), so they exercise hydrate's own responsibilities
+# than TableModel$read(), so they exercise reflect's own responsibilities
 # (column reflection + model construction) without depending on the dbplyr
 # read path.
 
-test_that("hydrate reflects column names from an existing table", {
+test_that("reflect reflects column names from an existing table", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   on.exit(engine$close(), add = TRUE)
 
@@ -17,13 +17,13 @@ test_that("hydrate reflects column names from an existing table", {
     hash = Column("TEXT")
   )$create_table()
 
-  Users <- engine$hydrate("users")
+  Users <- engine$reflect("users")
   expect_s3_class(Users, "TableModel")
   expect_equal(names(Users$fields), c("id", "name", "age", "hash"))
   expect_true(all(vapply(Users$fields, inherits, logical(1), "Column")))
 })
 
-test_that("a hydrated model supports create without predefining columns", {
+test_that("a reflected model supports create without predefining columns", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   on.exit(engine$close(), add = TRUE)
   con <- engine$get_connection()
@@ -35,7 +35,7 @@ test_that("a hydrated model supports create without predefining columns", {
     age = Column("INTEGER")
   )$create_table()
 
-  Users <- engine$hydrate("users")
+  Users <- engine$reflect("users")
   Users$record(id = 1L, name = "Kent", age = 34L)$create()
   Users$record(id = 2L, name = "Dylan", age = 25L)$create()
 
@@ -44,8 +44,8 @@ test_that("a hydrated model supports create without predefining columns", {
   expect_equal(rows$name, c("Kent", "Dylan"))
 })
 
-test_that("update and delete on a hydrated model work when a primary key is supplied via ...", {
-  # The generic-baseline hydrate does not reflect primary keys, so update()/
+test_that("update and delete on a reflected model work when a primary key is supplied via ...", {
+  # The generic-baseline reflect does not reflect primary keys, so update()/
   # delete() (which key off declared PK fields) require the caller to supply
   # the key column via ... until per-dialect PK reflection lands.
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
@@ -58,7 +58,7 @@ test_that("update and delete on a hydrated model work when a primary key is supp
     name = Column("TEXT")
   )$create_table()
 
-  Users <- engine$hydrate("users", id = Column("INTEGER", primary_key = TRUE))
+  Users <- engine$reflect("users", id = Column("INTEGER", primary_key = TRUE))
   Users$record(id = 1L, name = "Kent")$create()
 
   rec <- Users$record(id = 1L, name = "Kent")
@@ -72,7 +72,7 @@ test_that("update and delete on a hydrated model work when a primary key is supp
   expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM users")$n, 0)
 })
 
-test_that("a hydrated model reads back records via the normal read() API", {
+test_that("a reflected model reads back records via the normal read() API", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   on.exit(engine$close(), add = TRUE)
 
@@ -83,7 +83,7 @@ test_that("a hydrated model reads back records via the normal read() API", {
     age = Column("INTEGER")
   )$create_table()
 
-  Users <- engine$hydrate("users")
+  Users <- engine$reflect("users")
   Users$record(id = 1L, name = "Kent", age = 34L)$create()
   Users$record(id = 2L, name = "Dylan", age = 25L)$create()
 
@@ -95,7 +95,7 @@ test_that("a hydrated model reads back records via the normal read() API", {
   expect_equal(kent$data$name, "Kent")
 })
 
-test_that("hydrate respects include and exclude", {
+test_that("reflect respects include and exclude", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   on.exit(engine$close(), add = TRUE)
 
@@ -108,19 +108,19 @@ test_that("hydrate respects include and exclude", {
   )$create_table()
 
   # include keeps only requested columns, in table order
-  inc <- engine$hydrate("items", include = c("name", "id"))
+  inc <- engine$reflect("items", include = c("name", "id"))
   expect_equal(names(inc$fields), c("id", "name"))
 
   # exclude drops requested columns
-  exc <- engine$hydrate("items", exclude = c("hash", "configuration"))
+  exc <- engine$reflect("items", exclude = c("hash", "configuration"))
   expect_equal(names(exc$fields), c("id", "name"))
 
   # include + exclude: include first, then exclude
-  both <- engine$hydrate("items", include = c("id", "name", "hash"), exclude = "hash")
+  both <- engine$reflect("items", include = c("id", "name", "hash"), exclude = "hash")
   expect_equal(names(both$fields), c("id", "name"))
 })
 
-test_that("hydrate warns on missing include columns and errors when all filtered out", {
+test_that("reflect warns on missing include columns and errors when all filtered out", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   on.exit(engine$close(), add = TRUE)
 
@@ -131,25 +131,25 @@ test_that("hydrate warns on missing include columns and errors when all filtered
   )$create_table()
 
   expect_warning(
-    m <- engine$hydrate("things", include = c("id", "nope")),
+    m <- engine$reflect("things", include = c("id", "nope")),
     "include columns not found"
   )
   expect_equal(names(m$fields), "id")
 
   expect_error(
-    suppressWarnings(engine$hydrate("things", include = "nope")),
+    suppressWarnings(engine$reflect("things", include = "nope")),
     "no columns remain"
   )
 })
 
-test_that("hydrate errors on a nonexistent table", {
+test_that("reflect errors on a nonexistent table", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   on.exit(engine$close(), add = TRUE)
 
-  expect_error(engine$hydrate("does_not_exist"), "could not read table")
+  expect_error(engine$reflect("does_not_exist"), "could not read table")
 })
 
-test_that("hydrate lets ... override reflected columns and attach methods", {
+test_that("reflect lets ... override reflected columns and attach methods", {
   engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
   on.exit(engine$close(), add = TRUE)
 
@@ -159,7 +159,7 @@ test_that("hydrate lets ... override reflected columns and attach methods", {
     name = Column("TEXT")
   )$create_table()
 
-  People <- engine$hydrate(
+  People <- engine$reflect(
     "people",
     id = Column("INTEGER", primary_key = TRUE),
     greet = Method(function() paste("hi", self$data$name), target = "record")

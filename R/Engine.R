@@ -116,6 +116,13 @@ Engine <- R6::R6Class(
         #'
         #' @return A DBIConnection object or a pool object
         get_connection = function() {
+            # While a transaction holds a pinned connection (e.g. one checked
+            # out from a pool), every operation must run on that same
+            # connection so BEGIN/COMMIT and the writes between them agree.
+            if (!is.null(private$tx_conn)) {
+                return(private$tx_conn)
+            }
+
             fresh <- FALSE
             if (is.null(self$conn) || (!self$use_pool && !DBI::dbIsValid(self$conn))) {
                 if (self$use_pool) {
@@ -234,8 +241,7 @@ Engine <- R6::R6Class(
         #' )
         #' }
         model = function(tablename, ..., .data = list(), .schema = NULL, .default_mode = "all") {
-            if (is.null(.schema)) .schema <- self$schema
-            tablename <- qualify(self, tablename, .schema = .schema)
+            # Qualification is handled once, inside TableModel$new().
             TableModel$new(tablename = tablename, engine = self, ..., .data = .data, .schema = .schema, .default_mode = .default_mode)
         },
 
@@ -249,7 +255,7 @@ Engine <- R6::R6Class(
         #' PostgreSQL dialect reflects richer metadata: canonical types, primary
         #' keys, nullability, defaults, and foreign keys (as [ForeignKey]
         #' objects).
-        #' @param tablename Name of the existing table to hydrate.
+        #' @param tablename Name of the existing table to reflect.
         #' @param ... Additional `Column`, `ForeignKey`, or `Method` objects to
         #'   merge in. These take precedence over reflected columns of the same
         #'   name, matching the behaviour of `model()`.
@@ -262,63 +268,65 @@ Engine <- R6::R6Class(
         #' @examples
         #' \donttest{
         #' # Given a table "users" that already exists in the database:
-        #' Users <- engine$hydrate("users")
-        #' Users <- engine$hydrate("users", include = c("id", "name"))
-        #' Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+        #' Users <- engine$reflect("users")
+        #' Users <- engine$reflect("users", include = c("id", "name"))
+        #' Users <- engine$reflect("users", exclude = c("hash", "configuration"))
         #' }
-        hydrate = function(tablename, ..., include = NULL, exclude = NULL, .schema = NULL, .default_mode = "all") {
+        reflect = function(tablename, ..., include = NULL, exclude = NULL, .schema = NULL, .default_mode = "all") {
             if (is.null(.schema)) .schema <- self$schema
-            tablename <- qualify(self, tablename, .schema = .schema)
-            cols <- reflect_columns(self, tablename)
+            # Reflection needs the qualified name; TableModel$new() re-qualifies
+            # the raw name itself, so pass the unqualified tablename onward.
+            qualified <- qualify(self, tablename, .schema = .schema)
+            cols <- reflect_columns(self, qualified)
             cols <- filter_reflected_columns(cols, include = include, exclude = exclude)
             if (length(cols) == 0) {
-                stop("hydrate: no columns remain after include/exclude filtering.", call. = FALSE)
+                stop("reflect: no columns remain after include/exclude filtering.", call. = FALSE)
             }
             TableModel$new(tablename = tablename, engine = self, ..., .data = cols, .schema = .schema, .default_mode = .default_mode)
         },
 
         #' @description
-        #' Hydrate several tables from a schema at once and wire up the
+        #' Reflect several tables from a schema at once and wire up the
         #' relationships implied by their foreign keys.
         #'
-        #' Each table is hydrated via [Engine$hydrate()]; afterwards, every
-        #' reflected [ForeignKey] whose target is also among the hydrated models
+        #' Each table is reflected via [Engine$reflect()]; afterwards, every
+        #' reflected [ForeignKey] whose target is also among the reflected models
         #' is turned into a `many_to_one` relationship (with the reverse
         #' `one_to_many` backref) using [define_relationship()]. Foreign keys
-        #' pointing at tables outside the hydrated set are skipped with a
+        #' pointing at tables outside the reflected set are skipped with a
         #' warning. This is most useful with the PostgreSQL dialect, whose
         #' reflection captures foreign keys.
         #' @param tables Optional character vector limiting which tables to
-        #'   hydrate. When `NULL`, all tables in the schema are hydrated
+        #'   reflect. When `NULL`, all tables in the schema are reflected
         #'   (see [reflect_tables()]).
         #' @param ... Additional `Column`, `ForeignKey`, or `Method` objects
-        #'   passed to every `hydrate()` call (overrides of reflected columns).
-        #' @param .schema Character. Schema to hydrate. Defaults to the engine
+        #'   passed to every `reflect()` call (overrides of reflected columns).
+        #' @param .schema Character. Schema to reflect. Defaults to the engine
         #'   schema.
         #' @param exclude Optional character vector of table names to drop.
         #' @param .default_mode Character. Default read mode for each TableModel.
         #' @param wire_relationships Logical. Whether to auto-wire relationships
         #'   from reflected foreign keys. Defaults to TRUE.
         #' @return A named list of TableModel objects, keyed by bare table name.
-        #' @seealso [Engine$hydrate()], [define_relationship()], [reflect_tables()]
+        #' @seealso [Engine$reflect()], [define_relationship()], [reflect_tables()]
         #' @examples
         #' \donttest{
-        #' models <- engine$hydrate_schema()
-        #' models <- engine$hydrate_schema(tables = c("users", "posts"))
+        #' models <- engine$reflect_schema()
+        #' models <- engine$reflect_schema(tables = c("users", "posts"))
         #' posts <- models$posts
         #' }
-        hydrate_schema = function(tables = NULL, ..., .schema = NULL, exclude = NULL,
+        reflect_schema = function(tables = NULL, ..., .schema = NULL, exclude = NULL,
                                   .default_mode = "all", wire_relationships = TRUE) {
             if (is.null(.schema)) .schema <- self$schema
             if (is.null(tables)) tables <- reflect_tables(self, .schema)
             if (!is.null(exclude)) tables <- setdiff(tables, exclude)
             if (length(tables) == 0) {
-                stop("hydrate_schema: no tables to hydrate.", call. = FALSE)
+                stop("reflect_schema: no tables to reflect.", call. = FALSE)
             }
 
             models <- stats::setNames(
                 lapply(tables, function(t) {
-                    self$hydrate(t, ..., .schema = .schema, .default_mode = .default_mode)
+                    self$reflect(t, ..., .schema = .schema, .default_mode = .default_mode)
                 }),
                 tables
             )
@@ -333,7 +341,7 @@ Engine <- R6::R6Class(
                         target <- models[[field$ref_table]]
                         if (is.null(target)) {
                             warning(sprintf(
-                                "hydrate_schema: foreign key %s.%s references '%s', which was not hydrated; skipping relationship.",
+                                "reflect_schema: foreign key %s.%s references '%s', which was not reflected; skipping relationship.",
                                 local_name, field_name, field$ref_table
                             ), call. = FALSE)
                             next
@@ -342,7 +350,7 @@ Engine <- R6::R6Class(
                         # Align the reflected FK reference with the target model's
                         # actual tablename so define_relationship()'s reference
                         # check passes regardless of how the schema was applied
-                        # (qualified vs. unqualified) during hydration.
+                        # (qualified vs. unqualified) during reflection.
                         local_model$fields[[field_name]]$references <-
                             paste0(target$tablename, ".", field$ref_column)
 
@@ -358,7 +366,7 @@ Engine <- R6::R6Class(
                             ),
                             error = function(e) {
                                 warning(sprintf(
-                                    "hydrate_schema: could not wire %s.%s -> %s.%s (%s).",
+                                    "reflect_schema: could not wire %s.%s -> %s.%s (%s).",
                                     local_name, field_name, field$ref_table, field$ref_column,
                                     conditionMessage(e)
                                 ), call. = FALSE)
@@ -385,6 +393,37 @@ Engine <- R6::R6Class(
         #' @return Logical indicating if a transaction is active
         get_transaction_state = function() {
             private$in_transaction
+        },
+
+        #' @description
+        #' Pin a single connection for the duration of a transaction so that
+        #' [with.Engine()] and every operation inside the block share one
+        #' connection. Used internally for pooled engines, where each call would
+        #' otherwise check out a different connection. Pass `NULL` to clear.
+        #' @param conn A DBIConnection, or NULL to release the pin.
+        #' @return The Engine object, invisibly.
+        set_transaction_connection = function(conn) {
+            private$tx_conn <- conn
+            invisible(self)
+        },
+
+        #' @description
+        #' Reserve a fresh savepoint name for a nested transaction block and
+        #' bump the nesting depth.
+        #' @return A unique savepoint name (character).
+        push_savepoint = function() {
+            private$savepoint_depth <- private$savepoint_depth + 1L
+            paste0("orm_savepoint_", private$savepoint_depth)
+        },
+
+        #' @description
+        #' Release the most recently reserved savepoint name.
+        #' @return NULL, invisibly.
+        pop_savepoint = function() {
+            if (private$savepoint_depth > 0L) {
+                private$savepoint_depth <- private$savepoint_depth - 1L
+            }
+            invisible(NULL)
         },
 
         #' @description
@@ -439,7 +478,9 @@ Engine <- R6::R6Class(
     ),
     private = list(
         in_transaction = FALSE,
-        
+        tx_conn = NULL,
+        savepoint_depth = 0L,
+
         exit_check = function() {
             !private$in_transaction && !self$persist && !self$use_pool
         },
@@ -542,64 +583,109 @@ Engine <- R6::R6Class(
 #' @export
 with.Engine <- function(data, expr, auto_commit = TRUE, ...) {
     engine <- data
-    # Open a connection
-    engine$set_transaction_state(TRUE)
-    conn <- engine$get_connection()
-    
-    # Begin transaction
-    DBI::dbBegin(conn)
-    
+
+    # A transaction implies writes; refuse upfront on a read-only engine rather
+    # than opening one that only blows up mid-block on the first write.
+    if (isTRUE(engine$read_only)) {
+        stop(
+            "Engine is read-only; refusing to open a writable transaction.",
+            call. = FALSE
+        )
+    }
+
+    # A with.Engine nested inside another runs as a savepoint on the already
+    # open transaction, committing together with the outer block. The outermost
+    # block opens the real transaction.
+    nested <- isTRUE(engine$get_transaction_state())
+
+    # Resolve the single connection that carries this transaction. Pooled
+    # engines must check one out so BEGIN/COMMIT and every write in between land
+    # on the same connection instead of being scattered across the pool.
+    checked_out <- FALSE
+    if (nested) {
+        conn <- engine$get_connection()
+    } else if (isTRUE(engine$use_pool)) {
+        conn <- pool::poolCheckout(engine$get_connection())
+        engine$set_transaction_connection(conn)
+        checked_out <- TRUE
+    } else {
+        conn <- engine$get_connection()
+    }
+
+    sp_name <- if (nested) engine$push_savepoint() else NULL
+    if (nested) {
+        DBI::dbBegin(conn, name = sp_name)
+    } else {
+        DBI::dbBegin(conn)
+        engine$set_transaction_state(TRUE)
+    }
+
+    do_commit <- function() {
+        if (is.null(sp_name)) DBI::dbCommit(conn) else DBI::dbCommit(conn, name = sp_name)
+    }
+    do_rollback <- function() {
+        if (is.null(sp_name)) DBI::dbRollback(conn) else DBI::dbRollback(conn, name = sp_name)
+    }
+
     # Create a transaction environment with commit/rollback functions
     tx_env <- new.env(parent = parent.frame())
     tx_env$committed <- FALSE
     tx_env$rolled_back <- FALSE
-    
-    # Add transaction functions to the environment
+
     tx_env$commit <- function() {
-        DBI::dbCommit(conn)
+        do_commit()
         tx_env$committed <- TRUE
         invisible(NULL)
     }
-    
+
     tx_env$rollback <- function() {
-        DBI::dbRollback(conn)
+        do_rollback()
         tx_env$rolled_back <- TRUE
         invisible(NULL)
     }
-    
+
     result <- NULL
     # Execute the expression within the transaction
     tryCatch({
         # Evaluate the expression in the transaction environment
         result <- eval(substitute(expr), tx_env)
-        
+
         # Auto-commit if requested and not already committed/rolled back
         if (auto_commit && !tx_env$committed && !tx_env$rolled_back) {
-            DBI::dbCommit(conn)
+            do_commit()
         } else if (!auto_commit && !tx_env$committed && !tx_env$rolled_back) {
             warning("Transaction was neither committed nor rolled back. Rolling back by default.")
-            DBI::dbRollback(conn)
+            do_rollback()
         }
-        
+
         # Return the result
         return(result)
-        
+
     }, error = function(e) {
         # Roll back if not already committed/rolled back
         if (!tx_env$committed && !tx_env$rolled_back) {
-            DBI::dbRollback(conn)
-            warning("Transaction failed, rolling back: ", e$message)
+            do_rollback()
+            warning("Transaction failed, rolling back: ", conditionMessage(e))
         }
-        
+
         # Re-throw the error
         stop(e)
-        
+
     }, finally = {
-        # Clean up
-        if (!engine$persist) {
-            engine$close()
+        # Clean up. Nested blocks leave the outer transaction (and its pinned
+        # connection) untouched -- only release the savepoint name.
+        if (nested) {
+            engine$pop_savepoint()
+        } else {
+            engine$set_transaction_state(FALSE)
+            if (checked_out) {
+                engine$set_transaction_connection(NULL)
+                pool::poolReturn(conn)
+            }
+            if (!engine$persist && !engine$use_pool) {
+                engine$close()
+            }
         }
-        engine$set_transaction_state(FALSE)
     })
 }
 

@@ -1,0 +1,132 @@
+---
+title: "Building a database agent with ellmer"
+output: rmarkdown::html_vignette
+execute:
+  eval: false
+vignette: >
+  %\VignetteIndexEntry{Building a database agent with ellmer}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  eval = FALSE,
+  comment = "#>"
+)
+```
+
+`oRm` ships an optional integration with the
+[`ellmer`](https://ellmer.tidyverse.org) package that turns a `Chat` object into
+a **database agent**. You hand `register_db_tools()` a chat plus one or more
+models (or a whole `Engine`), and the chat is augmented with generic CRUD tools
+the LLM can call to read, create, update, and delete rows.
+
+This is an optional add-on: `ellmer` lives in `Suggests`, so `oRm` installs and
+loads without it. `register_db_tools()` only requires `ellmer` when you actually
+call it.
+
+## Setup
+
+```{r}
+library(oRm)
+library(ellmer)
+
+engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE
+)
+
+User <- engine$model(
+  "users",
+  id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+  name = Column("TEXT", nullable = FALSE),
+  age = Column("INTEGER")
+)
+User$create_table()
+```
+
+## Registering the tools
+
+Pass the chat and the model(s) you want to expose. The chat is modified in place
+(ellmer chats are reference objects), so you can ignore the return value.
+
+```{r}
+chat <- chat_anthropic()
+register_db_tools(chat, User)
+
+chat$chat("Add a user named Kent who is 35, then list everyone older than 30.")
+```
+
+Four tools are registered:
+
+- `db_read(table, filter)` — read rows; `filter` is an optional dplyr-style
+  expression as a string, e.g. `"age > 30 & name == 'Kent'"`.
+- `db_create(table, values)` — insert a row; `values` is a JSON object such as
+  `{"name":"Kent","age":35}`.
+- `db_update(table, filter, values)` — update matching rows (filter required).
+- `db_delete(table, filter)` — delete matching rows (filter required).
+
+The schema (every table and its columns) is embedded in each tool's description,
+so the model can discover what's available without an extra call.
+
+### Why dplyr filters?
+
+Filter expressions are handed straight to `oRm`'s existing read/update/delete
+machinery, which translates them to SQL via `dbplyr`. LLMs are fluent in dplyr,
+so letting them write `age > 30 & name == 'Kent'` is both natural for the model
+and reuses the same query builder you use elsewhere in `oRm`.
+
+## Exposing several tables, or a whole schema
+
+You can pass multiple models, and/or an `Engine` whose tables are reflected
+automatically:
+
+```{r}
+Post <- engine$model(
+  "posts",
+  id = Column("INTEGER", primary_key = TRUE),
+  user_id = ForeignKey("INTEGER", references = "users.id"),
+  title = Column("TEXT")
+)
+Post$create_table()
+
+# Explicit models ...
+register_db_tools(chat, User, Post)
+
+# ... or reflect everything the engine can see:
+register_db_tools(chat, engine)
+
+# Limit or skip tables when reflecting:
+register_db_tools(chat, engine, tables = c("users", "posts"))
+register_db_tools(chat, engine, exclude = "audit_log")
+```
+
+## Controlling write access
+
+There is intentionally **no separate permission switch** in
+`register_db_tools()`. Write access is governed by the `Engine`: open it
+read-only and the create/update/delete tools fail with the engine's read-only
+error, which is returned to the model so it can explain the limitation.
+
+```{r}
+ro_engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = "app.sqlite",
+  .read_only = TRUE
+)
+
+chat <- chat_anthropic()
+register_db_tools(chat, ro_engine)   # read works; writes are refused
+```
+
+## A note on trust
+
+The agent runs SQL with the privileges of the connection you give it, and filter
+expressions authored by the model are parsed and evaluated. `oRm` evaluates them
+in a minimal environment so they cannot reach objects in your R session, but you
+are still letting an LLM drive your database. For anything exposed to untrusted
+input, pair the agent with a **read-only engine** and a connection scoped to only
+the tables it should touch.

@@ -17,7 +17,7 @@ articles:
         - using-engine
         - using-tablemodels
         - using-records
-        - hydrating-tables
+        - reflecting-tables
         - using-relationships
         - using-methods
 
@@ -25,4 +25,5 @@ articles:
       navbar: "Advanced Topics"
       contents:
         - with_shiny
+        - database-agent
         - developing-dialects

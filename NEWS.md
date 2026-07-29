@@ -1,3 +1,99 @@
+# oRm 0.6.2
+
+## Bug Fixes
+
+* **Schema-qualified writes no longer break on the non-flush paths.**
+  `model$tablename` is stored as a plain `"schema.table"` string, and two
+  write paths passed it directly to DBI, which quotes a character string as a
+  single identifier — producing a relation whose name literally contains a
+  dot. On PostgreSQL this surfaced as
+  `Failed to initialise COPY : ERROR: relation "schema.table" does not exist`.
+    - `Record$create()` on its non-flush branch (the default inside a
+      transaction, or explicit `flush_record = FALSE`) passed the raw string
+      to `DBI::dbAppendTable()`. It now passes the name through
+      `engine$format_tablename()`, which quotes each dotted part separately.
+    - `TableModel$create_table(overwrite = TRUE)` built its `DROP TABLE`
+      statement the same way. Because of `IF EXISTS`, the drop silently
+      missed the qualified table and "overwrite" left the old table and its
+      data in place. It now uses `format_tablename()` like `drop_table()`
+      already did.
+
+# oRm 0.6.1
+
+## New Features
+
+* **Optional ellmer database-agent integration** — `register_db_tools()`
+  augments an ellmer Chat with generic CRUD tools (`db_read`/`db_create`/
+  `db_update`/`db_delete`) backed by oRm models or a reflected Engine. ellmer
+  is in Suggests; the package loads without it.
+
+# oRm 0.6.0
+
+## Breaking Changes
+
+* **`Engine$hydrate()` renamed to `Engine$reflect()`** (and
+  `Engine$hydrate_schema()` to `Engine$reflect_schema()`). The public verb now
+  matches the internal reflection vocabulary it has always used
+  (`reflect_columns()`, `reflect_tables()`) and the established ORM term for
+  schema introspection (SQLAlchemy's `MetaData.reflect()`). "Hydrate"
+  conventionally means populating an object instance from a row, which is not
+  what this method does — it builds a model from table metadata. There is no
+  deprecation shim; update calls from `engine$hydrate(...)` to
+  `engine$reflect(...)`.
+
+## New Features
+
+* **Set-level CRUD on `TableModel`** — the CRUD spine is now complete and
+  discoverable at the model level, mirroring the row-level `Record` verbs:
+    - `Model$create(...)` inserts a row (sugar over `Model$record(...)$create()`)
+      and returns the persisted `Record`.
+    - `Model$update(...)` issues a single `UPDATE ... WHERE`. Bare expressions
+      are the WHERE filter (like `read()`); named arguments are the SET values
+      (like `create()`), e.g. `User$update(id == 1, name = "Kent", age = 35)`.
+    - `Model$delete(...)` issues a single `DELETE ... WHERE` from bare-expression
+      filters.
+    - `update()`/`delete()` return the affected-row count invisibly and refuse a
+      filterless whole-table write unless `.all = TRUE`. Both require a primary
+      key.
+
+* **`TableModel$define_relationship()` method form** — `define_relationship()`
+  is now exposed as a model method that supplies the local model as `self`,
+  making it discoverable via `$`-autocomplete per the verb-mirroring
+  convention. The standalone `define_relationship()` function is retained for
+  functional/pipe-style use and internal wiring; both share one implementation.
+
+## Bug Fixes
+
+* **`with.Engine()` transactions now nest, pool, and respect read-only** —
+  three long-standing transaction bugs are fixed:
+    - *Nesting*: a `with.Engine()` block opened inside another (directly or via
+      a helper) used to hit `dbBegin()` on a connection already in a
+      transaction and error out. Nested blocks now run as savepoints and commit
+      together with the outer transaction.
+    - *Pooling*: with `use_pool = TRUE`, `dbBegin()` was called on the `Pool`
+      object itself (and the writes scattered across checkouts). A single
+      connection is now checked out for the life of the transaction and pinned
+      so every operation inside the block lands on it.
+    - *Read-only*: a transaction on a `.read_only` engine opened anyway and only
+      failed mid-block on the first write. `with.Engine()` now refuses upfront.
+
+* **Double-qualification of table names in `Engine`** — `Engine$model()` and
+  `Engine$reflect()` qualified the tablename before passing it to
+  `TableModel$new()`, which qualified it again. Qualification now happens once,
+  inside `TableModel$new()`; `reflect()` keeps a locally qualified name only for
+  column reflection.
+
+* **Single-column `read()`** — reads that project to a single column no longer
+  collapse to an unnamed vector when building a `Record`. The `get`,
+  `one_or_none`, and `all` modes now use `drop = FALSE` so the column name is
+  preserved.
+
+## Documentation
+
+* Renamed the "Hydrating Models from Existing Tables" vignette to "Reflecting
+  Models from Existing Tables" and updated the README and
+  `vignette("using-engine")` for the `reflect()` / `reflect_schema()` naming.
+
 # oRm 0.5.0
 
 ## New Features

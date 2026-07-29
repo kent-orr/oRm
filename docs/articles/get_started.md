@@ -12,6 +12,11 @@ responsibility:
   nested querying.
 - `Method`: Attaches custom behavior to models at table or record level.
 
+The verbs follow CRUD throughout, so once you have a `TableModel` or
+`Record` in hand, autocompleting on `c`, `r`, `u`, or `d` will surface
+create, read, update, and delete right where you expect them — set-level
+on the model, row-level on the record.
+
 We’ll walk through each concept, starting with the `Engine`.
 
 ------------------------------------------------------------------------
@@ -95,8 +100,10 @@ for use in relationships and queries.
 
 ## What TableModels Do
 
-A `TableModel` instance gives you access to common operations on your
-table:
+A `TableModel` exposes the full set of CRUD verbs at the table (set)
+level. The same verbs reappear on `Record` for single rows, so whichever
+noun you have in hand, autocompleting on `c`, `r`, `u`, or `d` lands you
+in the right place.
 
 ### Create the table in your database
 
@@ -105,12 +112,20 @@ Users$create_table()
 #> <TableModel>
 #> Table: users
 #> Columns: id, organization_id, name, age
-Users$record(id = 1, name='John')$create()
-Users$record(id = 2, name='Jane', age = 35)$create()
 ```
 
 This creates the table based on your column definitions if it doesn’t
 already exist.
+
+### Create rows
+
+``` r
+Users$create(id = 1, name = "John")
+Users$create(id = 2, name = "Jane", age = 35)
+```
+
+`create()` builds a row and inserts it in a single step — the set-level
+counterpart to `Record$create()`.
 
 ### Read rows from the table
 
@@ -127,10 +142,26 @@ of `Record` objects, or a single record if `.mode = "get"` is specified.
 specific_user <- Users$read(id == 1, .mode = "get")
 ```
 
+### Update rows
+
+Bare expressions are the `WHERE` filter; named values are the `SET`
+assignments:
+
+``` r
+Users$update(id == 1, age = 40)
+```
+
+### Delete rows
+
+``` r
+Users$delete(id == 2)
+```
+
 ## What Records Do
 
-Each row in a table is represented by a `Record`. Records provide
-methods for creating, updating, deleting, and accessing individual rows.
+Each row in a table is represented by a `Record`. Records mirror the
+same `create`/`read`/`update`/`delete` verbs, but scoped to a single row
+rather than the whole set.
 
 ### Create a new record
 
@@ -168,8 +199,7 @@ navigation between related records.
 ### Define a relationship
 
 ``` r
-define_relationship(
-  Users,
+Users$define_relationship(
   local_key = "organization_id",
   type = "many_to_one",
   related_model = Organization,
@@ -177,9 +207,6 @@ define_relationship(
   ref = "organization",
   backref = "users"
 )
-#> <TableModel>
-#> Table: users
-#> Columns: id, organization_id, name, age
 ```
 
 This allows records in `Users` to access their related `Organization`,

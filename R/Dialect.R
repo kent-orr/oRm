@@ -141,13 +141,13 @@ create_schema.default <- function(x, .schema) {
 #' Reflect the columns of an existing table into Column objects
 #'
 #' Inspects an existing database table and returns a named list of [Column]
-#' objects, one per column. Used by `Engine$hydrate()` to build a TableModel
+#' objects, one per column. Used by `Engine$reflect()` to build a TableModel
 #' from a table that already exists in the database.
 #'
 #' The default implementation is dialect-agnostic: it issues a zero-row query
 #' and reads `DBI::dbColumnInfo()` to recover column names and best-effort
 #' types. The reported type is backend-dependent (e.g. RSQLite reports R types
-#' such as "double"); since hydration targets existing tables, the type is not
+#' such as "double"); since reflection targets existing tables, the type is not
 #' used to create the table and so is informational only. Dialects may provide
 #' richer implementations (capturing primary keys, nullability, and defaults).
 #'
@@ -174,14 +174,14 @@ reflect_columns.default <- function(x, tablename, ...) {
         },
         error = function(e) {
             stop(
-                sprintf("hydrate: could not read table %s (%s).", tablename, conditionMessage(e)),
+                sprintf("reflect: could not read table %s (%s).", tablename, conditionMessage(e)),
                 call. = FALSE
             )
         }
     )
 
     if (NROW(info) == 0) {
-        stop(sprintf("hydrate: table %s reports no columns.", tablename), call. = FALSE)
+        stop(sprintf("reflect: table %s reports no columns.", tablename), call. = FALSE)
     }
 
     stats::setNames(
@@ -193,8 +193,8 @@ reflect_columns.default <- function(x, tablename, ...) {
 
 #' List the tables available in a schema
 #'
-#' Returns the names of tables that can be hydrated, used by
-#' `Engine$hydrate_schema()`. The default implementation falls back to
+#' Returns the names of tables that can be reflected, used by
+#' `Engine$reflect_schema()`. The default implementation falls back to
 #' `DBI::dbListTables()` and ignores `.schema`; dialects with first-class
 #' schema support (e.g. PostgreSQL) provide a schema-scoped implementation.
 #'
@@ -231,7 +231,7 @@ filter_reflected_columns <- function(cols, include = NULL, exclude = NULL) {
         missing <- setdiff(include, nms)
         if (length(missing)) {
             warning(
-                "hydrate: include columns not found and ignored: ",
+                "reflect: include columns not found and ignored: ",
                 paste(missing, collapse = ", "),
                 call. = FALSE
             )

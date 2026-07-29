@@ -273,7 +273,7 @@ test_that("PostgreSQL read-only engine refuses writes at the driver level", {
 # ---------------------------------------------------------------------------
 
 test_that("apply_read_only.mysql emits SET SESSION TRANSACTION READ ONLY", {
-  skip_if_not_installed("testthat", "3.5.0")
+  skip_if_not_installed("testthat", "3.1.7")  # local_mocked_bindings()
 
   captured <- list()
   testthat::local_mocked_bindings(

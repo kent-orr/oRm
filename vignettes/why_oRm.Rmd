@@ -177,8 +177,7 @@ Plants$record(id = 103, plant_type = "pea")$create()
 At this point, our database is aware of the relationship between Plants and Measurements. But oRm is not. We'll now **model** a **relationship** between the two tables which oRm **objects** will use.
 
 ```{r}
-define_relationship(
-    local_model = Plants,
+Plants$define_relationship(
     local_key = "id",
     type = "one_to_many",
     related_model = Measurement,

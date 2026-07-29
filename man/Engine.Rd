@@ -32,23 +32,23 @@ engine$model(
 }
 
 ## ------------------------------------------------
-## Method `Engine$hydrate`
+## Method `Engine$reflect`
 ## ------------------------------------------------
 
 \donttest{
 # Given a table "users" that already exists in the database:
-Users <- engine$hydrate("users")
-Users <- engine$hydrate("users", include = c("id", "name"))
-Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+Users <- engine$reflect("users")
+Users <- engine$reflect("users", include = c("id", "name"))
+Users <- engine$reflect("users", exclude = c("hash", "configuration"))
 }
 
 ## ------------------------------------------------
-## Method `Engine$hydrate_schema`
+## Method `Engine$reflect_schema`
 ## ------------------------------------------------
 
 \donttest{
-models <- engine$hydrate_schema()
-models <- engine$hydrate_schema(tables = c("users", "posts"))
+models <- engine$reflect_schema()
+models <- engine$reflect_schema(tables = c("users", "posts"))
 posts <- models$posts
 }
 }
@@ -57,7 +57,7 @@ posts <- models$posts
 
 [Engine$model()], [reflect_columns()]
 
-[Engine$hydrate()], [define_relationship()], [reflect_tables()]
+[Engine$reflect()], [define_relationship()], [reflect_tables()]
 
 [TableModel$print()], [Record$print()].
 }
@@ -91,10 +91,13 @@ posts <- models$posts
 \item \href{#method-Engine-create_schema}{\code{Engine$create_schema()}}
 \item \href{#method-Engine-check_schema_exists}{\code{Engine$check_schema_exists()}}
 \item \href{#method-Engine-model}{\code{Engine$model()}}
-\item \href{#method-Engine-hydrate}{\code{Engine$hydrate()}}
-\item \href{#method-Engine-hydrate_schema}{\code{Engine$hydrate_schema()}}
+\item \href{#method-Engine-reflect}{\code{Engine$reflect()}}
+\item \href{#method-Engine-reflect_schema}{\code{Engine$reflect_schema()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
+\item \href{#method-Engine-set_transaction_connection}{\code{Engine$set_transaction_connection()}}
+\item \href{#method-Engine-push_savepoint}{\code{Engine$push_savepoint()}}
+\item \href{#method-Engine-pop_savepoint}{\code{Engine$pop_savepoint()}}
 \item \href{#method-Engine-qualify}{\code{Engine$qualify()}}
 \item \href{#method-Engine-format_tablename}{\code{Engine$format_tablename()}}
 \item \href{#method-Engine-print}{\code{Engine$print()}}
@@ -332,9 +335,9 @@ engine$model(
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Engine-hydrate"></a>}}
-\if{latex}{\out{\hypertarget{method-Engine-hydrate}{}}}
-\subsection{Method \code{hydrate()}}{
+\if{html}{\out{<a id="method-Engine-reflect"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-reflect}{}}}
+\subsection{Method \code{reflect()}}{
 Build a TableModel by introspecting an existing database table.
 
 Inspects the columns of an existing table and returns a ready-to-use
@@ -345,7 +348,7 @@ PostgreSQL dialect reflects richer metadata: canonical types, primary
 keys, nullability, defaults, and foreign keys (as [ForeignKey]
 objects).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$hydrate(
+\if{html}{\out{<div class="r">}}\preformatted{Engine$reflect(
   tablename,
   ...,
   include = NULL,
@@ -358,7 +361,7 @@ objects).
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{tablename}}{Name of the existing table to hydrate.}
+\item{\code{tablename}}{Name of the existing table to reflect.}
 
 \item{\code{...}}{Additional `Column`, `ForeignKey`, or `Method` objects to
 merge in. These take precedence over reflected columns of the same
@@ -381,9 +384,9 @@ A new TableModel object.
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
 # Given a table "users" that already exists in the database:
-Users <- engine$hydrate("users")
-Users <- engine$hydrate("users", include = c("id", "name"))
-Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
+Users <- engine$reflect("users")
+Users <- engine$reflect("users", include = c("id", "name"))
+Users <- engine$reflect("users", exclude = c("hash", "configuration"))
 }
 }
 \if{html}{\out{</div>}}
@@ -392,21 +395,21 @@ Users <- engine$hydrate("users", exclude = c("hash", "configuration"))
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Engine-hydrate_schema"></a>}}
-\if{latex}{\out{\hypertarget{method-Engine-hydrate_schema}{}}}
-\subsection{Method \code{hydrate_schema()}}{
-Hydrate several tables from a schema at once and wire up the
+\if{html}{\out{<a id="method-Engine-reflect_schema"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-reflect_schema}{}}}
+\subsection{Method \code{reflect_schema()}}{
+Reflect several tables from a schema at once and wire up the
 relationships implied by their foreign keys.
 
-Each table is hydrated via [Engine$hydrate()]; afterwards, every
-reflected [ForeignKey] whose target is also among the hydrated models
+Each table is reflected via [Engine$reflect()]; afterwards, every
+reflected [ForeignKey] whose target is also among the reflected models
 is turned into a `many_to_one` relationship (with the reverse
 `one_to_many` backref) using [define_relationship()]. Foreign keys
-pointing at tables outside the hydrated set are skipped with a
+pointing at tables outside the reflected set are skipped with a
 warning. This is most useful with the PostgreSQL dialect, whose
 reflection captures foreign keys.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Engine$hydrate_schema(
+\if{html}{\out{<div class="r">}}\preformatted{Engine$reflect_schema(
   tables = NULL,
   ...,
   .schema = NULL,
@@ -420,13 +423,13 @@ reflection captures foreign keys.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{tables}}{Optional character vector limiting which tables to
-hydrate. When `NULL`, all tables in the schema are hydrated
+reflect. When `NULL`, all tables in the schema are reflected
 (see [reflect_tables()]).}
 
 \item{\code{...}}{Additional `Column`, `ForeignKey`, or `Method` objects
-passed to every `hydrate()` call (overrides of reflected columns).}
+passed to every `reflect()` call (overrides of reflected columns).}
 
-\item{\code{.schema}}{Character. Schema to hydrate. Defaults to the engine
+\item{\code{.schema}}{Character. Schema to reflect. Defaults to the engine
 schema.}
 
 \item{\code{exclude}}{Optional character vector of table names to drop.}
@@ -444,8 +447,8 @@ A named list of TableModel objects, keyed by bare table name.
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
-models <- engine$hydrate_schema()
-models <- engine$hydrate_schema(tables = c("users", "posts"))
+models <- engine$reflect_schema()
+models <- engine$reflect_schema(tables = c("users", "posts"))
 posts <- models$posts
 }
 }
@@ -485,6 +488,56 @@ Retrieve the current transaction state
 
 \subsection{Returns}{
 Logical indicating if a transaction is active
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-set_transaction_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-set_transaction_connection}{}}}
+\subsection{Method \code{set_transaction_connection()}}{
+Pin a single connection for the duration of a transaction so that
+[with.Engine()] and every operation inside the block share one
+connection. Used internally for pooled engines, where each call would
+otherwise check out a different connection. Pass `NULL` to clear.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$set_transaction_connection(conn)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{conn}}{A DBIConnection, or NULL to release the pin.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The Engine object, invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-push_savepoint"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-push_savepoint}{}}}
+\subsection{Method \code{push_savepoint()}}{
+Reserve a fresh savepoint name for a nested transaction block and
+bump the nesting depth.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$push_savepoint()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A unique savepoint name (character).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-pop_savepoint"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-pop_savepoint}{}}}
+\subsection{Method \code{pop_savepoint()}}{
+Release the most recently reserved savepoint name.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$pop_savepoint()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+NULL, invisibly.
 }
 }
 \if{html}{\out{<hr>}}

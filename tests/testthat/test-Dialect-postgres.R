@@ -1193,3 +1193,116 @@ test_that("JSON/JSONB types are case-insensitive", {
     expect_equal(job_read$data$data1, c(1, 2, 3))
     expect_equal(job_read$data$data2$key, "value")
 })
+# =============================================================================
+# with.Engine TRANSACTION BUGS (PostgreSQL-specific manifestations)
+# =============================================================================
+# These tests assert the *intended* contract of with.Engine and currently fail,
+# documenting bugs surfaced in review. Like SQLite, RPostgres rejects a nested
+# dbBegin() (it raises an error on a connection already in a transaction), so a
+# with.Engine nested inside another is currently impossible. The remaining bugs
+# (pooling, read-only) are dialect-independent and verified here against a real
+# Postgres backend as well.
+
+test_that("postgres: nested with.Engine should not error (bug: nesting)", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, c(conn_info, list(persist = TRUE)))
+    withr::defer(engine$close())
+
+    model <- engine$model(
+        "tx_nesting",
+        id = Column("INTEGER", primary_key = TRUE),
+        name = Column("TEXT")
+    )
+    model$create_table(overwrite = TRUE)
+    withr::defer(model$drop_table(ask = FALSE))
+
+    # A with.Engine nested inside another -- directly or via a helper -- should
+    # run as a savepoint and commit together with the outer transaction, not
+    # raise "nested transactions not supported" / leave the outer transaction in
+    # a broken state.
+    expect_no_error(
+        with.Engine(engine, {
+            model$record(id = 1, name = "Alice")$create()
+            with.Engine(engine, {
+                model$record(id = 2, name = "Bob")$create()
+            })
+            # The outer transaction must survive the inner block returning.
+            expect_true(engine$get_transaction_state())
+            model$record(id = 3, name = "Carol")$create()
+        })
+    )
+
+    expect_equal(length(model$read()), 3L)
+    expect_false(engine$get_transaction_state())
+})
+
+test_that("postgres: with.Engine commits through a pooled engine (bug: pooling)", {
+    testthat::skip_if_not_installed("pool")
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, c(conn_info, list(use_pool = TRUE)))
+    withr::defer(engine$close())
+
+    model <- engine$model(
+        "tx_pooling",
+        id = Column("INTEGER", primary_key = TRUE),
+        name = Column("TEXT")
+    )
+    model$create_table(overwrite = TRUE)
+    withr::defer(model$drop_table(ask = FALSE))
+
+    # dbBegin() is being called on the Pool object instead of a single
+    # checked-out connection; pool refuses this outright.
+    expect_no_error(
+        with.Engine(engine, {
+            model$record(id = 1, name = "Alice")$create()
+            model$record(id = 2, name = "Bob")$create()
+        })
+    )
+
+    expect_equal(length(model$read()), 2L)
+})
+
+test_that("postgres: with.Engine refuses a transaction on a read-only engine (bug: read_only)", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    # Seed a table with a writable engine first.
+    seed <- do.call(Engine$new, conn_info)
+    seed$model(
+        "tx_read_only",
+        id = Column("INTEGER", primary_key = TRUE),
+        name = Column("TEXT")
+    )$create_table(overwrite = TRUE)
+    seed$close()
+    withr::defer({
+        cleanup <- do.call(Engine$new, conn_info)
+        cleanup$model("tx_read_only", id = Column("INTEGER", primary_key = TRUE))$drop_table(ask = FALSE)
+        cleanup$close()
+    })
+
+    ro <- do.call(Engine$new, c(conn_info, list(.read_only = TRUE)))
+    withr::defer(ro$close())
+
+    # with.Engine should refuse upfront rather than opening a transaction that
+    # only fails when a write is attempted.
+    expect_error(
+        with.Engine(ro, { "noop" }),
+        regexp = "read-only"
+    )
+})

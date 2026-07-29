@@ -33,7 +33,7 @@ test_that("reflect_columns.postgres captures types, PK, nullability, defaults, a
         "title TEXT)"
     ))
 
-    Users <- engine$hydrate("users")
+    Users <- engine$reflect("users")
     uf <- Users$fields
     expect_true(isTRUE(uf$id$primary_key))
     expect_match(tolower(uf$id$type), "int")
@@ -41,7 +41,7 @@ test_that("reflect_columns.postgres captures types, PK, nullability, defaults, a
     expect_true(isTRUE(uf$active$nullable))           # nullable
     expect_false(is.null(uf$active$default))          # DEFAULT true captured
 
-    Posts <- engine$hydrate("posts")
+    Posts <- engine$reflect("posts")
     pf <- Posts$fields
     expect_s3_class(pf$user_id, "ForeignKey")
     expect_equal(pf$user_id$ref_schema, "public")
@@ -72,7 +72,7 @@ test_that("reflect_columns.postgres captures cross-schema foreign keys", {
         "author_id INTEGER REFERENCES other.authors(id))"
     ))
 
-    Articles <- engine$hydrate("articles")
+    Articles <- engine$reflect("articles")
     fk <- Articles$fields$author_id
     expect_s3_class(fk, "ForeignKey")
     expect_equal(fk$ref_schema, "other")
@@ -82,10 +82,10 @@ test_that("reflect_columns.postgres captures cross-schema foreign keys", {
 })
 
 # =============================================================================
-# hydrate_schema: table limiting + relationship wiring + traversal
+# reflect_schema: table limiting + relationship wiring + traversal
 # =============================================================================
 
-test_that("hydrate_schema hydrates a limited set and wires relationships", {
+test_that("reflect_schema reflects a limited set and wires relationships", {
     engine <- pg_engine()
     withr::defer(clear_postgres_test_tables())
     withr::defer(engine$close())
@@ -102,9 +102,9 @@ test_that("hydrate_schema hydrates a limited set and wires relationships", {
     ))
     DBI::dbExecute(con, "CREATE TABLE logs (id SERIAL PRIMARY KEY, msg TEXT)")
 
-    models <- engine$hydrate_schema(tables = c("users", "posts"))
+    models <- engine$reflect_schema(tables = c("users", "posts"))
 
-    # 'tables' limits the hydrated set
+    # 'tables' limits the reflected set
     expect_setequal(names(models), c("users", "posts"))
     expect_false("logs" %in% names(models))
 
@@ -129,7 +129,7 @@ test_that("hydrate_schema hydrates a limited set and wires relationships", {
     expect_true(length(ada_posts) >= 1)
 })
 
-test_that("hydrate_schema warns and skips foreign keys whose target is not hydrated", {
+test_that("reflect_schema warns and skips foreign keys whose target is not reflected", {
     engine <- pg_engine()
     withr::defer(clear_postgres_test_tables())
     withr::defer(engine$close())
@@ -145,8 +145,8 @@ test_that("hydrate_schema warns and skips foreign keys whose target is not hydra
 
     # Hydrate only 'posts'; its FK target 'users' is outside the set.
     expect_warning(
-        models <- engine$hydrate_schema(tables = "posts"),
-        "not hydrated"
+        models <- engine$reflect_schema(tables = "posts"),
+        "not reflected"
     )
     expect_setequal(names(models), "posts")
     expect_length(models$posts$relationships, 0)

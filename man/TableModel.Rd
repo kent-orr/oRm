@@ -28,6 +28,22 @@ Key features:
 \note{
 Errors if the table's schema does not exist.
 
+When a filter is supplied, this resolves it with two round-trips:
+    first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    filter machinery as `read()`), then an `UPDATE ... WHERE pk IN (...)`.
+    This reuses the query builder instead of re-translating NSE filters to
+    raw SQL, at the cost of being non-atomic: rows that start matching the
+    filter between the two statements are not updated. Wrap the call in a
+    transaction if you need isolation.
+
+When a filter is supplied, this resolves it with two round-trips:
+    first a `SELECT` of the matching primary keys (reusing the same dbplyr
+    filter machinery as `read()`), then a `DELETE ... WHERE pk IN (...)`.
+    This reuses the query builder instead of re-translating NSE filters to
+    raw SQL, at the cost of being non-atomic: rows that start matching the
+    filter between the two statements are not deleted. Wrap the call in a
+    transaction if you need isolation.
+
 Throws an error if zero or multiple records are found.
 
 Throws an error if multiple records are found.
@@ -40,7 +56,11 @@ Throws an error if multiple records are found.
     \item{\code{generate_sql_fields()}}{Generate SQL field definitions for table creation.}
     \item{\code{create_table(if_not_exists = TRUE, overwrite = FALSE, verbose = FALSE)}}{Create the associated table in the database.}
     \item{\code{record(..., .data = list())}}{Create a new Record object associated with this model.}
+    \item{\code{create(..., .data = list())}}{Insert a new row (set-level counterpart to \code{Record$create()}).}
     \item{\code{read(..., .mode = NULL, .limit = NULL)}}{Read records from the table using dynamic filters. If `.mode` is NULL, uses `default_mode`.}
+    \item{\code{update(..., .all = FALSE, .data = list())}}{Update matching rows; bare exprs are the WHERE filter, named args are the SET values.}
+    \item{\code{delete(..., .all = FALSE)}}{Delete matching rows; bare exprs are the WHERE filter.}
+    \item{\code{define_relationship(local_key, type, related_model, related_key, ref = NULL, backref = NULL)}}{Define a relationship from this model to a related model (method form of \code{define_relationship()}).}
     \item{\code{relationship(rel_name, ...)}}{Query related records based on defined relationships.}
     \item{\code{print()}}{Print a concise summary of the model, including its fields.}
 }
@@ -58,6 +78,31 @@ User$drop_table()
 
 # Force drop without confirmation
 User$drop_table(ask = FALSE)
+}
+
+## ------------------------------------------------
+## Method `TableModel$create`
+## ------------------------------------------------
+
+\donttest{
+User$create(id = 1L, name = "Kent")
+}
+
+## ------------------------------------------------
+## Method `TableModel$update`
+## ------------------------------------------------
+
+\donttest{
+User$update(id == 1, name = "Kent", age = 35)
+}
+
+## ------------------------------------------------
+## Method `TableModel$delete`
+## ------------------------------------------------
+
+\donttest{
+User$delete(id == 1)
+User$delete(.all = TRUE)
 }
 
 ## ------------------------------------------------
@@ -106,6 +151,15 @@ user <- User$one_or_none(status == "active")  # Error if multiple active users
 }
 Retrieve related records based on a defined relationship.
 
+
+## ------------------------------------------------
+## Method `TableModel$define_relationship`
+## ------------------------------------------------
+
+\donttest{
+User$define_relationship("id", "one_to_many", Post, "user_id",
+                         ref = "posts", backref = "user")
+}
 }
 \seealso{
 \code{\link{Engine}}, \code{\link{Record}}, \code{\link{Column}}, \code{\link{ForeignKey}}
@@ -113,6 +167,8 @@ Retrieve related records based on a defined relationship.
 Engine::get_connection
 
 [Record$relationship()]
+
+[define_relationship()], [TableModel$relationship()]
 
 [Engine$print()], [Record$print()].
 }
@@ -142,12 +198,16 @@ Engine::get_connection
 \item \href{#method-TableModel-create_table}{\code{TableModel$create_table()}}
 \item \href{#method-TableModel-drop_table}{\code{TableModel$drop_table()}}
 \item \href{#method-TableModel-record}{\code{TableModel$record()}}
+\item \href{#method-TableModel-create}{\code{TableModel$create()}}
+\item \href{#method-TableModel-update}{\code{TableModel$update()}}
+\item \href{#method-TableModel-delete}{\code{TableModel$delete()}}
 \item \href{#method-TableModel-tbl}{\code{TableModel$tbl()}}
 \item \href{#method-TableModel-read}{\code{TableModel$read()}}
 \item \href{#method-TableModel-get}{\code{TableModel$get()}}
 \item \href{#method-TableModel-all}{\code{TableModel$all()}}
 \item \href{#method-TableModel-one_or_none}{\code{TableModel$one_or_none()}}
 \item \href{#method-TableModel-relationship}{\code{TableModel$relationship()}}
+\item \href{#method-TableModel-define_relationship}{\code{TableModel$define_relationship()}}
 \item \href{#method-TableModel-print}{\code{TableModel$print()}}
 \item \href{#method-TableModel-clone}{\code{TableModel$clone()}}
 }
@@ -314,6 +374,121 @@ Create a new Record object with this model.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-create"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-create}{}}}
+\subsection{Method \code{create()}}{
+Insert a new row into the table.
+
+Convenience wrapper over `model$record(...)$create()`: builds a Record
+from the supplied values and immediately persists it. This is the
+set-level counterpart to `Record$create()`.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$create(..., .data = list())}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Named values for the new row.}
+
+\item{\code{.data}}{A named list of field values (alternative to `...`).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The persisted Record (carrying any server-generated keys).
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+User$create(id = 1L, name = "Kent")
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-update"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-update}{}}}
+\subsection{Method \code{update()}}{
+Update matching rows in the table (set-level `UPDATE ... WHERE`).
+
+Bare expressions are treated as the WHERE filter (exactly like `read()`),
+while named arguments are treated as the SET assignments (like
+`create()`/`record()`). For example, `User$update(id == 1, name = "Kent")`
+sets `name` on the row(s) where `id == 1`.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$update(..., .all = FALSE, .data = list())}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{A mix of unquoted filter expressions (WHERE) and named values
+(SET).}
+
+\item{\code{.all}}{Logical. Must be `TRUE` to update every row when no filter is
+supplied; guards against accidental whole-table updates.}
+
+\item{\code{.data}}{A named list of SET values (combined with named `...`, which
+takes precedence).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The number of rows affected, invisibly.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+User$update(id == 1, name = "Kent", age = 35)
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-delete"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-delete}{}}}
+\subsection{Method \code{delete()}}{
+Delete matching rows from the table (set-level `DELETE ... WHERE`).
+
+Bare expressions are treated as the WHERE filter, exactly like `read()`.
+This is the set-level counterpart to `Record$delete()`.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$delete(..., .all = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unquoted filter expressions (WHERE).}
+
+\item{\code{.all}}{Logical. Must be `TRUE` to delete every row when no filter is
+supplied; guards against accidental whole-table deletes.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The number of rows affected, invisibly.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+User$delete(id == 1)
+User$delete(.all = TRUE)
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-tbl"></a>}}
@@ -501,6 +676,61 @@ For per-record filtering based on existing data, use [Record$relationship()], wh
 \subsection{Returns}{
 A single Record, a list of Records, or NULL, depending on the relationship type.
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TableModel-define_relationship"></a>}}
+\if{latex}{\out{\hypertarget{method-TableModel-define_relationship}{}}}
+\subsection{Method \code{define_relationship()}}{
+Define a relationship from this model to a related model.
+
+Method form of [define_relationship()] with this model supplied as the
+`local_model`. Modifies both models in place (R6 semantics); the related
+model gains the reverse relationship unless `backref = FALSE`.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$define_relationship(
+  local_key,
+  type,
+  related_model,
+  related_key,
+  ref = NULL,
+  backref = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{local_key}}{The key in this model that relates to `related_key`.}
+
+\item{\code{type}}{The relationship type. One of 'one_to_one', 'one_to_many',
+'many_to_one', or 'many_to_many'.}
+
+\item{\code{related_model}}{The model being related to.}
+
+\item{\code{related_key}}{The key in the related model that `local_key` relates to.}
+
+\item{\code{ref}}{Name for this relationship on this model. Defaults to the
+lowercase related table name.}
+
+\item{\code{backref}}{Name for the reverse relationship on the related model.
+Defaults to the lowercase local table name; `FALSE` skips it.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The TableModel object, invisibly.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+User$define_relationship("id", "one_to_many", Post, "user_id",
+                         ref = "posts", backref = "user")
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-print"></a>}}

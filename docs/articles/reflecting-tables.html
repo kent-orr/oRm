@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Hydrating Models from Existing Tables • oRm</title>
+<title>Reflecting Models from Existing Tables • oRm</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -15,7 +15,7 @@
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Hydrating Models from Existing Tables">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Reflecting Models from Existing Tables">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -47,7 +47,7 @@
     <li><a class="dropdown-item" href="../articles/using-engine.html">Using Engine</a></li>
     <li><a class="dropdown-item" href="../articles/using-tablemodels.html">Using TableModels</a></li>
     <li><a class="dropdown-item" href="../articles/using-records.html">Using Records</a></li>
-    <li><a class="dropdown-item" href="../articles/hydrating-tables.html">Hydrating Models from Existing Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/reflecting-tables.html">Reflecting Models from Existing Tables</a></li>
     <li><a class="dropdown-item" href="../articles/using-relationships.html">Using Relationships</a></li>
     <li><a class="dropdown-item" href="../articles/using-methods.html">Using Methods</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -83,11 +83,11 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.svg" class="logo" alt=""><h1>Hydrating Models from Existing Tables</h1>
+      <img src="../logo.svg" class="logo" alt=""><h1>Reflecting Models from Existing Tables</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/kent-orr/oRm/blob/HEAD/vignettes/hydrating-tables.Rmd" class="external-link"><code>vignettes/hydrating-tables.Rmd</code></a></small>
-      <div class="d-none name"><code>hydrating-tables.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/kent-orr/oRm/blob/HEAD/vignettes/reflecting-tables.Rmd" class="external-link"><code>vignettes/reflecting-tables.Rmd</code></a></small>
+      <div class="d-none name"><code>reflecting-tables.Rmd</code></div>
     </div>
 
     
@@ -95,11 +95,11 @@
 <p>When a database already exists, <code>oRm</code> can introspect its
 tables and return ready-to-use <code>TableModel</code> objects — no need
 to re-declare every column by hand. This is called
-<em>hydration</em>.</p>
+<em>reflection</em>.</p>
 <div class="section level2">
-<h2 id="single-table-hydration-with-hydrate">Single-table hydration with <code>hydrate()</code><a class="anchor" aria-label="anchor" href="#single-table-hydration-with-hydrate"></a>
+<h2 id="single-table-reflection-with-reflect">Single-table reflection with <code>reflect()</code><a class="anchor" aria-label="anchor" href="#single-table-reflection-with-reflect"></a>
 </h2>
-<p><code>engine$hydrate()</code> inspects one table and returns a
+<p><code>engine$reflect()</code> inspects one table and returns a
 <code>TableModel</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kent-orr.github.io/oRm/">oRm</a></span><span class="op">)</span></span>
@@ -111,13 +111,13 @@ to re-declare every column by hand. This is called
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Reflect every column of the existing "users" table</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span><span class="st">"users"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">Users</span><span class="op">$</span><span class="va">fields</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "id" "name" "email" "created_at"</span></span>
 <span></span>
 <span><span class="co"># Narrow the model with include / exclude</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"email"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span><span class="st">"users"</span>, exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"password_hash"</span>, <span class="st">"internal_notes"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span><span class="st">"users"</span>, include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"email"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span><span class="st">"users"</span>, exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"password_hash"</span>, <span class="st">"internal_notes"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">Users</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
@@ -144,7 +144,7 @@ foreign keys</td>
 </tr>
 </tbody>
 </table>
-<p>With PostgreSQL, <code>hydrate()</code> captures:</p>
+<p>With PostgreSQL, <code>reflect()</code> captures:</p>
 <ul>
 <li>
 <strong>Canonical types</strong> — e.g. <code>integer</code>,
@@ -177,13 +177,13 @@ primary key on dialects that don’t reflect one, override a type, or add
 a <code><a href="../reference/Method.html">Method()</a></code>:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Supply the PK explicitly on a non-PostgreSQL backend</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span></span>
 <span>  <span class="st">"users"</span>,</span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">"INTEGER"</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Attach a custom method alongside the reflected columns</span></span>
-<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate</span><span class="op">(</span></span>
+<span><span class="va">Users</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect</span><span class="op">(</span></span>
 <span>  <span class="st">"users"</span>,</span>
 <span>  display_name <span class="op">=</span> <span class="fu"><a href="../reference/Method.html">Method</a></span><span class="op">(</span><span class="st">"table"</span>, <span class="kw">function</span><span class="op">(</span><span class="va">self</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">self</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.mode <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span><span class="op">$</span><span class="va">name</span></span>
@@ -192,25 +192,25 @@ a <code><a href="../reference/Method.html">Method()</a></code>:</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="schema-wide-hydration-with-hydrate_schema">Schema-wide hydration with <code>hydrate_schema()</code><a class="anchor" aria-label="anchor" href="#schema-wide-hydration-with-hydrate_schema"></a>
+<h2 id="schema-wide-reflection-with-reflect_schema">Schema-wide reflection with <code>reflect_schema()</code><a class="anchor" aria-label="anchor" href="#schema-wide-reflection-with-reflect_schema"></a>
 </h2>
-<p><code>engine$hydrate_schema()</code> hydrates every table in a schema
+<p><code>engine$reflect_schema()</code> reflects every table in a schema
 at once and automatically wires the <code>many_to_one</code> /
 <code>one_to_many</code> relationships implied by the reflected foreign
 keys.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Hydrate all tables in the engine's default schema</span></span>
-<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Reflect all tables in the engine's default schema</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect_schema</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Or restrict to a subset</span></span>
-<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"users"</span>, <span class="st">"posts"</span>, <span class="st">"comments"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect_schema</span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"users"</span>, <span class="st">"posts"</span>, <span class="st">"comments"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Exclude tables you don't need</span></span>
-<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">hydrate_schema</span><span class="op">(</span>exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"schema_migrations"</span>, <span class="st">"audit_log"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">models</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">reflect_schema</span><span class="op">(</span>exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"schema_migrations"</span>, <span class="st">"audit_log"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="accessing-models">Accessing models<a class="anchor" aria-label="anchor" href="#accessing-models"></a>
 </h3>
-<p><code>hydrate_schema()</code> returns a named list keyed by bare
+<p><code>reflect_schema()</code> returns a named list keyed by bare
 table name:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">posts</span>  <span class="op">&lt;-</span> <span class="va">models</span><span class="op">$</span><span class="va">posts</span></span>
@@ -220,7 +220,7 @@ table name:</p>
 <h3 id="auto-wired-relationships">Auto-wired relationships<a class="anchor" aria-label="anchor" href="#auto-wired-relationships"></a>
 </h3>
 <p>Every reflected <code>ForeignKey</code> whose target was also
-hydrated is turned into a <code>many_to_one</code> relationship (with
+reflected is turned into a <code>many_to_one</code> relationship (with
 the reverse <code>one_to_many</code> backref):</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">post</span>   <span class="op">&lt;-</span> <span class="va">posts</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="va">id</span> <span class="op">==</span> <span class="fl">1</span>, .mode <span class="op">=</span> <span class="st">"get"</span><span class="op">)</span></span>
@@ -231,7 +231,7 @@ the reverse <code>one_to_many</code> backref):</p>
 <span><span class="va">all_posts</span> <span class="op">&lt;-</span> <span class="va">author</span><span class="op">$</span><span class="fu">relationship</span><span class="op">(</span><span class="st">"posts"</span><span class="op">)</span>  <span class="co"># reverse backref</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">all_posts</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 12</span></span></code></pre></div>
-<p>Foreign keys pointing at tables outside the hydrated set are skipped
+<p>Foreign keys pointing at tables outside the reflected set are skipped
 with a warning. You can always wire those manually afterwards:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">models</span><span class="op">$</span><span class="va">posts</span><span class="op">$</span><span class="fu">define_relationship</span><span class="op">(</span></span>
@@ -256,7 +256,7 @@ with a warning. You can always wire those manually afterwards:</p>
 <tr class="odd">
 <td><code>tables</code></td>
 <td><code>NULL</code></td>
-<td>Tables to hydrate; <code>NULL</code> = all in schema</td>
+<td>Tables to reflect; <code>NULL</code> = all in schema</td>
 </tr>
 <tr class="even">
 <td><code>exclude</code></td>
@@ -298,7 +298,7 @@ shorthand and explicit forms:</p>
 <code>REFERENCES "audit"."users" ("id")</code>.</p>
 <p>PostgreSQL reflection automatically schema-qualifies foreign keys
 when the target lives in a different schema, so
-<code>hydrate_schema()</code> handles cross-schema FK wiring
+<code>reflect_schema()</code> handles cross-schema FK wiring
 transparently.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

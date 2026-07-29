@@ -1,7 +1,7 @@
 # Reflect the columns of an existing table into Column objects
 
 Inspects an existing database table and returns a named list of
-\[Column\] objects, one per column. Used by \`Engine\$hydrate()\` to
+\[Column\] objects, one per column. Used by \`Engine\$reflect()\` to
 build a TableModel from a table that already exists in the database.
 
 ## Usage
@@ -37,7 +37,7 @@ A named list of \[Column\] objects, keyed by column name.
 The default implementation is dialect-agnostic: it issues a zero-row
 query and reads \`DBI::dbColumnInfo()\` to recover column names and
 best-effort types. The reported type is backend-dependent (e.g. RSQLite
-reports R types such as "double"); since hydration targets existing
+reports R types such as "double"); since reflection targets existing
 tables, the type is not used to create the table and so is informational
 only. Dialects may provide richer implementations (capturing primary
 keys, nullability, and defaults).
