@@ -43,6 +43,25 @@ build_set_clause <- function(con, fields, values, dialect = NULL) {
     paste(set_parts, collapse = ", ")
 }
 
+#' Is a column type filled in by the database on insert?
+#'
+#' Auto-generated columns are exempt from the required-field check in
+#' `Record$create()` and are dropped from mssql insert statements. Covers
+#' PostgreSQL's SERIAL family and SQL Server's IDENTITY specification, which
+#' rides along in the declared type (e.g. `"INT IDENTITY(1,1)"`).
+#'
+#' @param type A column type string.
+#' @return TRUE when the database supplies the value itself.
+#' @noRd
+is_auto_generated_type <- function(type) {
+    if (is.null(type) || length(type) != 1 || is.na(type)) {
+        return(FALSE)
+    }
+    type <- toupper(as.character(type))
+    type %in% c("SERIAL", "BIGSERIAL", "SMALLSERIAL") ||
+        grepl("\\bIDENTITY\\b", type)
+}
+
 #' Primary-key field names for a model, erroring if none are defined
 #'
 #' Shared by row-level (`Record`) and set-level (`TableModel`) write/refresh

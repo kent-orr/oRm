@@ -124,10 +124,9 @@ Record <- R6::R6Class(
       # Validate required fields (excluding auto-generated fields like SERIAL)
       required_fields <- names(self$model$fields)[
         vapply(self$model$fields, function(x) {
-          # A field is required if it's not nullable AND not auto-generated
-          # SERIAL, BIGSERIAL, SMALLSERIAL are auto-generated types
-          is_auto_generated <- toupper(x$type) %in% c("SERIAL", "BIGSERIAL", "SMALLSERIAL")
-          isFALSE(x$nullable) && !is_auto_generated
+          # A field is required if it's not nullable AND not filled in by the
+          # database itself (SERIAL family, IDENTITY).
+          isFALSE(x$nullable) && !is_auto_generated_type(x$type)
         }, logical(1))
       ]
       missing_fields <- setdiff(required_fields, names(self$data))

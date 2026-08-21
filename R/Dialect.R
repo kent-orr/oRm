@@ -1,4 +1,4 @@
-#' @include Dialect-mysql.R Dialect-postgres.R Dialect-sqlite.R
+#' @include Dialect-mssql.R Dialect-mysql.R Dialect-postgres.R Dialect-sqlite.R
 #' @importFrom DBI dbExecute
 NULL
 
@@ -386,6 +386,34 @@ render_field.default <- function(field, conn, ...) {
     parts_string = paste(parts, collapse = ' ')
     paste(DBI::dbQuoteIdentifier(conn, field$name), parts_string)
 }
+
+#' Assemble a CREATE TABLE statement
+#'
+#' Wraps the rendered column and constraint definitions in a dialect-appropriate
+#' `CREATE TABLE`. The default emits ANSI `CREATE TABLE [IF NOT EXISTS]`;
+#' dialects whose SQL lacks that spelling (notably T-SQL) provide their own
+#' existence guard.
+#'
+#' @param x An oRm object (usually a TableModel) used for dialect dispatch.
+#' @param conn A DBI connection used for quoting.
+#' @param tablename Character. The unquoted (optionally schema-qualified) name.
+#' @param quoted_name Character. The same name, already quoted for the backend.
+#' @param body Character. The rendered column and constraint definitions.
+#' @param if_not_exists Logical. Whether to guard against an existing table.
+#' @param ... Additional arguments for dialect-specific implementations.
+#' @return A character SQL statement.
+#' @keywords internal
+sql_create_table <- function(x, conn, tablename, quoted_name, body, if_not_exists = TRUE, ...) {
+    dispatch_method(x, "sql_create_table", conn, tablename, quoted_name, body, if_not_exists, ...)
+}
+
+#' @rdname sql_create_table
+#' @keywords internal
+sql_create_table.default <- function(x, conn, tablename, quoted_name, body, if_not_exists = TRUE, ...) {
+    create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
+    paste0(create_clause, " ", quoted_name, " (\n    ", body, "\n);\n")
+}
+
 
 #' Write teh sql for a foreign key column
 #' @inheritParams render_field
