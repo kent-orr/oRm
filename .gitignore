@@ -11,6 +11,7 @@ oRm.Rcheck/
 
 # Claude AI and development files
 CLAUDE.md
+.claude/settings.local.json
 .vscode/
 build/
 ..Rcheck/

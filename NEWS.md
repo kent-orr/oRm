@@ -1,3 +1,47 @@
+# oRm 0.7.0
+
+## New Features
+
+* **Microsoft SQL Server dialect.** oRm now speaks T-SQL, with the same
+  reflection depth PostgreSQL has enjoyed. Connect through `odbc` and the
+  dialect is inferred from the `Driver` (or `.connection_string`) argument;
+  where that is not enough — a DSN, for instance — pass `.dialect = "mssql"`.
+  SQL Server 2016 or later is assumed.
+    - **Reflection** reads the `sys` catalog views, rebuilding declared types
+      (`nvarchar(100)`, `decimal(10,2)`, `nvarchar(MAX)`), primary keys
+      (composite included), nullability, column defaults, and foreign keys.
+      Foreign keys become `ForeignKey` objects, so `engine$reflect_schema()`
+      wires up `many_to_one` relationships and their backrefs exactly as it
+      does on PostgreSQL.
+    - **Inserts** use `OUTPUT INSERTED.*` to return the stored row, so
+      server-generated values land back on the record. Tables carrying
+      triggers reject that clause; oRm falls back to a keyed re-read when the
+      primary key was supplied, and otherwise reports why rather than
+      surfacing a raw SQL Server error.
+    - `CREATE TABLE` is guarded with `IF OBJECT_ID(...) IS NULL`, since T-SQL
+      has no `CREATE TABLE IF NOT EXISTS`.
+    - Read-only engines fall back to oRm's application-level statement guard,
+      as SQL Server has no session-level read-only mode.
+
+* **IDENTITY columns.** Declared in the type string, mirroring how PostgreSQL's
+  `SERIAL` has always worked: `Column("INT IDENTITY(1,1)", primary_key = TRUE)`.
+  IDENTITY columns are exempt from the required-field check on `create()` and
+  are omitted from insert statements, so the server generates the value.
+
+* **`.dialect` argument to `Engine$new()`** overrides automatic detection. Any
+  dialect string is accepted, so dialects shipped by other packages can be
+  selected the same way.
+
+## Bug Fixes
+
+* **Composite primary keys now generate valid DDL on every dialect.** Marking
+  more than one column `primary_key = TRUE` emitted an inline `PRIMARY KEY`
+  clause per column, which every database rejects (SQLite, for example, with
+  `table ... has more than one primary key`). `create_table()` now emits a
+  single table-level `PRIMARY KEY (a, b)` constraint and marks those columns
+  `NOT NULL`. Single-column keys render exactly as before. The query side —
+  `update()`, `delete()`, `refresh()` — already handled composite keys.
+
 # oRm 0.6.2
 
 ## Bug Fixes

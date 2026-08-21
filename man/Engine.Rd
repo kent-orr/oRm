@@ -116,7 +116,8 @@ Create an Engine object
   .schema = NULL,
   .read_only = FALSE,
   use_pool = FALSE,
-  persist = FALSE
+  persist = FALSE,
+  .dialect = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -137,7 +138,14 @@ read-only enforcement (SQLite: `SQLITE_RO` open flag; PostgreSQL:
 
 \item{\code{use_pool}}{Logical. Whether or not to make use of the pool package for connections to this engine}
 
-\item{\code{persist}}{Logical. Whether to keep the connection open after operations (default: FALSE)
+\item{\code{persist}}{Logical. Whether to keep the connection open after operations (default: FALSE)}
+
+\item{\code{.dialect}}{Character. Overrides automatic dialect detection, e.g.
+    `"mssql"`. Needed when the driver cannot identify the backend on
+    its own: every `odbc::odbc()` connection shares one driver class,
+    so SQL Server is only auto-detected when the connection arguments
+    name it. Any dialect string is accepted, so third-party dialects
+    can be selected the same way.
 Get a connection to the database
 
 Reapplies the configured schema on every connection retrieval to

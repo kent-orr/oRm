@@ -57,14 +57,28 @@ Engine <- R6::R6Class(
         #'     `SET SESSION TRANSACTION READ ONLY`).
         #' @param use_pool Logical. Whether or not to make use of the pool package for connections to this engine
         #' @param persist Logical. Whether to keep the connection open after operations (default: FALSE)
-        initialize = function(..., conn_args = list(), .schema = NULL, .read_only = FALSE, use_pool = FALSE, persist = FALSE) {
+        #' @param .dialect Character. Overrides automatic dialect detection, e.g.
+        #'     `"mssql"`. Needed when the driver cannot identify the backend on
+        #'     its own: every `odbc::odbc()` connection shares one driver class,
+        #'     so SQL Server is only auto-detected when the connection arguments
+        #'     name it. Any dialect string is accepted, so third-party dialects
+        #'     can be selected the same way.
+        initialize = function(..., conn_args = list(), .schema = NULL, .read_only = FALSE, use_pool = FALSE, persist = FALSE, .dialect = NULL) {
             dots <- rlang::list2(...)
             # Normalize unnamed first argument as `drv` (mirrors DBI::dbConnect convention)
             if (length(dots) >= 1 && !is.null(names(dots)) && names(dots)[1] == "" && is.null(dots[["drv"]])) {
                 names(dots)[1] <- "drv"
             }
             self$conn_args <- utils::modifyList(conn_args, dots)
-            private$detect_dialect()
+            if (is.null(.dialect)) {
+                private$detect_dialect()
+            } else {
+                if (!is.character(.dialect) || length(.dialect) != 1 ||
+                    is.na(.dialect) || !nzchar(.dialect)) {
+                    stop("`.dialect` must be a single non-empty character string.", call. = FALSE)
+                }
+                self$dialect <- .dialect
+            }
             self$schema <- .schema
             self$use_pool <- use_pool
             self$persist <- persist
@@ -493,9 +507,31 @@ Engine <- R6::R6Class(
                 self$dialect <- "mysql"
             } else if (grepl("SQLite", drv_name, ignore.case = TRUE)) {
                 self$dialect <- "sqlite"
+            } else if (grepl("Odbc", drv_name, ignore.case = TRUE)) {
+                self$dialect <- private$detect_odbc_dialect()
             } else {
                 self$dialect <- "default"
             }
+        },
+
+        # An ODBC driver object is the same class for every DBMS, so the target
+        # has to be read off the connection arguments. Only names that identify
+        # the backend are inspected; anything unrecognized stays "default" and
+        # the user can pass `.dialect` instead.
+        detect_odbc_dialect = function() {
+            hint_args <- self$conn_args[
+                tolower(names(self$conn_args)) %in%
+                    c("driver", ".connection_string", "connection_string")
+            ]
+            hints <- unlist(hint_args, use.names = FALSE)
+            hints <- hints[vapply(hints, is.character, logical(1))]
+            if (length(hints) == 0) {
+                return("default")
+            }
+            if (any(grepl("sql server|sqlsrv|mssql", hints, ignore.case = TRUE))) {
+                return("mssql")
+            }
+            "default"
         }
     )
 

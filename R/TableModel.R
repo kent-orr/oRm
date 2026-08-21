@@ -197,26 +197,47 @@ TableModel <- R6::R6Class(
         
         # Get fresh connection after potential execute() call that may close it
         conn <- self$get_connection()
+
+        # A composite key cannot be declared inline on each column; it becomes a
+        # single table-level constraint instead.
+        pk_names <- names(self$fields)[
+            vapply(self$fields, function(f) isTRUE(f$primary_key), logical(1))
+        ]
+        composite_pk <- length(pk_names) > 1
+
         fields_sql = c()
         constraints_sql = c()
         for (i in seq_along(self$fields)) {
             field_name = names(self$fields)[i]
             field = self$fields[[i]]
+            if (composite_pk && field_name %in% pk_names) {
+                field$primary_key <- NULL
+                field$nullable <- FALSE
+            }
             fields_sql = c(fields_sql, render_field(field, conn))
             constraints_sql = c(constraints_sql, render_constraint(field, conn))
         }
 
-        create_clause <- if (if_not_exists) "CREATE TABLE IF NOT EXISTS" else "CREATE TABLE"
-        sql <- paste0(
-            create_clause, " ",
-            self$engine$format_tablename(self$tablename), 
-                " (\n    ", paste(fields_sql, collapse = ',\n'), 
-                if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
+        if (composite_pk) {
+            constraints_sql <- c(constraints_sql, paste0(
+                "PRIMARY KEY (",
+                paste(DBI::dbQuoteIdentifier(conn, pk_names), collapse = ", "),
+                ")"
+            ))
+        }
+
+        body <- paste0(
+            paste(fields_sql, collapse = ',\n'),
+            if (length(constraints_sql) > 0 && any(constraints_sql != "")) {
                 paste0(",\n    ", paste(constraints_sql[constraints_sql != ""], collapse = ",\n    "))
-                } else {
+            } else {
                 ""
-            },
-            "\n);\n"
+            }
+        )
+        sql <- sql_create_table(
+            self, conn, self$tablename,
+            self$engine$format_tablename(self$tablename),
+            body, if_not_exists
         )
 
         if (verbose) {
