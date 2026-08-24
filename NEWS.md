@@ -1,3 +1,63 @@
+# oRm 0.7.0.9000 (development)
+
+## New Features
+
+* **`.autoflush` returns server-generated values for inserts made inside a
+  transaction.** Inside a transaction `Record$create()` defaults to a plain
+  insert, so IDENTITY/SERIAL keys and column defaults stay `NULL` on the record
+  -- the surprise reported in #122, where a parent key was needed for a child
+  insert. Two new controls change that default, and the innermost one wins:
+
+    * `with.Engine(..., .autoflush = TRUE)` makes every `create()` in that block
+      flush.
+    * `Engine$new(..., .autoflush = TRUE)` does the same for every transaction
+      on the engine, so call sites need no flag at all;
+      `engine$set_autoflush()` changes it later in the session.
+
+  An explicit `create(flush_record = ...)` still overrides both. A block's
+  setting is scoped to that block and restored on exit (including on error),
+  and a nested `with.Engine()` inherits it unless it says otherwise. Both
+  default to `FALSE`, so existing behaviour is unchanged and bulk loads are not
+  charged a round trip per row.
+
+  The block-level argument is spelled `.autoflush`, matching `Engine$new()`
+  and the rest of the package's dot-prefixed arguments. Flushing behaviour is
+  covered per dialect -- PostgreSQL recovers keys with `RETURNING`, SQL Server
+  with `OUTPUT INSERTED`, SQLite with a last-rowid lookup -- in
+  `test-Dialect-postgres.R`, `test-Dialect-mssql-integration.R`, and
+  `test-Dialect-sqlite.R`.
+
+## Bug Fixes
+
+* **SQL Server: records on trigger-bearing tables now recover their IDENTITY
+  key.** `OUTPUT INSERTED` is rejected on tables with triggers (error 334), so
+  `flush.mssql` fell back to a keyed re-read that only worked when the caller
+  supplied every primary key value; an IDENTITY key raised an error instead.
+  The fallback now recovers the IDENTITY key with `SCOPE_IDENTITY()` in the
+  same batch as the insert and returns the full row, so `Record$create()`
+  behaves the same on trigger tables as on trigger-free ones. Keys that are
+  neither supplied nor IDENTITY (a `DEFAULT NEWID()` GUID, say) still fail
+  with a clear message.
+
+## Documentation
+
+* **`with.Engine()` now documents its flush behaviour.** Inside a transaction,
+  `Record$create()` leaves server-generated values (IDENTITY/SERIAL keys,
+  column defaults) unset unless it is asked to flush. The help page now says
+  so, spells out all three ways to get them back (`flush_record = TRUE` on one
+  insert, `autoflush = TRUE` on the block, `.autoflush = TRUE` on the engine),
+  and shows the parent/child insert pattern; `create()`'s own docs
+  cross-reference it (#122).
+
+* **The Engine vignette gains a "Server-generated values inside a transaction"
+  section**, showing with live output how `create()` returns generated keys
+  outside a transaction but not inside one, and working through all three ways
+  to change that (per insert, per block, per engine), plus the bulk-load opt-out
+  and a demonstration that a flushed insert still rolls back with its
+  transaction. The Records vignette's `flush_record` paragraph is corrected --
+  it described the in-transaction default as waiting for commit -- and now links
+  to that section.
+
 # oRm 0.7.0
 
 ## New Features

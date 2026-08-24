@@ -95,6 +95,8 @@ posts <- models$posts
 \item \href{#method-Engine-reflect_schema}{\code{Engine$reflect_schema()}}
 \item \href{#method-Engine-set_transaction_state}{\code{Engine$set_transaction_state()}}
 \item \href{#method-Engine-get_transaction_state}{\code{Engine$get_transaction_state()}}
+\item \href{#method-Engine-set_autoflush}{\code{Engine$set_autoflush()}}
+\item \href{#method-Engine-get_autoflush}{\code{Engine$get_autoflush()}}
 \item \href{#method-Engine-set_transaction_connection}{\code{Engine$set_transaction_connection()}}
 \item \href{#method-Engine-push_savepoint}{\code{Engine$push_savepoint()}}
 \item \href{#method-Engine-pop_savepoint}{\code{Engine$pop_savepoint()}}
@@ -117,7 +119,8 @@ Create an Engine object
   .read_only = FALSE,
   use_pool = FALSE,
   persist = FALSE,
-  .dialect = NULL
+  .dialect = NULL,
+  .autoflush = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -141,11 +144,19 @@ read-only enforcement (SQLite: `SQLITE_RO` open flag; PostgreSQL:
 \item{\code{persist}}{Logical. Whether to keep the connection open after operations (default: FALSE)}
 
 \item{\code{.dialect}}{Character. Overrides automatic dialect detection, e.g.
-    `"mssql"`. Needed when the driver cannot identify the backend on
-    its own: every `odbc::odbc()` connection shares one driver class,
-    so SQL Server is only auto-detected when the connection arguments
-    name it. Any dialect string is accepted, so third-party dialects
-    can be selected the same way.
+`"mssql"`. Needed when the driver cannot identify the backend on
+its own: every `odbc::odbc()` connection shares one driver class,
+so SQL Server is only auto-detected when the connection arguments
+name it. Any dialect string is accepted, so third-party dialects
+can be selected the same way.}
+
+\item{\code{.autoflush}}{Logical. The default value of `flush_record` for
+    [Record$create()] calls made inside a transaction (default:
+    FALSE, a plain insert that leaves server-generated values unset).
+    Set `TRUE` to have every create inside a [with.Engine()] block
+    return its IDENTITY/SERIAL key and column defaults without having
+    to ask per block. Individual blocks and creates can still
+    override it, and creates outside a transaction always flush.
 Get a connection to the database
 
 Reapplies the configured schema on every connection retrieval to
@@ -496,6 +507,45 @@ Retrieve the current transaction state
 
 \subsection{Returns}{
 Logical indicating if a transaction is active
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-set_autoflush"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-set_autoflush}{}}}
+\subsection{Method \code{set_autoflush()}}{
+Set the flush default that [Record$create()] uses while a transaction
+is open, overriding the engine's `.autoflush` setting for the rest of
+the session. [with.Engine()] uses this to apply its own `.autoflush`
+argument for the duration of a block, restoring the previous value on
+exit. It is not read outside a transaction, where creates always
+flush.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$set_autoflush(state)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{state}}{Logical. `TRUE` to flush inserts made inside a
+transaction, populating records with server-generated values.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The previous value, invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Engine-get_autoflush"></a>}}
+\if{latex}{\out{\hypertarget{method-Engine-get_autoflush}{}}}
+\subsection{Method \code{get_autoflush()}}{
+Retrieve the in-transaction flush default currently in force.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Engine$get_autoflush()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Logical indicating whether creates inside a transaction flush.
 }
 }
 \if{html}{\out{<hr>}}

@@ -4,7 +4,7 @@
 \alias{with.Engine}
 \title{Transaction Function}
 \usage{
-\method{with}{Engine}(data, expr, auto_commit = TRUE, ...)
+\method{with}{Engine}(data, expr, auto_commit = TRUE, .autoflush = NULL, ...)
 }
 \arguments{
 \item{data}{An Engine object that manages the database connection}
@@ -12,6 +12,13 @@
 \item{expr}{An expression to be evaluated within the transaction}
 
 \item{auto_commit}{Logical. Whether to automatically commit if no errors occur (default: TRUE)}
+
+\item{.autoflush}{Logical. Whether `Record$create()` calls inside the block
+should flush by default, populating records with server-generated values.
+Defaults to `NULL`, which inherits the surrounding setting -- the engine's
+`.autoflush` value at the outermost block, or whatever an enclosing
+`with.Engine()` established. The previous value is restored when the block
+exits.}
 
 \item{...}{Additional arguments (ignored)}
 }
@@ -41,6 +48,34 @@ If \code{auto_commit = FALSE}, you must explicitly call \code{commit()} within t
 your changes. If neither \code{commit()} nor \code{rollback()} is called, the transaction will be
 rolled back by default and a warning will be issued.
 }
+\section{Server-generated values inside a transaction}{
+
+`Record$create()` resolves its `flush_record` argument from the transaction
+state when it is left `NULL`. Outside a transaction the insert is flushed and
+the record comes back populated with server-generated values (IDENTITY and
+SERIAL keys, column defaults, timestamps). Inside a `with.Engine()` block the
+default is a plain insert, and those values stay `NULL` on the record --
+cheap for bulk loads, but a surprise when a later statement needs the key.
+
+There are three ways to get them back, innermost setting winning:
+
+\itemize{
+  \item `create(flush_record = TRUE)` on the individual insert that a later
+        statement depends on -- typically a parent row whose key a child row
+        references.
+  \item `.autoflush = TRUE` on the `with.Engine()` call, which makes every
+        `create()` in the block flush by default. Individual calls can still
+        opt out with `flush_record = FALSE`.
+  \item `Engine$new(.autoflush = TRUE)`, which does the same for every
+        transaction on that engine, so callers never have to remember the
+        flag. `engine$set_autoflush()` changes it later in the session.
+}
+
+Flushing never commits: the insert joins the open transaction and is rolled
+back with it. It does cost a round trip per insert that returns the row, so
+`.autoflush = TRUE` is a poor fit for bulk loads where the keys are unused.
+}
+
 \examples{
 \donttest{
 # With auto-commit (default)
@@ -49,6 +84,18 @@ with.Engine(engine, {
   User$record(name = "Bob")$create()
   # Transaction automatically committed if no errors
 })
+
+# Parent/child insert: flush the parent so its generated key is available
+with.Engine(engine, {
+  order <- Order$record(customer = "Alice")$create(flush_record = TRUE)
+  Item$record(order_id = order$data$id, sku = "A-1")$create()
+})
+
+# Same thing for every insert in the block
+with.Engine(engine, {
+  order <- Order$record(customer = "Alice")$create()
+  Item$record(order_id = order$data$id, sku = "A-1")$create()
+}, .autoflush = TRUE)
 
 # With manual commit
 with.Engine(engine, {

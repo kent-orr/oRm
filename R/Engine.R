@@ -63,7 +63,14 @@ Engine <- R6::R6Class(
         #'     so SQL Server is only auto-detected when the connection arguments
         #'     name it. Any dialect string is accepted, so third-party dialects
         #'     can be selected the same way.
-        initialize = function(..., conn_args = list(), .schema = NULL, .read_only = FALSE, use_pool = FALSE, persist = FALSE, .dialect = NULL) {
+        #' @param .autoflush Logical. The default value of `flush_record` for
+        #'     [Record$create()] calls made inside a transaction (default:
+        #'     FALSE, a plain insert that leaves server-generated values unset).
+        #'     Set `TRUE` to have every create inside a [with.Engine()] block
+        #'     return its IDENTITY/SERIAL key and column defaults without having
+        #'     to ask per block. Individual blocks and creates can still
+        #'     override it, and creates outside a transaction always flush.
+        initialize = function(..., conn_args = list(), .schema = NULL, .read_only = FALSE, use_pool = FALSE, persist = FALSE, .dialect = NULL, .autoflush = FALSE) {
             dots <- rlang::list2(...)
             # Normalize unnamed first argument as `drv` (mirrors DBI::dbConnect convention)
             if (length(dots) >= 1 && !is.null(names(dots)) && names(dots)[1] == "" && is.null(dots[["drv"]])) {
@@ -83,6 +90,11 @@ Engine <- R6::R6Class(
             self$use_pool <- use_pool
             self$persist <- persist
             self$read_only <- isTRUE(.read_only)
+
+            if (!is.logical(.autoflush) || length(.autoflush) != 1L || is.na(.autoflush)) {
+                stop("`.autoflush` must be TRUE or FALSE.", call. = FALSE)
+            }
+            private$autoflush <- .autoflush
 
             if (self$read_only) {
                 # SQLite enforces read-only via the SQLITE_RO open flag, which
@@ -410,6 +422,29 @@ Engine <- R6::R6Class(
         },
 
         #' @description
+        #' Set the flush default that [Record$create()] uses while a transaction
+        #' is open, overriding the engine's `.autoflush` setting for the rest of
+        #' the session. [with.Engine()] uses this to apply its own `.autoflush`
+        #' argument for the duration of a block, restoring the previous value on
+        #' exit. It is not read outside a transaction, where creates always
+        #' flush.
+        #' @param state Logical. `TRUE` to flush inserts made inside a
+        #'   transaction, populating records with server-generated values.
+        #' @return The previous value, invisibly.
+        set_autoflush = function(state) {
+            previous <- private$autoflush
+            private$autoflush <- isTRUE(state)
+            invisible(previous)
+        },
+
+        #' @description
+        #' Retrieve the in-transaction flush default currently in force.
+        #' @return Logical indicating whether creates inside a transaction flush.
+        get_autoflush = function() {
+            private$autoflush
+        },
+
+        #' @description
         #' Pin a single connection for the duration of a transaction so that
         #' [with.Engine()] and every operation inside the block share one
         #' connection. Used internally for pooled engines, where each call would
@@ -492,6 +527,7 @@ Engine <- R6::R6Class(
     ),
     private = list(
         in_transaction = FALSE,
+        autoflush = FALSE,
         tx_conn = NULL,
         savepoint_depth = 0L,
 
@@ -562,9 +598,41 @@ Engine <- R6::R6Class(
 #' your changes. If neither \code{commit()} nor \code{rollback()} is called, the transaction will be
 #' rolled back by default and a warning will be issued.
 #'
+#' @section Server-generated values inside a transaction:
+#' `Record$create()` resolves its `flush_record` argument from the transaction
+#' state when it is left `NULL`. Outside a transaction the insert is flushed and
+#' the record comes back populated with server-generated values (IDENTITY and
+#' SERIAL keys, column defaults, timestamps). Inside a `with.Engine()` block the
+#' default is a plain insert, and those values stay `NULL` on the record --
+#' cheap for bulk loads, but a surprise when a later statement needs the key.
+#'
+#' There are three ways to get them back, innermost setting winning:
+#'
+#' \itemize{
+#'   \item `create(flush_record = TRUE)` on the individual insert that a later
+#'         statement depends on -- typically a parent row whose key a child row
+#'         references.
+#'   \item `.autoflush = TRUE` on the `with.Engine()` call, which makes every
+#'         `create()` in the block flush by default. Individual calls can still
+#'         opt out with `flush_record = FALSE`.
+#'   \item `Engine$new(.autoflush = TRUE)`, which does the same for every
+#'         transaction on that engine, so callers never have to remember the
+#'         flag. `engine$set_autoflush()` changes it later in the session.
+#' }
+#'
+#' Flushing never commits: the insert joins the open transaction and is rolled
+#' back with it. It does cost a round trip per insert that returns the row, so
+#' `.autoflush = TRUE` is a poor fit for bulk loads where the keys are unused.
+#'
 #' @param data An Engine object that manages the database connection
 #' @param expr An expression to be evaluated within the transaction
 #' @param auto_commit Logical. Whether to automatically commit if no errors occur (default: TRUE)
+#' @param .autoflush Logical. Whether `Record$create()` calls inside the block
+#'   should flush by default, populating records with server-generated values.
+#'   Defaults to `NULL`, which inherits the surrounding setting -- the engine's
+#'   `.autoflush` value at the outermost block, or whatever an enclosing
+#'   `with.Engine()` established. The previous value is restored when the block
+#'   exits.
 #' @param ... Additional arguments (ignored)
 #'
 #' @return The result of evaluating the expression
@@ -577,6 +645,18 @@ Engine <- R6::R6Class(
 #'   User$record(name = "Bob")$create()
 #'   # Transaction automatically committed if no errors
 #' })
+#'
+#' # Parent/child insert: flush the parent so its generated key is available
+#' with.Engine(engine, {
+#'   order <- Order$record(customer = "Alice")$create(flush_record = TRUE)
+#'   Item$record(order_id = order$data$id, sku = "A-1")$create()
+#' })
+#'
+#' # Same thing for every insert in the block
+#' with.Engine(engine, {
+#'   order <- Order$record(customer = "Alice")$create()
+#'   Item$record(order_id = order$data$id, sku = "A-1")$create()
+#' }, .autoflush = TRUE)
 #'
 #' # With manual commit
 #' with.Engine(engine, {
@@ -617,7 +697,7 @@ Engine <- R6::R6Class(
 #' }
 #'
 #' @export
-with.Engine <- function(data, expr, auto_commit = TRUE, ...) {
+with.Engine <- function(data, expr, auto_commit = TRUE, .autoflush = NULL, ...) {
     engine <- data
 
     # A transaction implies writes; refuse upfront on a read-only engine rather
@@ -627,6 +707,12 @@ with.Engine <- function(data, expr, auto_commit = TRUE, ...) {
             "Engine is read-only; refusing to open a writable transaction.",
             call. = FALSE
         )
+    }
+
+    valid_autoflush <- is.null(.autoflush) ||
+        (is.logical(.autoflush) && length(.autoflush) == 1L && !is.na(.autoflush))
+    if (!valid_autoflush) {
+        stop("`.autoflush` must be TRUE, FALSE, or NULL.", call. = FALSE)
     }
 
     # A with.Engine nested inside another runs as a savepoint on the already
@@ -680,6 +766,15 @@ with.Engine <- function(data, expr, auto_commit = TRUE, ...) {
         invisible(NULL)
     }
 
+    # A NULL `.autoflush` inherits whatever is already in force: the engine's
+    # `.autoflush` default, or the outer block's setting when nested. The
+    # previous value is restored in the finally handler below, including when
+    # the block errors.
+    prev_autoflush <- engine$get_autoflush()
+    if (!is.null(.autoflush)) {
+        engine$set_autoflush(.autoflush)
+    }
+
     result <- NULL
     # Execute the expression within the transaction
     tryCatch({
@@ -708,6 +803,8 @@ with.Engine <- function(data, expr, auto_commit = TRUE, ...) {
         stop(e)
 
     }, finally = {
+        engine$set_autoflush(prev_autoflush)
+
         # Clean up. Nested blocks leave the outer transaction (and its pinned
         # connection) untouched -- only release the savepoint name.
         if (nested) {

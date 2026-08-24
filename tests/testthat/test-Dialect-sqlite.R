@@ -140,3 +140,117 @@ test_that("SQLite: with.Engine refuses a transaction on a read-only engine (bug:
 
   ro$close()
 })
+
+# ---------------------------------------------------------------------------
+# .autoflush ON SQLITE
+#
+# SQLite has no RETURNING/OUTPUT clause in the path oRm takes; the key comes
+# back via a last-rowid lookup, so the three flush levels are asserted here
+# against the dialect rather than only through the generic Engine tests.
+# ---------------------------------------------------------------------------
+
+test_that("SQLite: .autoflush returns AUTOINCREMENT keys inside a transaction", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  withr::defer(engine$close())
+
+  parent <- engine$model(
+    "flush_orders",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    customer = Column("TEXT")
+  )
+  child <- engine$model(
+    "flush_order_items",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    order_id = Column("INTEGER"),
+    sku = Column("TEXT")
+  )
+  parent$create_table()
+  child$create_table()
+
+  # Outside a transaction a create always flushes.
+  outside <- parent$record(customer = "outside")$create()
+  expect_false(is.null(outside$data$id))
+
+  # Inside one the default is a plain insert.
+  plain <- with(engine, parent$record(customer = "plain")$create())
+  expect_null(plain$data$id)
+
+  # Block level: the parent key reaches the child insert in the same block.
+  item <- with(engine, {
+    order <- parent$record(customer = "Alice")$create()
+    expect_false(is.null(order$data$id))
+    child$record(order_id = order$data$id, sku = "A-1")$create()
+  }, .autoflush = TRUE)
+
+  expect_false(is.null(item$data$id))
+  expect_equal(
+    item$data$order_id,
+    parent$read(customer == "Alice", .mode = "data.frame")$id
+  )
+
+  # Record level wins over a block that opted out.
+  explicit <- with(engine, {
+    bulk <- parent$record(customer = "bulk")$create()
+    expect_null(bulk$data$id)
+    parent$record(customer = "explicit")$create(flush_record = TRUE)
+  }, .autoflush = FALSE)
+  expect_false(is.null(explicit$data$id))
+
+  # Flushing never commits on its own.
+  tryCatch(
+    with(engine, {
+      parent$record(customer = "rolled back")$create()
+      stop("abort")
+    }, .autoflush = TRUE),
+    error = function(e) NULL,
+    warning = function(w) NULL
+  )
+  expect_equal(
+    nrow(parent$read(customer == "rolled back", .mode = "data.frame")),
+    0L
+  )
+})
+
+test_that("SQLite: an engine built with .autoflush = TRUE needs no per-block flag", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE,
+    .autoflush = TRUE
+  )
+  withr::defer(engine$close())
+
+  parent <- engine$model(
+    "flush_orders2",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    customer = Column("TEXT")
+  )
+  child <- engine$model(
+    "flush_order_items2",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    order_id = Column("INTEGER"),
+    sku = Column("TEXT")
+  )
+  parent$create_table()
+  child$create_table()
+
+  item <- with(engine, {
+    order <- parent$record(customer = "Alice")$create()
+    expect_false(is.null(order$data$id))
+    child$record(order_id = order$data$id, sku = "A-1")$create()
+  })
+  expect_equal(
+    item$data$order_id,
+    parent$read(customer == "Alice", .mode = "data.frame")$id
+  )
+
+  bulk <- with(engine, {
+    parent$record(customer = "bulk")$create()
+  }, .autoflush = FALSE)
+  expect_null(bulk$data$id)
+  expect_true(engine$get_autoflush())
+})

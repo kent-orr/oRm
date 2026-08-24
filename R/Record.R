@@ -112,9 +112,14 @@ Record <- R6::R6Class(
 
     #' @description Insert this record into the database.
     #' @param flush_record Logical flag determining whether to call `flush()` after
-    #'   insertion. Defaults to `NULL`, which flushes when not currently in a
-    #'   transaction.
-    #' @return Invisible NULL
+    #'   insertion, populating the record with server-generated values such as
+    #'   IDENTITY/SERIAL keys and column defaults. Defaults to `NULL`, which
+    #'   flushes when not currently in a transaction. Inside a [with.Engine()]
+    #'   block the default follows that block's `.autoflush` setting, which in
+    #'   turn defaults to the engine's `.autoflush` value; pass `TRUE`
+    #'   explicitly when a later statement needs the generated key. Flushing
+    #'   never commits the transaction.
+    #' @return The Record instance, populated with server-generated values when flushed.
     create = function(flush_record = NULL) {
       if (isTRUE(self$model$engine$read_only)) {
         stop("Engine is read-only; cannot create records.", call. = FALSE)
@@ -134,10 +139,13 @@ Record <- R6::R6Class(
         stop("Missing required fields: ", paste(missing_fields, collapse = ", "))
       }
     
-      # Determine whether to flush based on user input or transaction state
+      # Determine whether to flush based on user input or transaction state.
+      # Outside a transaction creates always flush; inside one the default comes
+      # from the block's `.autoflush` setting (FALSE unless the caller asked for
+      # it), so a bulk load is not charged a round trip per row.
       if (is.null(flush_record)) {
-        # Default behavior: flush if not in transaction
-        flush_record <- !self$model$engine$get_transaction_state()
+        flush_record <- !self$model$engine$get_transaction_state() ||
+          isTRUE(self$model$engine$get_autoflush())
       }
       
       if (flush_record) {

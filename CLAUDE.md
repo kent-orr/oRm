@@ -48,10 +48,56 @@ and CRUD operations without requiring raw SQL.
 
 ### Testing Considerations
 
-- **Do not attempt to run testthat** - test dependencies are large
-- When adding features, consider test structure but don’t execute
+- Follow test-driven development: add or update the failing test first,
+  confirm it fails for the intended reason, then implement.
 - Follow existing test patterns in `tests/testthat/`
 - Test files should mirror source file names (`test-Engine.R`, etc.)
+- Run the suite with
+  `Rscript -e 'pkgload::load_all("."); testthat::test_dir("tests/testthat")'`.
+  A single file is much faster during iteration:
+  `testthat::test_file("tests/testthat/test-Engine.R")`.
+- The full suite takes several minutes; run it in the background rather
+  than under a short foreground timeout.
+
+#### Container-backed integration tests
+
+PostgreSQL and SQL Server tests run against throwaway docker containers
+and **skip silently** when the container, the driver, or docker itself is
+missing. A green run that reports skips has not exercised those dialects
+-- check the skip count before claiming dialect coverage.
+
+- `tests/testthat/helper-postgres.R` and `helper-mssql.R` start a
+  container on demand, and their `reg.finalizer(onexit = TRUE)` **removes
+  it when the R session exits**. A container is therefore never left
+  ready between sessions; each run pays the startup cost, and all tests
+  needing it must run in one session.
+- SQL Server additionally requires the `msodbcsql18` ODBC driver on the
+  host and the `odbc` package. Without them the suite skips with
+  "No ODBC driver for SQL Server installed".
+- To start the containers manually (matching what the helpers do):
+
+```bash
+docker run -d --name orm_postgres_test \
+  -e POSTGRES_USER=tester -e POSTGRES_PASSWORD=tester -e POSTGRES_DB=tests \
+  -p 5432:5432 postgres:14-alpine
+
+docker run -d --name orm_mssql_test \
+  -e ACCEPT_EULA=Y -e 'MSSQL_SA_PASSWORD=oRm_Test_Passw0rd!' \
+  -e MSSQL_PID=Developer -p 1433:1433 \
+  mcr.microsoft.com/mssql/server:2022-latest
+```
+
+  SQL Server needs ~30s before it accepts connections, and the `tests`
+  database must be created once:
+  `IF DB_ID(N'tests') IS NULL CREATE DATABASE [tests]`.
+- Dialect-specific behaviour deserves a dialect-specific test. Flushing
+  is the worked example: Postgres recovers generated keys with
+  `RETURNING`, SQL Server with `OUTPUT INSERTED`, and SQLite with a
+  last-rowid lookup, so `.autoflush` is asserted in all three of
+  `test-Dialect-postgres.R`, `test-Dialect-mssql-integration.R`, and
+  `test-Dialect-sqlite.R` rather than only in `test-Engine.R`.
+- SQLite reserves the `sqlite_` table-name prefix; name test tables
+  something else or `create_table()` errors.
 
 ### Database Dialect Support
 
@@ -66,6 +112,7 @@ oRm uses a custom method dispatcher
 in `Dialect.R:39`) for dialect-specific behavior:
 
 ``` r
+
 # Correct - uses method dispatch
 qualify(engine, tablename, schema)
 set_schema(engine, schema)
@@ -102,6 +149,7 @@ schema if needed -
 #### Example Implementation
 
 ``` r
+
 # In Dialect-postgres.R
 flush.postgres <- function(x, table, data, con, commit = TRUE, ...) {
     # PostgreSQL-specific implementation with RETURNING
@@ -158,6 +206,7 @@ flush.default <- function(x, table, data, con, commit = TRUE, ...) {
 ### Error Handling
 
 ``` r
+
 if (missing(required_param)) {
   stop("Required parameter 'required_param' must be provided")
 }
@@ -173,6 +222,7 @@ tryCatch({
 ### R6 Method Documentation
 
 ``` r
+
 #' @description
 #' Brief description of what the method does
 #' @param param_name Parameter description
@@ -223,7 +273,8 @@ Add roxygen2 documentation for public methods
 
 Update existing documentation if behavior changes
 
-Consider test cases (structure, not execution)
+Add or update tests, and run them (including the container-backed
+dialect tests when the change touches dialect behaviour)
 
 Check for proper error handling and validation
 
