@@ -1306,3 +1306,126 @@ test_that("postgres: with.Engine refuses a transaction on a read-only engine (bu
         regexp = "read-only"
     )
 })
+
+# ---------------------------------------------------------------------------
+# .autoflush ON POSTGRESQL
+#
+# Postgres recovers server-generated values with `INSERT ... RETURNING`, a
+# different mechanism from SQL Server's `OUTPUT INSERTED` and SQLite's
+# last-rowid lookup, so the three flush levels are worth asserting per dialect.
+# ---------------------------------------------------------------------------
+
+test_that("postgres: .autoflush returns SERIAL keys for creates inside a transaction", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    parent <- engine$model(
+        "pg_orders",
+        id = Column("SERIAL", primary_key = TRUE),
+        customer = Column("TEXT")
+    )
+    child <- engine$model(
+        "pg_order_items",
+        id = Column("SERIAL", primary_key = TRUE),
+        order_id = Column("INTEGER"),
+        sku = Column("TEXT")
+    )
+    parent$create_table(overwrite = TRUE)
+    child$create_table(overwrite = TRUE)
+
+    # Outside a transaction a create always flushes: RETURNING gives the key.
+    outside <- parent$record(customer = "outside")$create()
+    expect_false(is.null(outside$data$id))
+
+    # Inside one, the default is a plain insert -- the #122 surprise.
+    plain <- with(engine, parent$record(customer = "plain")$create())
+    expect_null(plain$data$id)
+
+    # Block level: `.autoflush = TRUE` makes the parent key available to the
+    # child insert in the same transaction.
+    item <- with(engine, {
+        order <- parent$record(customer = "Alice")$create()
+        expect_false(is.null(order$data$id))
+        child$record(order_id = order$data$id, sku = "A-1")$create()
+    }, .autoflush = TRUE)
+
+    expect_false(is.null(item$data$id))
+    expect_equal(
+        item$data$order_id,
+        parent$read(customer == "Alice", .mode = "data.frame")$id
+    )
+
+    # Record level: the innermost setting wins over a block that opted out.
+    explicit <- with(engine, {
+        bulk <- parent$record(customer = "bulk")$create()
+        expect_null(bulk$data$id)
+        parent$record(customer = "explicit")$create(flush_record = TRUE)
+    }, .autoflush = FALSE)
+    expect_false(is.null(explicit$data$id))
+
+    # Flushing joins the open transaction rather than committing on its own.
+    tryCatch(
+        with(engine, {
+            parent$record(customer = "rolled back")$create()
+            stop("abort")
+        }, .autoflush = TRUE),
+        error = function(e) NULL,
+        warning = function(w) NULL
+    )
+    expect_equal(
+        nrow(parent$read(customer == "rolled back", .mode = "data.frame")),
+        0L
+    )
+})
+
+test_that("postgres: an engine built with .autoflush = TRUE needs no per-block flag", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, c(conn_info, list(.autoflush = TRUE)))
+    withr::defer(engine$close())
+
+    parent <- engine$model(
+        "pg_orders2",
+        id = Column("SERIAL", primary_key = TRUE),
+        customer = Column("TEXT")
+    )
+    child <- engine$model(
+        "pg_order_items2",
+        id = Column("SERIAL", primary_key = TRUE),
+        order_id = Column("INTEGER"),
+        sku = Column("TEXT")
+    )
+    parent$create_table(overwrite = TRUE)
+    child$create_table(overwrite = TRUE)
+
+    # The #122 reprex verbatim, minus any flag at the call site.
+    item <- with(engine, {
+        order <- parent$record(customer = "Alice")$create()
+        expect_false(is.null(order$data$id))
+        child$record(order_id = order$data$id, sku = "A-1")$create()
+    })
+    expect_equal(
+        item$data$order_id,
+        parent$read(customer == "Alice", .mode = "data.frame")$id
+    )
+
+    # A block may still opt out for a bulk load; the engine default returns
+    # when the block exits.
+    bulk <- with(engine, {
+        parent$record(customer = "bulk")$create()
+    }, .autoflush = FALSE)
+    expect_null(bulk$data$id)
+    expect_true(engine$get_autoflush())
+})

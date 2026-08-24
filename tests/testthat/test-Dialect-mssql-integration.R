@@ -320,7 +320,7 @@ test_that("flush falls back to a keyed re-read on tables carrying triggers", {
     expect_equal(nrow(model$read(.mode = "data.frame")), 1L)
 })
 
-test_that("flush reports a clear error when a trigger table has no client key", {
+test_that("flush recovers a server-generated IDENTITY key on tables carrying triggers", {
     engine <- mssql_test_engine()
     withr::defer(clear_mssql_test_tables())
     withr::defer(engine$close())
@@ -331,7 +331,8 @@ test_that("flush reports a clear error when a trigger table has no client key", 
     DBI::dbExecute(con, "CREATE TABLE dbo.audit_log2 (msg NVARCHAR(100))")
     DBI::dbExecute(con, paste(
         "CREATE TABLE dbo.audited_identity (",
-        "id INT IDENTITY(1,1) PRIMARY KEY, name NVARCHAR(100))"
+        "id INT IDENTITY(1,1) PRIMARY KEY, name NVARCHAR(100),",
+        "created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME())"
     ))
     DBI::dbExecute(con, paste(
         "EXEC('CREATE TRIGGER trg_audited_identity ON dbo.audited_identity AFTER INSERT AS",
@@ -341,11 +342,166 @@ test_that("flush reports a clear error when a trigger table has no client key", 
     model <- engine$model(
         "audited_identity",
         id = Column("INT IDENTITY(1,1)", primary_key = TRUE),
+        name = Column("NVARCHAR(100)"),
+        created_at = Column("DATETIME2", nullable = TRUE)
+    )
+
+    # OUTPUT INSERTED is rejected (error 334), but a single IDENTITY key can
+    # still be recovered with SCOPE_IDENTITY() and the full row re-read, so the
+    # record comes back populated exactly as it would on a trigger-free table.
+    rec <- model$record(name = "no key")
+    expect_no_error(rec$create())
+    expect_equal(rec$data$id, 1L)
+    expect_equal(rec$data$name, "no key")
+    expect_false(is.null(rec$data$created_at))
+
+    # The trigger itself still fired.
+    expect_equal(nrow(DBI::dbGetQuery(con, "SELECT * FROM dbo.audit_log2")), 1L)
+
+    # The fallback toggles NOCOUNT inside its batch; that must not leak into
+    # the session, or later statements would stop reporting affected rows.
+    expect_equal(
+        DBI::dbExecute(con, "UPDATE dbo.audited_identity SET name = 'renamed' WHERE id = 1"),
+        1L
+    )
+
+    # The same recovery works inside a transaction (the #122 scenario), and a
+    # rolled-back insert leaves no trace.
+    rec2 <- with(engine, {
+        r <- model$record(name = "in tx")$create(flush_record = TRUE)
+        expect_equal(r$data$id, 2L)
+        r
+    })
+    expect_equal(rec2$data$id, 2L)
+
+    tryCatch(
+        with(engine, {
+            model$record(name = "rolled back")$create(flush_record = TRUE)
+            stop("abort")
+        }),
+        error = function(e) NULL,
+        warning = function(w) NULL
+    )
+    expect_equal(nrow(model$read(.mode = "data.frame")), 2L)
+})
+
+test_that("autoflush returns IDENTITY keys for every create inside a transaction", {
+    engine <- mssql_test_engine()
+    withr::defer(clear_mssql_test_tables())
+    withr::defer(engine$close())
+
+    parent <- engine$model(
+        "orders",
+        id = Column("INT IDENTITY(1,1)", primary_key = TRUE),
+        customer = Column("NVARCHAR(100)")
+    )
+    child <- engine$model(
+        "order_items",
+        id = Column("INT IDENTITY(1,1)", primary_key = TRUE),
+        order_id = Column("INT"),
+        sku = Column("NVARCHAR(50)")
+    )
+    parent$create_table(overwrite = TRUE, ask = FALSE)
+    child$create_table(overwrite = TRUE, ask = FALSE)
+
+    # The #122 reprex: without autoflush the IDENTITY key stays NULL inside the
+    # block, even though it is returned outside one.
+    outside <- parent$record(customer = "outside")$create()
+    expect_equal(outside$data$id, 1L)
+
+    plain <- with(engine, parent$record(customer = "plain")$create())
+    expect_null(plain$data$id)
+
+    # With autoflush the key is available to the child insert in the same block.
+    items <- with(engine, {
+        order <- parent$record(customer = "Alice")$create()
+        expect_false(is.null(order$data$id))
+        child$record(order_id = order$data$id, sku = "A-1")$create()
+    }, .autoflush = TRUE)
+
+    expect_false(is.null(items$data$id))
+    expect_equal(
+        items$data$order_id,
+        parent$read(customer == "Alice", .mode = "data.frame")$id
+    )
+
+    # Flushing joins the open transaction rather than committing on its own: a
+    # failure rolls the flushed insert back with everything else.
+    tryCatch(
+        with(engine, {
+            parent$record(customer = "rolled back")$create()
+            stop("abort")
+        }, .autoflush = TRUE),
+        error = function(e) NULL,
+        warning = function(w) NULL
+    )
+    expect_equal(nrow(parent$read(customer == "rolled back", .mode = "data.frame")), 0L)
+})
+
+test_that("an engine built with .autoflush = TRUE needs no per-block flag", {
+    engine <- mssql_test_engine(.autoflush = TRUE)
+    withr::defer(clear_mssql_test_tables())
+    withr::defer(engine$close())
+
+    parent <- engine$model(
+        "orders2",
+        id = Column("INT IDENTITY(1,1)", primary_key = TRUE),
+        customer = Column("NVARCHAR(100)")
+    )
+    child <- engine$model(
+        "order_items2",
+        id = Column("INT IDENTITY(1,1)", primary_key = TRUE),
+        order_id = Column("INT"),
+        sku = Column("NVARCHAR(50)")
+    )
+    parent$create_table(overwrite = TRUE, ask = FALSE)
+    child$create_table(overwrite = TRUE, ask = FALSE)
+
+    # The #122 reprex verbatim, minus any flag at the call site.
+    item <- with(engine, {
+        order <- parent$record(customer = "Alice")$create()
+        expect_equal(order$data$id, 1L)
+        child$record(order_id = order$data$id, sku = "A-1")$create()
+    })
+    expect_equal(item$data$order_id, 1L)
+
+    # A block can still opt out for a bulk load, restoring the engine default
+    # afterwards.
+    bulk <- with(engine, {
+        parent$record(customer = "bulk")$create()
+    }, .autoflush = FALSE)
+    expect_null(bulk$data$id)
+    expect_true(engine$get_autoflush())
+
+    expect_equal(nrow(parent$read(.mode = "data.frame")), 2L)
+})
+
+test_that("flush reports a clear error when a trigger table key is neither supplied nor IDENTITY", {
+    engine <- mssql_test_engine()
+    withr::defer(clear_mssql_test_tables())
+    withr::defer(engine$close())
+
+    con <- engine$get_connection()
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS dbo.audited_guid")
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS dbo.audit_log3")
+    DBI::dbExecute(con, "CREATE TABLE dbo.audit_log3 (msg NVARCHAR(100))")
+    DBI::dbExecute(con, paste(
+        "CREATE TABLE dbo.audited_guid (",
+        "id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(), name NVARCHAR(100))"
+    ))
+    DBI::dbExecute(con, paste(
+        "EXEC('CREATE TRIGGER trg_audited_guid ON dbo.audited_guid AFTER INSERT AS",
+        "INSERT INTO dbo.audit_log3 (msg) VALUES (''inserted'')')"
+    ))
+
+    model <- engine$model(
+        "audited_guid",
+        id = Column("UNIQUEIDENTIFIER", primary_key = TRUE),
         name = Column("NVARCHAR(100)")
     )
 
-    # The key is server-generated and OUTPUT is unavailable, so this cannot be
-    # recovered; the error must say why rather than surfacing raw error 334.
+    # A server-defaulted, non-IDENTITY key cannot be recovered once OUTPUT is
+    # off the table; the error must say why rather than surfacing raw error 334.
     expect_error(
         model$record(name = "no key")$create(),
         "trigger"

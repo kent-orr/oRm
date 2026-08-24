@@ -8,7 +8,9 @@
 - Avoid dialect-specific checks in core R6 classes (`Engine`, `TableModel`, `Record`); place dialect logic in dedicated dialect files.
 - Increase the development version in `DESCRIPTION` with each commit unless the codex prompt explicitly states otherwise.
 
-- The test dependencies are fairly large. Do not attempt to run testthat.
+- Use test-driven development: write the failing test first, confirm it fails for the intended reason, then implement.
+- Run tests with `Rscript -e 'pkgload::load_all("."); testthat::test_dir("tests/testthat")'`. The full suite takes several minutes -- run it in the background.
+- PostgreSQL and SQL Server tests need docker containers (`orm_postgres_test`, `orm_mssql_test`) and skip silently without them; SQL Server also needs the `msodbcsql18` ODBC driver. Check the skip count before claiming dialect coverage. See the testing section of `docs/CLAUDE.md` for the container commands.
 .
 ├── AGENTS.md
 ├── DESCRIPTION

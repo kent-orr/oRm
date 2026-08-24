@@ -451,3 +451,190 @@ test_that("dialect detected when driver passed as unnamed positional argument", 
   expect_equal(engine$conn_args[["drv"]], RSQLite::SQLite())
 })
 
+
+test_that("autoflush populates server-generated values inside a transaction", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  withr::defer(engine$close())
+
+  model <- engine$model(
+    "autoflush_table",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    name = Column("TEXT")
+  )
+  model$create_table()
+
+  # Default: a create inside a transaction is a plain insert, so the generated
+  # key never comes back on the record (the behaviour reported in #122).
+  plain <- with.Engine(engine, {
+    model$record(name = "Alice")$create()
+  })
+  expect_null(plain$data$id)
+
+  # .autoflush = TRUE makes the same create return the generated key.
+  flushed <- with.Engine(engine, {
+    model$record(name = "Bob")$create()
+  }, .autoflush = TRUE)
+  expect_false(is.null(flushed$data$id))
+  expect_equal(flushed$data$name, "Bob")
+
+  # Both rows committed either way.
+  expect_equal(length(model$read()), 2)
+})
+
+test_that("autoflush respects explicit flush_record and restores prior state", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  withr::defer(engine$close())
+
+  model <- engine$model(
+    "autoflush_optout",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    name = Column("TEXT")
+  )
+  model$create_table()
+
+  # An explicit flush_record still wins over the block setting.
+  opted_out <- with.Engine(engine, {
+    model$record(name = "Alice")$create(flush_record = FALSE)
+  }, .autoflush = TRUE)
+  expect_null(opted_out$data$id)
+
+  # The setting is scoped to the block.
+  expect_false(engine$get_autoflush())
+
+  # Including when the block errors.
+  suppressWarnings(try(
+    with.Engine(engine, {
+      stop("Forced error")
+    }, .autoflush = TRUE),
+    silent = TRUE
+  ))
+  expect_false(engine$get_autoflush())
+
+  # Outside a transaction creates flush regardless of the setting.
+  outside <- model$record(name = "Carol")$create()
+  expect_false(is.null(outside$data$id))
+})
+
+test_that("nested with.Engine blocks inherit and scope autoflush", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  withr::defer(engine$close())
+
+  model <- engine$model(
+    "autoflush_nested",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    name = Column("TEXT")
+  )
+  model$create_table()
+
+  with.Engine(engine, {
+    # An inner block that says nothing keeps the outer setting.
+    inner <- with.Engine(engine, {
+      expect_true(engine$get_autoflush())
+      model$record(name = "inner")$create()
+    })
+    expect_false(is.null(inner$data$id))
+
+    # An inner block may turn it off for its own scope only.
+    with.Engine(engine, {
+      expect_false(engine$get_autoflush())
+    }, .autoflush = FALSE)
+    expect_true(engine$get_autoflush())
+  }, .autoflush = TRUE)
+
+  expect_false(engine$get_autoflush())
+})
+
+test_that("with.Engine rejects a non-logical .autoflush", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  withr::defer(engine$close())
+
+  expect_error(
+    with.Engine(engine, invisible(NULL), .autoflush = "yes"),
+    "must be TRUE, FALSE, or NULL"
+  )
+  # The rejected call must not have opened a transaction.
+  expect_false(engine$get_transaction_state())
+})
+
+test_that("Engine(.autoflush = TRUE) sets the in-transaction flush default", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE,
+    .autoflush = TRUE
+  )
+  withr::defer(engine$close())
+
+  model <- engine$model(
+    "engine_autoflush",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    name = Column("TEXT")
+  )
+  model$create_table()
+
+  expect_true(engine$get_autoflush())
+
+  # No per-block flag needed: creates inside a transaction come back populated.
+  parent <- with.Engine(engine, {
+    model$record(name = "Alice")$create()
+  })
+  expect_false(is.null(parent$data$id))
+
+  # A block may still turn it off, and the engine default is restored after.
+  off <- with.Engine(engine, {
+    expect_false(engine$get_autoflush())
+    model$record(name = "Bob")$create()
+  }, .autoflush = FALSE)
+  expect_null(off$data$id)
+  expect_true(engine$get_autoflush())
+
+  # So may an individual create.
+  opted_out <- with.Engine(engine, {
+    model$record(name = "Carol")$create(flush_record = FALSE)
+  })
+  expect_null(opted_out$data$id)
+
+  # set_autoflush() changes the default for the rest of the session and
+  # reports the value it replaced.
+  expect_true(engine$set_autoflush(FALSE))
+  expect_false(engine$get_autoflush())
+  plain <- with.Engine(engine, model$record(name = "Dave")$create())
+  expect_null(plain$data$id)
+
+  expect_equal(length(model$read()), 4)
+})
+
+test_that("Engine defaults to .autoflush = FALSE and validates the argument", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+  withr::defer(engine$close())
+  expect_false(engine$get_autoflush())
+
+  expect_error(
+    Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", .autoflush = "yes"),
+    "must be TRUE or FALSE"
+  )
+  expect_error(
+    Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", .autoflush = NA),
+    "must be TRUE or FALSE"
+  )
+})

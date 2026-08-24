@@ -87,45 +87,74 @@ flush.mssql <- function(x, table, data, con, commit = TRUE, ...) {
 
 #' Re-read an inserted row when OUTPUT INSERTED is unavailable
 #'
-#' Used by [flush.mssql] when the target table has triggers. Requires the
-#' primary key to be supplied by the caller, because there is no reliable way to
-#' recover a server-generated key once `OUTPUT` is off the table.
+#' Used by [flush.mssql] when the target table has triggers. Every primary key
+#' column must be either supplied by the caller or the table's IDENTITY column,
+#' whose value `SCOPE_IDENTITY()` recovers in the same batch as the insert. Any
+#' other server-generated key (a `DEFAULT NEWID()` GUID, say) cannot be found
+#' again once `OUTPUT` is off the table.
 #' @keywords internal
 #' @noRd
 mssql_flush_fallback <- function(table, data, con, field_defs, original_message) {
     keys <- character(0)
+    identity_keys <- character(0)
     if (!is.null(field_defs)) {
         keys <- names(field_defs)[vapply(field_defs, function(f) isTRUE(f$primary_key), logical(1))]
+        identity_keys <- keys[vapply(field_defs[keys], function(f) is_auto_generated_type(f$type), logical(1))]
     }
 
-    if (length(keys) == 0 || !all(keys %in% names(data))) {
+    # A table carries at most one IDENTITY column, so at most one key may be
+    # left for the server to generate, and it has to be that column.
+    supplied <- intersect(keys, names(data))
+    generated <- setdiff(keys, supplied)
+    recoverable <- length(keys) > 0 &&
+        length(generated) <= 1 &&
+        all(generated %in% identity_keys)
+
+    if (!recoverable) {
         stop(
             "flush failed on a table where OUTPUT INSERTED is unavailable (SQL Server ",
-            "rejects it on tables with triggers). Supply the primary key values ",
-            "explicitly so the inserted row can be re-read, or drop the trigger. ",
+            "rejects it on tables with triggers). The inserted row can only be re-read ",
+            "when every primary key column is supplied explicitly or is the table's ",
+            "IDENTITY column; otherwise drop the trigger. ",
             "Original error: ", original_message,
             call. = FALSE
         )
     }
 
     tbl_expr <- dbplyr::ident_q(table)
-    field_sql <- paste(DBI::dbQuoteIdentifier(con, names(data)), collapse = ", ")
-    values_sql <- paste0(
-        "(",
-        paste(DBI::dbQuoteLiteral(con, unlist(data, use.names = FALSE)), collapse = ", "),
-        ")"
-    )
-    DBI::dbExecute(con, paste0(
-        "INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql
-    ))
+    if (length(data) == 0) {
+        insert_sql <- paste0("INSERT INTO ", tbl_expr, " DEFAULT VALUES")
+    } else {
+        field_sql <- paste(DBI::dbQuoteIdentifier(con, names(data)), collapse = ", ")
+        values_sql <- paste0(
+            "(",
+            paste(DBI::dbQuoteLiteral(con, unlist(data, use.names = FALSE)), collapse = ", "),
+            ")"
+        )
+        insert_sql <- paste0("INSERT INTO ", tbl_expr, " (", field_sql, ") VALUES ", values_sql)
+    }
 
     where <- paste(
         vapply(keys, function(k) {
-            paste0(DBI::dbQuoteIdentifier(con, k), " = ", DBI::dbQuoteLiteral(con, data[[k]]))
+            value <- if (k %in% supplied) {
+                DBI::dbQuoteLiteral(con, data[[k]])
+            } else {
+                "SCOPE_IDENTITY()"
+            }
+            paste0(DBI::dbQuoteIdentifier(con, k), " = ", value)
         }, character(1)),
         collapse = " AND "
     )
-    DBI::dbGetQuery(con, paste0("SELECT * FROM ", tbl_expr, " WHERE ", where))
+
+    # SCOPE_IDENTITY() is scoped to the batch, so the insert and the re-read
+    # must travel together. NOCOUNT stops the insert's row count from arriving
+    # as a result set ahead of the SELECT; it is session-level state, so switch
+    # it back off before the batch ends rather than leaking it to later calls.
+    DBI::dbGetQuery(con, paste0(
+        "SET NOCOUNT ON; ", insert_sql, "; ",
+        "SELECT * FROM ", tbl_expr, " WHERE ", where, "; ",
+        "SET NOCOUNT OFF"
+    ))
 }
 
 #' @describeIn set_schema SQL Server has no session-level schema switch (the

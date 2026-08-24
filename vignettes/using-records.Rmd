@@ -64,7 +64,9 @@ Just defining a Record object doesn't save it to the database. To do that, you n
 english$create(flush_record = NULL)
 ```
 
-Create only comes with a single argument, flush_record, which is a boolean indicating whether to flush the record to the database after creation. The default NULL will check the transaction state and flush the record if it's not in a transaction, or wait for commit if it's in a transaction. This can of course be overridden. The point here is that you might have a 'SERIAL' column in your table that automatically increments the id for you, or your column has a timestamp function being called by the database itself. If a record is flushed, it will return the updated record (if the dialect supports it).
+Create only comes with a single argument, flush_record, which is a boolean indicating whether to flush the record to the database after creation. The point here is that you might have a 'SERIAL' column in your table that automatically increments the id for you, or your column has a timestamp function being called by the database itself. If a record is flushed, it will return the updated record (if the dialect supports it).
+
+The default NULL checks the transaction state. Outside a transaction the record is flushed, so you get those generated values back. Inside a `with(engine, ...)` block the default is a plain insert instead and they stay NULL, on the assumption that a transaction is a bulk load and the round trip per row is not worth paying. This can of course be overridden -- see [Server-generated values inside a transaction](./using-engine.html#server-generated-values-inside-a-transaction) for the three ways to ask for them.
 
 In interactive use, you probably want to flush every creation so that you have the whole record to work with on creation. In a loop or transaction where you're making a modification, you may not be very concerned about flushing.
 
