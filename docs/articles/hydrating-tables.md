@@ -9,6 +9,7 @@ column by hand. This is called *hydration*.
 `engine$hydrate()` inspects one table and returns a `TableModel`:
 
 ``` r
+
 library(oRm)
 
 engine <- Engine$new(
@@ -61,6 +62,7 @@ that don’t reflect one, override a type, or add a
 [`Method()`](https://kent-orr.github.io/oRm/reference/Method.md):
 
 ``` r
+
 # Supply the PK explicitly on a non-PostgreSQL backend
 Users <- engine$hydrate(
   "users",
@@ -83,6 +85,7 @@ automatically wires the `many_to_one` / `one_to_many` relationships
 implied by the reflected foreign keys.
 
 ``` r
+
 # Hydrate all tables in the engine's default schema
 models <- engine$hydrate_schema()
 
@@ -98,6 +101,7 @@ models <- engine$hydrate_schema(exclude = c("schema_migrations", "audit_log"))
 `hydrate_schema()` returns a named list keyed by bare table name:
 
 ``` r
+
 posts  <- models$posts
 users  <- models$users
 ```
@@ -109,6 +113,7 @@ into a `many_to_one` relationship (with the reverse `one_to_many`
 backref):
 
 ``` r
+
 post   <- posts$read(id == 1, .mode = "get")
 author <- post$relationship("users")   # posts.user_id -> users.id
 author$data$name
@@ -123,6 +128,7 @@ Foreign keys pointing at tables outside the hydrated set are skipped
 with a warning. You can always wire those manually afterwards:
 
 ``` r
+
 models$posts$define_relationship(
   local_key     = "category_id",
   type          = "many_to_one",
@@ -148,6 +154,7 @@ models$posts$define_relationship(
 supports cross-schema references in both shorthand and explicit forms:
 
 ``` r
+
 # Shorthand: "schema.table.column"
 fk <- ForeignKey("INTEGER", references = "audit.users.id")
 

@@ -5,6 +5,8 @@ Dialects that do not implement schemas should return TRUE.
 ## Usage
 
 ``` r
+check_schema_exists.mssql(x, .schema)
+
 check_schema_exists.mysql(x, .schema)
 
 check_schema_exists.postgres(x, .schema)
@@ -27,6 +29,9 @@ check_schema_exists.sqlite(x, .schema)
   Character. Name of the schema to check.
 
 ## Functions
+
+- `check_schema_exists.mssql()`: Check if a schema exists for SQL
+  Server.
 
 - `check_schema_exists.mysql()`: Check if a schema exists for MySQL.
 

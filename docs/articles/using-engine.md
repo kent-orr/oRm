@@ -28,6 +28,7 @@ knowing:
   reusing open connections across sessions.
 
 ``` r
+
 library(oRm)
 
 engine <- Engine$new(
@@ -74,6 +75,7 @@ the most commonly used methods:
 
 ``` r
 
+
 # Run a raw SQL statement
 engine$execute("CREATE TABLE things (id INTEGER PRIMARY KEY, name TEXT)")
 
@@ -89,6 +91,7 @@ re-declaring every column when you just need basic CRUD against an
 existing table.
 
 ``` r
+
 # Reflect every column of the existing "users" table
 Users <- engine$reflect("users")
 names(Users$fields)
@@ -118,6 +121,7 @@ key off declared PK fields) require you to supply the key column via
 mirroring `model()`:
 
 ``` r
+
 Users <- engine$reflect(
   "users",
   id = Column("INTEGER", primary_key = TRUE)
@@ -133,6 +137,7 @@ implied by the reflected foreign keys. This is most useful with the
 PostgreSQL dialect, whose reflection captures foreign keys.
 
 ``` r
+
 # Reflect all tables in the engine's default schema
 models <- engine$reflect_schema()
 
@@ -173,6 +178,7 @@ If you’re familiar with Python’s `sqlalchemy`, the usage will feel
 familiar.
 
 ``` r
+
 with(engine, {
   user = Users$record(name = "John Doe")
   user$create()
@@ -183,6 +189,7 @@ You can also choose to manually commit or roll back transactions. This
 gives you full control over error handling:
 
 ``` r
+
 with(engine, {
   user = Users$record(name = "Jane Doe")
   tryCatch({
@@ -198,6 +205,161 @@ with(engine, {
 This approach helps ensure that your data remains in sync with the
 database state. If any part of the transaction fails, with.Engine() will
 automatically clean up and alert you with a meaningful error.
+
+### Server-generated values inside a transaction
+
+Databases fill in plenty of values on their own: `INTEGER PRIMARY KEY`
+and `SERIAL` keys, SQL Server `IDENTITY` columns, `DEFAULT` expressions,
+insert timestamps. Outside a transaction, `create()` hands those
+straight back to you, because it *flushes* the insert – it asks the
+database to return the row it just wrote.
+
+``` r
+
+Orders <- engine$model(
+  "orders",
+  id = Column("INTEGER", primary_key = TRUE),
+  customer = Column("TEXT")
+)
+
+Items <- engine$model(
+  "order_items",
+  id = Column("INTEGER", primary_key = TRUE),
+  order_id = Column("INTEGER"),
+  sku = Column("TEXT")
+)
+
+Orders$create_table()
+#> <TableModel>
+#> Table: orders
+#> Columns: id, customer
+Items$create_table()
+#> <TableModel>
+#> Table: order_items
+#> Columns: id, order_id, sku
+
+# Outside a transaction, the generated key comes back on the record.
+Orders$record(customer = "Ada")$create()$data$id
+#> [1] 1
+```
+
+Inside [`with()`](https://rdrr.io/r/base/with.html), that default flips.
+A transaction is often a bulk load, and returning the row costs a round
+trip per insert, so `create()` does a plain insert instead and the
+generated values stay `NULL`:
+
+``` r
+
+with(engine, {
+  Orders$record(customer = "Grace")$create()$data$id
+})
+#> NULL
+```
+
+That is fine until a later statement in the same block needs the key – a
+child row pointing at the parent you just inserted. There are three ways
+to ask for it, and the innermost one wins.
+
+**Per insert**, with `flush_record = TRUE`. Reach for this when one row
+in the block needs its key and the rest do not:
+
+``` r
+
+with(engine, {
+  order <- Orders$record(customer = "Katherine")$create(flush_record = TRUE)
+  Items$record(order_id = order$data$id, sku = "A-1")$create()
+  order$data$id
+})
+#> [1] 3
+```
+
+**Per block**, with `.autoflush = TRUE` on the
+[`with()`](https://rdrr.io/r/base/with.html) call. Every `create()` in
+the block flushes, and any individual one can still opt out with
+`flush_record = FALSE`:
+
+``` r
+
+with(engine, {
+  order <- Orders$record(customer = "Radia")$create()
+  Items$record(order_id = order$data$id, sku = "B-2")$create()
+  order$data$id
+}, .autoflush = TRUE)
+#> [1] 4
+```
+
+**Per engine**, with `.autoflush = TRUE` at construction. Every
+transaction on the engine behaves that way, so call sites need no flag
+at all. This is the setting to reach for when your workload is
+transactional writes that thread generated keys through, rather than
+bulk loads:
+
+``` r
+
+flushing_engine <- Engine$new(
+  drv = RSQLite::SQLite(),
+  dbname = ":memory:",
+  persist = TRUE,
+  .autoflush = TRUE
+)
+
+Widgets <- flushing_engine$model(
+  "widgets",
+  id = Column("INTEGER", primary_key = TRUE),
+  name = Column("TEXT")
+)
+Widgets$create_table()
+#> <TableModel>
+#> Table: widgets
+#> Columns: id, name
+
+with(flushing_engine, {
+  Widgets$record(name = "cog")$create()$data$id
+})
+#> [1] 1
+```
+
+`engine$set_autoflush()` changes that default later in the session, and
+a block that passes `.autoflush = FALSE` opts out for its own scope –
+useful for dropping a bulk load into an otherwise flushing engine.
+Either way the previous setting is restored when the block exits,
+including when it errors.
+
+``` r
+
+with(flushing_engine, {
+  # A bulk load inside a flushing engine: no round trips for keys nobody reads.
+  for (name in c("gear", "sprocket", "flange")) {
+    Widgets$record(name = name)$create()
+  }
+  nrow(Widgets$read(.mode = "data.frame"))
+}, .autoflush = FALSE)
+#> [1] 4
+
+flushing_engine$get_autoflush()  # unchanged by the block above
+#> [1] TRUE
+flushing_engine$close()
+```
+
+One thing flushing never does is commit. The insert joins the open
+transaction like any other statement, so it rolls back with everything
+else:
+
+``` r
+
+suppressWarnings(tryCatch(
+  with(engine, {
+    Orders$record(customer = "doomed")$create()
+    stop("something went wrong")
+  }, .autoflush = TRUE),
+  error = function(e) message("rolled back: ", conditionMessage(e))
+))
+#> rolled back: something went wrong
+
+# The flushed insert went back with the rest of the transaction.
+nrow(Orders$read(customer == "doomed", .mode = "data.frame"))
+#> [1] 0
+```
 
 ## Dialects
 
@@ -225,6 +387,7 @@ production database, running exploratory queries against live data, or
 any situation where accidental writes would be harmful.
 
 ``` r
+
 ro_engine <- Engine$new(
   drv    = RPostgres::Postgres(),
   dbname = "prod_db",
@@ -240,6 +403,7 @@ Any statement that is not a read (`SELECT`, `WITH`, `EXPLAIN`, `SHOW`,
 database:
 
 ``` r
+
 # Fine
 ro_engine$get_query("SELECT count(*) FROM users")
 

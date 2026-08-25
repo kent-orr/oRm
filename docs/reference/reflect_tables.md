@@ -9,6 +9,8 @@ implementation.
 ## Usage
 
 ``` r
+reflect_tables.mssql(x, .schema = NULL, ...)
+
 reflect_tables.postgres(x, .schema = NULL, ...)
 
 reflect_tables(x, .schema = NULL, ...)
@@ -35,6 +37,9 @@ reflect_tables.default(x, .schema = NULL, ...)
 A character vector of (bare) table names.
 
 ## Functions
+
+- `reflect_tables.mssql()`: List base tables in a SQL Server schema
+  (defaults to \`SCHEMA_NAME()\`).
 
 - `reflect_tables.postgres()`: List base tables in a PostgreSQL schema
   (defaults to \`current_schema()\`).

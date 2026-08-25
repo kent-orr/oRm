@@ -6,6 +6,7 @@ Record is a type of TableModel that represents a single row of data in a
 database.
 
 ``` r
+
 library(oRm)
 engine <- Engine$new(
   drv = RSQLite::SQLite(),
@@ -42,6 +43,7 @@ can use the Record\$new() function to create a new Record object. Or,
 you can use the parent model object to create a new record:
 
 ``` r
+
 english = Classes$record(
     id = 11, 
     subject = "English", 
@@ -62,18 +64,26 @@ that, you need to call the create() method on the Record object.
 ## Create
 
 ``` r
+
 english$create(flush_record = NULL)
 ```
 
 Create only comes with a single argument, flush_record, which is a
 boolean indicating whether to flush the record to the database after
-creation. The default NULL will check the transaction state and flush
-the record if it’s not in a transaction, or wait for commit if it’s in a
-transaction. This can of course be overridden. The point here is that
-you might have a ‘SERIAL’ column in your table that automatically
-increments the id for you, or your column has a timestamp function being
-called by the database itself. If a record is flushed, it will return
-the updated record (if the dialect supports it).
+creation. The point here is that you might have a ‘SERIAL’ column in
+your table that automatically increments the id for you, or your column
+has a timestamp function being called by the database itself. If a
+record is flushed, it will return the updated record (if the dialect
+supports it).
+
+The default NULL checks the transaction state. Outside a transaction the
+record is flushed, so you get those generated values back. Inside a
+`with(engine, ...)` block the default is a plain insert instead and they
+stay NULL, on the assumption that a transaction is a bulk load and the
+round trip per row is not worth paying. This can of course be overridden
+– see [Server-generated values inside a
+transaction](https://kent-orr.github.io/oRm/articles/using-engine.html#server-generated-values-inside-a-transaction)
+for the three ways to ask for them.
 
 In interactive use, you probably want to flush every creation so that
 you have the whole record to work with on creation. In a loop or
@@ -88,6 +98,7 @@ it and then call the update() method to save the changes to the
 database.
 
 ``` r
+
 english$data$grade_average = 90
 english$update()
 Classes$read(id==11, .mode='get')
@@ -102,6 +113,7 @@ alternatively, you can give named arguments to the update() method to do
 it in one go.
 
 ``` r
+
 english$update(grade_average = 91)
 Classes$read(id==11, .mode='get')
 #> <Record>: 'classes'
@@ -114,6 +126,7 @@ Classes$read(id==11, .mode='get')
 And need to give a named list for programmatic updates?
 
 ``` r
+
 e_data = list(grade_average = 92, teacher_id = 1)
 english$update(.data = e_data)
 Classes$read(id==11, .mode='get')
@@ -129,6 +142,7 @@ Classes$read(id==11, .mode='get')
 To delete a record, call the delete() method on the Record object.
 
 ``` r
+
 english$delete()
 #> NULL
 Classes$read(!subject %in% c("Math", "Science"), .mode='one_or_none')
@@ -143,6 +157,7 @@ function. Record-level methods are defined when creating the model and
 become available on all record instances:
 
 ``` r
+
 Classes <- engine$model(
     tablename = "classes",
     id = Column('INTEGER', primary_key = TRUE),

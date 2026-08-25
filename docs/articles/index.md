@@ -24,5 +24,7 @@
 
 - [oRm with
   Shiny](https://kent-orr.github.io/oRm/articles/with_shiny.md):
+- [Building a database agent with
+  ellmer](https://kent-orr.github.io/oRm/articles/database-agent.md):
 - [Developing
   Dialects](https://kent-orr.github.io/oRm/articles/developing-dialects.md):

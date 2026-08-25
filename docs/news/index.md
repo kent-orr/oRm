@@ -1,5 +1,154 @@
 # Changelog
 
+## oRm 0.7.0.9000 (development)
+
+### New Features
+
+- **`.autoflush` returns server-generated values for inserts made inside
+  a transaction.** Inside a transaction `Record$create()` defaults to a
+  plain insert, so IDENTITY/SERIAL keys and column defaults stay `NULL`
+  on the record – the surprise reported in
+  [\#122](https://github.com/kent-orr/oRm/issues/122), where a parent
+  key was needed for a child insert. Two new controls change that
+  default, and the innermost one wins:
+
+  - `with.Engine(..., .autoflush = TRUE)` makes every `create()` in that
+    block flush.
+  - `Engine$new(..., .autoflush = TRUE)` does the same for every
+    transaction on the engine, so call sites need no flag at all;
+    `engine$set_autoflush()` changes it later in the session.
+
+  An explicit `create(flush_record = ...)` still overrides both. A
+  block’s setting is scoped to that block and restored on exit
+  (including on error), and a nested
+  [`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
+  inherits it unless it says otherwise. Both default to `FALSE`, so
+  existing behaviour is unchanged and bulk loads are not charged a round
+  trip per row.
+
+  The block-level argument is spelled `.autoflush`, matching
+  `Engine$new()` and the rest of the package’s dot-prefixed arguments.
+  Flushing behaviour is covered per dialect – PostgreSQL recovers keys
+  with `RETURNING`, SQL Server with `OUTPUT INSERTED`, SQLite with a
+  last-rowid lookup – in `test-Dialect-postgres.R`,
+  `test-Dialect-mssql-integration.R`, and `test-Dialect-sqlite.R`.
+
+### Bug Fixes
+
+- **SQL Server: records on trigger-bearing tables now recover their
+  IDENTITY key.** `OUTPUT INSERTED` is rejected on tables with triggers
+  (error 334), so `flush.mssql` fell back to a keyed re-read that only
+  worked when the caller supplied every primary key value; an IDENTITY
+  key raised an error instead. The fallback now recovers the IDENTITY
+  key with `SCOPE_IDENTITY()` in the same batch as the insert and
+  returns the full row, so `Record$create()` behaves the same on trigger
+  tables as on trigger-free ones. Keys that are neither supplied nor
+  IDENTITY (a `DEFAULT NEWID()` GUID, say) still fail with a clear
+  message.
+
+### Documentation
+
+- **[`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
+  now documents its flush behaviour.** Inside a transaction,
+  `Record$create()` leaves server-generated values (IDENTITY/SERIAL
+  keys, column defaults) unset unless it is asked to flush. The help
+  page now says so, spells out all three ways to get them back
+  (`flush_record = TRUE` on one insert, `autoflush = TRUE` on the block,
+  `.autoflush = TRUE` on the engine), and shows the parent/child insert
+  pattern; `create()`’s own docs cross-reference it
+  ([\#122](https://github.com/kent-orr/oRm/issues/122)).
+
+- **The Engine vignette gains a “Server-generated values inside a
+  transaction” section**, showing with live output how `create()`
+  returns generated keys outside a transaction but not inside one, and
+  working through all three ways to change that (per insert, per block,
+  per engine), plus the bulk-load opt-out and a demonstration that a
+  flushed insert still rolls back with its transaction. The Records
+  vignette’s `flush_record` paragraph is corrected – it described the
+  in-transaction default as waiting for commit – and now links to that
+  section.
+
+## oRm 0.7.0
+
+### New Features
+
+- **Microsoft SQL Server dialect.** oRm now speaks T-SQL, with the same
+  reflection depth PostgreSQL has enjoyed. Connect through `odbc` and
+  the dialect is inferred from the `Driver` (or `.connection_string`)
+  argument; where that is not enough — a DSN, for instance — pass
+  `.dialect = "mssql"`. SQL Server 2016 or later is assumed.
+
+  - **Reflection** reads the `sys` catalog views, rebuilding declared
+    types (`nvarchar(100)`, `decimal(10,2)`, `nvarchar(MAX)`), primary
+    keys (composite included), nullability, column defaults, and foreign
+    keys. Foreign keys become `ForeignKey` objects, so
+    `engine$reflect_schema()` wires up `many_to_one` relationships and
+    their backrefs exactly as it does on PostgreSQL.
+  - **Inserts** use `OUTPUT INSERTED.*` to return the stored row, so
+    server-generated values land back on the record. Tables carrying
+    triggers reject that clause; oRm falls back to a keyed re-read when
+    the primary key was supplied, and otherwise reports why rather than
+    surfacing a raw SQL Server error.
+  - `CREATE TABLE` is guarded with `IF OBJECT_ID(...) IS NULL`, since
+    T-SQL has no `CREATE TABLE IF NOT EXISTS`.
+  - Read-only engines fall back to oRm’s application-level statement
+    guard, as SQL Server has no session-level read-only mode.
+
+- **IDENTITY columns.** Declared in the type string, mirroring how
+  PostgreSQL’s `SERIAL` has always worked:
+  `Column("INT IDENTITY(1,1)", primary_key = TRUE)`. IDENTITY columns
+  are exempt from the required-field check on `create()` and are omitted
+  from insert statements, so the server generates the value.
+
+- **`.dialect` argument to `Engine$new()`** overrides automatic
+  detection. Any dialect string is accepted, so dialects shipped by
+  other packages can be selected the same way.
+
+### Bug Fixes
+
+- **Composite primary keys now generate valid DDL on every dialect.**
+  Marking more than one column `primary_key = TRUE` emitted an inline
+  `PRIMARY KEY` clause per column, which every database rejects (SQLite,
+  for example, with `table ... has more than one primary key`).
+  `create_table()` now emits a single table-level `PRIMARY KEY (a, b)`
+  constraint and marks those columns `NOT NULL`. Single-column keys
+  render exactly as before. The query side —
+  [`update()`](https://rdrr.io/r/stats/update.html), `delete()`,
+  `refresh()` — already handled composite keys.
+
+## oRm 0.6.2
+
+### Bug Fixes
+
+- **Schema-qualified writes no longer break on the non-flush paths.**
+  `model$tablename` is stored as a plain `"schema.table"` string, and
+  two write paths passed it directly to DBI, which quotes a character
+  string as a single identifier — producing a relation whose name
+  literally contains a dot. On PostgreSQL this surfaced as
+  `Failed to initialise COPY : ERROR: relation "schema.table" does not exist`.
+  - `Record$create()` on its non-flush branch (the default inside a
+    transaction, or explicit `flush_record = FALSE`) passed the raw
+    string to
+    [`DBI::dbAppendTable()`](https://dbi.r-dbi.org/reference/dbAppendTable.html).
+    It now passes the name through `engine$format_tablename()`, which
+    quotes each dotted part separately.
+  - `TableModel$create_table(overwrite = TRUE)` built its `DROP TABLE`
+    statement the same way. Because of `IF EXISTS`, the drop silently
+    missed the qualified table and “overwrite” left the old table and
+    its data in place. It now uses `format_tablename()` like
+    `drop_table()` already did.
+
+## oRm 0.6.1
+
+### New Features
+
+- **Optional ellmer database-agent integration** —
+  [`register_db_tools()`](https://kent-orr.github.io/oRm/reference/register_db_tools.md)
+  augments an ellmer Chat with generic CRUD tools
+  (`db_read`/`db_create`/ `db_update`/`db_delete`) backed by oRm models
+  or a reflected Engine. ellmer is in Suggests; the package loads
+  without it.
+
 ## oRm 0.6.0
 
 ### Breaking Changes
@@ -41,6 +190,28 @@
   wiring; both share one implementation.
 
 ### Bug Fixes
+
+- **[`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
+  transactions now nest, pool, and respect read-only** — three
+  long-standing transaction bugs are fixed:
+
+  - *Nesting*: a
+    [`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
+    block opened inside another (directly or via a helper) used to hit
+    [`dbBegin()`](https://dbi.r-dbi.org/reference/transactions.html) on
+    a connection already in a transaction and error out. Nested blocks
+    now run as savepoints and commit together with the outer
+    transaction.
+  - *Pooling*: with `use_pool = TRUE`,
+    [`dbBegin()`](https://dbi.r-dbi.org/reference/transactions.html) was
+    called on the `Pool` object itself (and the writes scattered across
+    checkouts). A single connection is now checked out for the life of
+    the transaction and pinned so every operation inside the block lands
+    on it.
+  - *Read-only*: a transaction on a `.read_only` engine opened anyway
+    and only failed mid-block on the first write.
+    [`with.Engine()`](https://kent-orr.github.io/oRm/reference/with.Engine.md)
+    now refuses upfront.
 
 - **Double-qualification of table names in `Engine`** — `Engine$model()`
   and `Engine$reflect()` qualified the tablename before passing it to

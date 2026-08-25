@@ -18,6 +18,7 @@ Let’s create `Students` and `Classes` tables and populate them with some
 dummy data.
 
 ``` r
+
 library(oRm)
 engine <- Engine$new(
   drv = RSQLite::SQLite(),
@@ -111,6 +112,7 @@ related fields between tables via joins. We’ll look at all the students
 in class with id=1
 
 ``` r
+
 class_tbl <- Classes$tbl()
 student_tbl <- Students$tbl()
 
@@ -137,6 +139,7 @@ get our joins right, or, we could rely on a previously described
 relationship to get the necessary records and apply the curve.
 
 ``` r
+
 Classes$define_relationship(
     local_key = 'id',
     type = 'one_to_many',
@@ -153,6 +156,7 @@ relationship between the two models. You’ll use those values to call on
 related records. Let’s see that in action:
 
 ``` r
+
 class1 = Classes$read(id == 1, .mode='get')
 class1_students = class1$relationship('students')
 class1_students |> sapply(\(x) paste(
@@ -175,6 +179,7 @@ class1_students |> sapply(\(x) paste(
 And if we look at that in reverse:
 
 ``` r
+
 class1_students[[1]]$relationship('class')
 #> <Record>: 'classes'
 #> id: 1
@@ -185,6 +190,7 @@ class1_students[[1]]$relationship('class')
 We can also apply filtering to the related records:
 
 ``` r
+
 class1$relationship('students', grade < 87)
 #> [[1]]
 #> <Record>: 'students'
@@ -215,6 +221,7 @@ There are only a handful of teachers, and they may have multipe classes
 to take care of, so we’ll assign teachers to multiple classes.
 
 ``` r
+
 set.seed(100)
 Teachers <- engine$model(
     tablename = "teachers", 
@@ -267,6 +274,7 @@ Teachers to TeacherAssignments, and ‘many_to_one’ from
 TeacherAssignments to Classes.
 
 ``` r
+
 Teachers$define_relationship(
     local_key = 'id',
     type = 'one_to_many',
@@ -291,6 +299,7 @@ You can now traverse from `Teachers` -\> `TeacherAssignments` -\>
 cards for a teacher showing each class and the students in each class.
 
 ``` r
+
 teacher <- Teachers$read(id == 3, .mode='get')
 
 # teacher$relationship('teacher_assignments') |>

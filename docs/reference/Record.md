@@ -133,13 +133,19 @@ Insert this record into the database.
 
 - `flush_record`:
 
-  Logical flag determining whether to call \`flush()\` after insertion.
-  Defaults to \`NULL\`, which flushes when not currently in a
-  transaction.
+  Logical flag determining whether to call \`flush()\` after insertion,
+  populating the record with server-generated values such as
+  IDENTITY/SERIAL keys and column defaults. Defaults to \`NULL\`, which
+  flushes when not currently in a transaction. Inside a
+  \[with.Engine()\] block the default follows that block's
+  \`.autoflush\` setting, which in turn defaults to the engine's
+  \`.autoflush\` value; pass \`TRUE\` explicitly when a later statement
+  needs the generated key. Flushing never commits the transaction.
 
 #### Returns
 
-Invisible NULL
+The Record instance, populated with server-generated values when
+flushed.
 
 ------------------------------------------------------------------------
 

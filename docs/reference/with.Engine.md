@@ -10,7 +10,7 @@ block.
 
 ``` r
 # S3 method for class 'Engine'
-with(data, expr, auto_commit = TRUE, ...)
+with(data, expr, auto_commit = TRUE, .autoflush = NULL, ...)
 ```
 
 ## Arguments
@@ -27,6 +27,15 @@ with(data, expr, auto_commit = TRUE, ...)
 
   Logical. Whether to automatically commit if no errors occur (default:
   TRUE)
+
+- .autoflush:
+
+  Logical. Whether \`Record\$create()\` calls inside the block should
+  flush by default, populating records with server-generated values.
+  Defaults to \`NULL\`, which inherits the surrounding setting – the
+  engine's \`.autoflush\` value at the outermost block, or whatever an
+  enclosing \`with.Engine()\` established. The previous value is
+  restored when the block exits.
 
 - ...:
 
@@ -58,6 +67,35 @@ block to save your changes. If neither `commit()` nor `rollback()` is
 called, the transaction will be rolled back by default and a warning
 will be issued.
 
+## Server-generated values inside a transaction
+
+\`Record\$create()\` resolves its \`flush_record\` argument from the
+transaction state when it is left \`NULL\`. Outside a transaction the
+insert is flushed and the record comes back populated with
+server-generated values (IDENTITY and SERIAL keys, column defaults,
+timestamps). Inside a \`with.Engine()\` block the default is a plain
+insert, and those values stay \`NULL\` on the record – cheap for bulk
+loads, but a surprise when a later statement needs the key.
+
+There are three ways to get them back, innermost setting winning:
+
+- \`create(flush_record = TRUE)\` on the individual insert that a later
+  statement depends on – typically a parent row whose key a child row
+  references.
+
+- \`.autoflush = TRUE\` on the \`with.Engine()\` call, which makes every
+  \`create()\` in the block flush by default. Individual calls can still
+  opt out with \`flush_record = FALSE\`.
+
+- \`Engine\$new(.autoflush = TRUE)\`, which does the same for every
+  transaction on that engine, so callers never have to remember the
+  flag. \`engine\$set_autoflush()\` changes it later in the session.
+
+Flushing never commits: the insert joins the open transaction and is
+rolled back with it. It does cost a round trip per insert that returns
+the row, so \`.autoflush = TRUE\` is a poor fit for bulk loads where the
+keys are unused.
+
 ## Examples
 
 ``` r
@@ -69,6 +107,20 @@ with.Engine(engine, {
   # Transaction automatically committed if no errors
 })
 #> Error in with.Engine(engine, {    User$record(name = "Alice")$create()    User$record(name = "Bob")$create()}): could not find function "with.Engine"
+
+# Parent/child insert: flush the parent so its generated key is available
+with.Engine(engine, {
+  order <- Order$record(customer = "Alice")$create(flush_record = TRUE)
+  Item$record(order_id = order$data$id, sku = "A-1")$create()
+})
+#> Error in with.Engine(engine, {    order <- Order$record(customer = "Alice")$create(flush_record = TRUE)    Item$record(order_id = order$data$id, sku = "A-1")$create()}): could not find function "with.Engine"
+
+# Same thing for every insert in the block
+with.Engine(engine, {
+  order <- Order$record(customer = "Alice")$create()
+  Item$record(order_id = order$data$id, sku = "A-1")$create()
+}, .autoflush = TRUE)
+#> Error in with.Engine(engine, {    order <- Order$record(customer = "Alice")$create()    Item$record(order_id = order$data$id, sku = "A-1")$create()}, .autoflush = TRUE): could not find function "with.Engine"
 
 # With manual commit
 with.Engine(engine, {

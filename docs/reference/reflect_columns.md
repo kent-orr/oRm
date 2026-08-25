@@ -7,6 +7,8 @@ build a TableModel from a table that already exists in the database.
 ## Usage
 
 ``` r
+reflect_columns.mssql(x, tablename, ...)
+
 reflect_columns.postgres(x, tablename, ...)
 
 reflect_columns(x, tablename, ...)
@@ -43,6 +45,12 @@ only. Dialects may provide richer implementations (capturing primary
 keys, nullability, and defaults).
 
 ## Functions
+
+- `reflect_columns.mssql()`: SQL Server reflection via the \`sys\`
+  catalog views, capturing declared types (including IDENTITY), primary
+  keys (composite keys included), nullability, defaults, and foreign
+  keys (returned as \[ForeignKey\] objects, schema-qualified when the
+  target lives in another schema).
 
 - `reflect_columns.postgres()`: PostgreSQL reflection via
   \`pg_catalog\`, capturing canonical types, primary keys, nullability,

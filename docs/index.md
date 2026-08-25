@@ -8,6 +8,7 @@ query relationships without writing raw SQL.
 ## 🔧 Installation
 
 ``` r
+
 remotes::install_github("kent-orr/oRm")
 ```
 
@@ -16,6 +17,7 @@ remotes::install_github("kent-orr/oRm")
 ### 1. Create Engine
 
 ``` r
+
 library(oRm)
 
 engine <- Engine$new(
@@ -29,6 +31,7 @@ For PostgreSQL connections, you can set a default schema that will be
 used for `search_path` and by `model()` when no schema is supplied:
 
 ``` r
+
 engine <- Engine$new(
   drv = RPostgres::Postgres(),
   dbname = "mydb",
@@ -39,6 +42,7 @@ engine <- Engine$new(
 ### 2. Define Models
 
 ``` r
+
 User <- engine$model(
   "users",
   id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
@@ -60,6 +64,7 @@ User$create_table()
 ### 3. Add Relationship
 
 ``` r
+
 User$define_relationship(
   local_key = "organization_id",
   type = "belongs_to",
@@ -73,6 +78,7 @@ User$define_relationship(
 ### 4. Insert Records
 
 ``` r
+
 Organization$record(id = 1L, name = "Widgets, Inc")$create()
 User$record(id = 1L, organization_id = 1L, name = "Kent", age = 34)$create()
 User$record(id = 2L, organization_id = 1L, name = "Dylan", age = 25)$create()
@@ -81,6 +87,7 @@ User$record(id = 2L, organization_id = 1L, name = "Dylan", age = 25)$create()
 ### 5. Query Records
 
 ``` r
+
 kent <- User$read(id == 1, .mode = "get")
 kent$data$name
 
@@ -98,6 +105,7 @@ row — so autocomplete on `c`, `r`, `u`, `d` gets you where you need to
 go on either noun.
 
 ``` r
+
 # Set-level: operate on the table
 User$create(id = 5, name = "hogan")
 User$update(id == 5, name = "Hogan")
@@ -116,6 +124,7 @@ Pass `.read_only = TRUE` to prevent all write operations on an engine.
 Useful for giving analysts a safe connection to production databases.
 
 ``` r
+
 ro_engine <- Engine$new(
   drv   = RSQLite::SQLite(),
   dbname = "prod.sqlite",
@@ -141,6 +150,7 @@ Define a `TableModel` with only a subset of an existing table’s columns.
 `read()` will project results to just the declared fields.
 
 ``` r
+
 # The 'users' table also has 'ssn' and 'internal_notes' columns — omit them here
 UserView <- engine$model(
   "users",
@@ -164,6 +174,7 @@ and returns a ready-to-use `TableModel`, so you can do basic CRUD
 without declaring every column by hand.
 
 ``` r
+
 # Reflect all columns of the existing "users" table
 Users <- engine$reflect("users")
 names(Users$fields)
@@ -194,6 +205,7 @@ For other dialects, because the primary key is not reflected,
 you to supply the key column via `...`:
 
 ``` r
+
 Users <- engine$reflect("users", id = Column("INTEGER", primary_key = TRUE))
 ```
 
@@ -209,6 +221,7 @@ relationships implied by the reflected foreign keys. This is most useful
 with the PostgreSQL dialect, whose reflection captures foreign keys.
 
 ``` r
+
 # Reflect all tables in the engine's default schema
 models <- engine$reflect_schema()
 

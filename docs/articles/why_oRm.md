@@ -23,6 +23,7 @@ are recorded accurately and consistently?
 ## Using `dbplyr` and `DBI` to manage your database
 
 ``` r
+
 library(DBI)
 library(dplyr)
 library(dbplyr)
@@ -70,6 +71,7 @@ One of your team members actually put in the measurement wrong, it’s
 8.15, not 15.8. How would we fix this record in the database?
 
 ``` r
+
 # You have to find the row and update it manually using SQL
 dbExecute(con, "
   UPDATE measurements
@@ -114,6 +116,7 @@ So now let’s use `oRm` to manage our database. We’re going to define our
 table schema and enter our first few observations.
 
 ``` r
+
 library(oRm)
 
 engine <- Engine$new(
@@ -173,6 +176,7 @@ m1
 And oh, yikes. Person 2 put in the measurement wrong. let’s correct it.
 
 ``` r
+
 p2 = Measurement$read(observer_id == 2, .mode='get')
 p2$update(measurement_value = 8.15)
 p2
@@ -203,6 +207,7 @@ we designated a foreign key to the Plants table. We’ll make use of that
 relationship now.
 
 ``` r
+
 Plants <- engine$model(
     "plants",
     id = Column("INTEGER", primary_key = TRUE),
@@ -224,6 +229,7 @@ and Measurements. But oRm is not. We’ll now **model** a **relationship**
 between the two tables which oRm **objects** will use.
 
 ``` r
+
 Plants$define_relationship(
     local_key = "id",
     type = "one_to_many",
@@ -238,6 +244,7 @@ And after we’ve made that mapping, we can find all the related
 measurements for a specific plant.
 
 ``` r
+
 p101 = Plants$read(id == 101, .mode='get')
 p101$relationship('measurements')
 #> [[1]]
@@ -260,6 +267,7 @@ p101$relationship('measurements')
 Or we can look for a specific relationship by filtering
 
 ``` r
+
 p101$relationship('measurements', measurement_value < 15.0)
 #> [[1]]
 #> <Record>: 'measurements'

@@ -24,10 +24,12 @@ We’ll walk through each concept, starting with the `Engine`.
 ## Set up the Engine
 
 ``` r
+
 library(oRm)
 ```
 
 ``` r
+
 engine <- Engine$new(
   drv = RSQLite::SQLite(),
   dbname = ":memory:",
@@ -45,6 +47,7 @@ You’ll rarely need to interact with the connection directly, but you
 can:
 
 ``` r
+
 engine$get_connection()
 engine$list_tables()
 engine$execute("SELECT * FROM users")
@@ -59,6 +62,7 @@ TableModels can be created in two ways. The first is by calling the
 `TableModel` constructor directly:
 
 ``` r
+
 Users <- TableModel$new(
   "users",
   engine,
@@ -74,6 +78,7 @@ in [`dbplyr::sql()`](https://dbplyr.tidyverse.org/reference/sql.html),
 which prevents the value from being quoted as a string:
 
 ``` r
+
 # Simple Users model without complex defaults
 Users <- TableModel$new(
     "users",
@@ -88,6 +93,7 @@ Users <- TableModel$new(
 Or, more commonly, you define a model through the engine itself:
 
 ``` r
+
 Organization <- engine$model(
   "organizations",
   id = Column("INTEGER", primary_key = TRUE),
@@ -108,6 +114,7 @@ in the right place.
 ### Create the table in your database
 
 ``` r
+
 Users$create_table()
 #> <TableModel>
 #> Table: users
@@ -120,6 +127,7 @@ already exist.
 ### Create rows
 
 ``` r
+
 Users$create(id = 1, name = "John")
 Users$create(id = 2, name = "Jane", age = 35)
 ```
@@ -130,6 +138,7 @@ counterpart to `Record$create()`.
 ### Read rows from the table
 
 ``` r
+
 all_users <- Users$read()
 young_users <- Users$read(age < 30)
 ```
@@ -139,6 +148,7 @@ The `read()` method accepts `dbplyr`-style filter conditions through
 of `Record` objects, or a single record if `.mode = "get"` is specified.
 
 ``` r
+
 specific_user <- Users$read(id == 1, .mode = "get")
 ```
 
@@ -148,12 +158,14 @@ Bare expressions are the `WHERE` filter; named values are the `SET`
 assignments:
 
 ``` r
+
 Users$update(id == 1, age = 40)
 ```
 
 ### Delete rows
 
 ``` r
+
 Users$delete(id == 2)
 ```
 
@@ -166,12 +178,14 @@ rather than the whole set.
 ### Create a new record
 
 ``` r
+
 Users$record(id = 3, organization_id = 1, name = "Alice")$create()
 ```
 
 ### Update a record
 
 ``` r
+
 alice <- Users$read(id == 3, .mode = "get")
 alice$data$name <- "Alicia"
 alice$update()
@@ -180,6 +194,7 @@ alice$update()
 ### Delete a record
 
 ``` r
+
 alice$delete()
 #> NULL
 ```
@@ -187,6 +202,7 @@ alice$delete()
 ### Access record data
 
 ``` r
+
 print(alice$data$name)
 #> [1] "Alicia"
 ```
@@ -199,6 +215,7 @@ navigation between related records.
 ### Define a relationship
 
 ``` r
+
 Users$define_relationship(
   local_key = "organization_id",
   type = "many_to_one",
@@ -219,6 +236,7 @@ created. Let’s create our table and give it an Organization to work
 with.
 
 ``` r
+
 Organization$create_table()
 #> <TableModel>
 #> Table: organizations
@@ -227,6 +245,7 @@ Organization$record(id = 1, name = "Widgets, Inc")$create()
 ```
 
 ``` r
+
 
 Users$record(id = 3, name = 'Alice', organization_id = 1)$create()
 alice = Users$read(id == 3, .mode='get')
@@ -238,6 +257,7 @@ print(alice_org$data$name)
 ### Accessing relationships through a TableModel
 
 ``` r
+
 young_orgs <- Organization$relationship("users", age < 30)
 young_orgs
 #> list()
@@ -260,6 +280,7 @@ Table-level methods operate on the entire table and are useful for
 custom queries or bulk operations:
 
 ``` r
+
 Users <- engine$model(
   "users",
   id = Column("INTEGER", primary_key = TRUE),
@@ -302,6 +323,7 @@ Record-level methods operate on individual records and are useful for
 instance-specific operations:
 
 ``` r
+
 Users <- engine$model(
   "users",
   id = Column("INTEGER", primary_key = TRUE),

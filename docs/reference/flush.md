@@ -1,5 +1,9 @@
 # Flush data to database table
 
+Insert a row and return the inserted record using SQL Server's \`OUTPUT
+INSERTED.\*\` clause. IDENTITY columns are dropped from the insert list,
+since assigning them requires \`SET IDENTITY_INSERT\`.
+
 MySQL insert returning the last generated ID.
 
 Insert a row and return the inserted record using PostgreSQL's RETURNING
@@ -14,6 +18,9 @@ SQLite implementation
 ## Usage
 
 ``` r
+# S3 method for class 'mssql'
+flush(x, table, data, con, commit = TRUE, ...)
+
 # S3 method for class 'mysql'
 flush(x, table, data, con, commit = TRUE, ...)
 

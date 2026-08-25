@@ -15,6 +15,7 @@ For demonstration purposes, we’ll consdier that the data is plant
 heights and the team members are represented by IDs.
 
 ``` r
+
 # in global.R =====
 engine <- Engine$new(
   drv = RSQLite::SQLite(),
@@ -63,6 +64,7 @@ and `OFFSET` clause. Let’s say we want to display the observations as
 cards in a uiOutput, but we only want to show the last 5 cards.
 
 ``` r
+
 displayed_observations <- reactive({
     page_no = input$page_no
     offset = (page_no - 1) * 5  # Assuming 5 observations per page
@@ -99,6 +101,7 @@ users can select from. `oRm` can help manage lookup tables in an oop
 manner instead of using SQL queries directly.
 
 ``` r
+
 Users <- engine$model(
     "users",
     user_id = Column('Integer', primary_key = TRUE),
@@ -141,6 +144,7 @@ data integrity across multiple database operations.
 ### Basic Usage in Shiny:
 
 ``` r
+
 observeEvent(input$add_observation, {
     # observer_id and plant_height are the values from the form inputs
 
@@ -180,6 +184,7 @@ before committing the transaction.
 ### Example with Auto-incrementing IDs:
 
 ``` r
+
 # Setup a model with an auto-incrementing column
 Observations <- engine$model(
     "observations",

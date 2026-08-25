@@ -1,6 +1,7 @@
 # Using TableModels
 
 ``` r
+
 library(oRm)
 
 engine <- Engine$new(
@@ -24,6 +25,7 @@ You can define a TableModel with `TableModel$new()`, but the more common
 (and convenient) way is through the Engine using `engine$model()`:
 
 ``` r
+
 Classes <- engine$model(
     tablename = "classes", 
     id = Column('INTEGER', primary_key = TRUE),
@@ -84,6 +86,7 @@ ahead and come back, you can jump to the [using
 records](https://kent-orr.github.io/using-records.md) section.
 
 ``` r
+
 # Let's make some classes
 for (i in 1:10) {
     Classes$record(
@@ -138,6 +141,7 @@ So if it works in `arrange` call, it should work here as well, and that
 includes the designation of `desc()` to sort in descending order.
 
 ``` r
+
 Classes$read(.order_by = c(subject, desc(id))) |>
     sapply(function(x) {paste(x$data$subject, x$data$id)}) |>
     suppressWarnings() # sqlite is noisy about arrange and limits
@@ -164,6 +168,7 @@ function. Table-level methods operate on the entire table and are useful
 for custom queries, bulk operations, or complex business logic:
 
 ``` r
+
 Classes <- engine$model(
     tablename = "classes",
     id = Column('INTEGER', primary_key = TRUE),
@@ -235,6 +240,7 @@ Pass `ask = FALSE` to bypass the prompt in scripts or automated
 workflows:
 
 ``` r
+
 Classes$create_table(overwrite = TRUE, ask = FALSE)
 ```
 
@@ -251,6 +257,7 @@ are not the table owner and do not want to replicate every column in
 your model
 
 ``` r
+
 # Suppose 'users' also has 'ssn' and 'internal_notes' columns in the database
 UserView <- engine$model(
   "users",

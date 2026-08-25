@@ -9,6 +9,7 @@ column by hand. This is called *reflection*.
 `engine$reflect()` inspects one table and returns a `TableModel`:
 
 ``` r
+
 library(oRm)
 
 engine <- Engine$new(
@@ -35,6 +36,7 @@ Users$read(.mode = "data.frame")
 |----|----|
 | Default (all) | Column names and best-effort types only |
 | **PostgreSQL** | Canonical types, primary keys, nullability, column defaults, and foreign keys |
+| **SQL Server** | Declared types (including `IDENTITY`), primary keys (composite included), nullability, column defaults, and foreign keys |
 
 With PostgreSQL, `reflect()` captures:
 
@@ -53,6 +55,53 @@ With PostgreSQL, `reflect()` captures:
 - **Foreign keys** — reflected as `ForeignKey` objects, schema-qualified
   when the target lives in another schema
 
+SQL Server reflection reads the same detail from the `sys` catalog
+views. Types are rebuilt as declared — `nvarchar(100)`, `decimal(10,2)`,
+`nvarchar(MAX)` — and an `IDENTITY` column comes back with its
+specification attached, e.g. `"int IDENTITY(1,1)"`, so the reflected
+model can recreate the table as it stands.
+
+### Working with SQL Server
+
+Connect through `odbc` with the Microsoft ODBC driver installed:
+
+``` r
+
+engine <- Engine$new(
+  drv = odbc::odbc(),
+  Driver = "ODBC Driver 18 for SQL Server",
+  Server = "localhost,1433",
+  Database = "mydb",
+  UID = "sa",
+  PWD = Sys.getenv("MSSQL_PWD"),
+  TrustServerCertificate = "yes"
+)
+```
+
+Every `odbc` connection shares one driver class, so the dialect is
+inferred from the `Driver` (or `.connection_string`) argument. When your
+connection names the driver differently — a DSN, for instance — select
+the dialect explicitly:
+
+``` r
+
+engine <- Engine$new(drv = odbc::odbc(), dsn = "MyWarehouse", .dialect = "mssql")
+```
+
+A few backend specifics are worth knowing:
+
+- **SQL Server 2016 or later** is assumed, for `DROP TABLE IF EXISTS`.
+- **IDENTITY columns** are declared in the type string, the same way
+  PostgreSQL uses `SERIAL`:
+  `Column("INT IDENTITY(1,1)", primary_key = TRUE)`. oRm omits them from
+  inserts and reads the generated value back.
+- **Tables with triggers** reject the `OUTPUT INSERTED` clause oRm uses
+  to return inserted rows. On such a table, supply the primary key
+  yourself so the row can be re-read; a server-generated key cannot be
+  recovered there.
+- **Read-only engines** rely on oRm’s application-level statement guard,
+  since SQL Server has no session-level read-only mode.
+
 ### Overriding reflected columns
 
 Arguments passed via `...` take precedence over reflected columns, just
@@ -61,6 +110,7 @@ that don’t reflect one, override a type, or add a
 [`Method()`](https://kent-orr.github.io/oRm/reference/Method.md):
 
 ``` r
+
 # Supply the PK explicitly on a non-PostgreSQL backend
 Users <- engine$reflect(
   "users",
@@ -83,6 +133,7 @@ automatically wires the `many_to_one` / `one_to_many` relationships
 implied by the reflected foreign keys.
 
 ``` r
+
 # Reflect all tables in the engine's default schema
 models <- engine$reflect_schema()
 
@@ -98,6 +149,7 @@ models <- engine$reflect_schema(exclude = c("schema_migrations", "audit_log"))
 `reflect_schema()` returns a named list keyed by bare table name:
 
 ``` r
+
 posts  <- models$posts
 users  <- models$users
 ```
@@ -109,6 +161,7 @@ into a `many_to_one` relationship (with the reverse `one_to_many`
 backref):
 
 ``` r
+
 post   <- posts$read(id == 1, .mode = "get")
 author <- post$relationship("users")   # posts.user_id -> users.id
 author$data$name
@@ -123,6 +176,7 @@ Foreign keys pointing at tables outside the reflected set are skipped
 with a warning. You can always wire those manually afterwards:
 
 ``` r
+
 models$posts$define_relationship(
   local_key     = "category_id",
   type          = "many_to_one",
@@ -148,6 +202,7 @@ models$posts$define_relationship(
 supports cross-schema references in both shorthand and explicit forms:
 
 ``` r
+
 # Shorthand: "schema.table.column"
 fk <- ForeignKey("INTEGER", references = "audit.users.id")
 

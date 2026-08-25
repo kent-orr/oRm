@@ -18,6 +18,7 @@ Let’s look at a table level method for students that performs a custom
 search:
 
 ``` r
+
 Student = engine$model(
     "students",
     id = Column('int'),
@@ -54,6 +55,7 @@ Student$search_by_name('j')
 You can also have record level methods (this is the default behavior):
 
 ``` r
+
 Student = engine$model(
     "students",
     id = Column('int'),
@@ -90,6 +92,7 @@ method to assign a grade and another to calculate an average.
 First, define the grades table:
 
 ``` r
+
 Grades = engine$model(
     "grades",
     id = Column('int', primary_key = TRUE),
@@ -111,6 +114,7 @@ related grade record using that helper, and `get_average()` summarizes a
 student’s grades.
 
 ``` r
+
 Students = engine$model(
     "students",
     id = Column('int', primary_key = TRUE),
@@ -149,6 +153,7 @@ With both tables in place, define the relationship so records can find
 their grades:
 
 ``` r
+
 Students$define_relationship(
     'id', 'one_to_many', Grades, 'student_id',
     ref = 'grades',
@@ -159,6 +164,7 @@ Students$define_relationship(
 And now we can use the methods on a record:
 
 ``` r
+
 john = Students$record(id=1, name = "john", age = 22)$create()
 john$assign_grade('Math', 83)
 #> Warning: Missing values are always removed in SQL aggregation functions.

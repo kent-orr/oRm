@@ -83,6 +83,16 @@ Key features:
 
 - [`Engine$get_transaction_state()`](#method-Engine-get_transaction_state)
 
+- [`Engine$set_autoflush()`](#method-Engine-set_autoflush)
+
+- [`Engine$get_autoflush()`](#method-Engine-get_autoflush)
+
+- [`Engine$set_transaction_connection()`](#method-Engine-set_transaction_connection)
+
+- [`Engine$push_savepoint()`](#method-Engine-push_savepoint)
+
+- [`Engine$pop_savepoint()`](#method-Engine-pop_savepoint)
+
 - [`Engine$qualify()`](#method-Engine-qualify)
 
 - [`Engine$format_tablename()`](#method-Engine-format_tablename)
@@ -105,7 +115,9 @@ Create an Engine object
       .schema = NULL,
       .read_only = FALSE,
       use_pool = FALSE,
-      persist = FALSE
+      persist = FALSE,
+      .dialect = NULL,
+      .autoflush = FALSE
     )
 
 #### Arguments
@@ -138,7 +150,27 @@ Create an Engine object
 - `persist`:
 
   Logical. Whether to keep the connection open after operations
-  (default: FALSE) Get a connection to the database
+  (default: FALSE)
+
+- `.dialect`:
+
+  Character. Overrides automatic dialect detection, e.g. \`"mssql"\`.
+  Needed when the driver cannot identify the backend on its own: every
+  \`odbc::odbc()\` connection shares one driver class, so SQL Server is
+  only auto-detected when the connection arguments name it. Any dialect
+  string is accepted, so third-party dialects can be selected the same
+  way.
+
+- `.autoflush`:
+
+  Logical. The default value of \`flush_record\` for
+  \[Record\$create()\] calls made inside a transaction (default: FALSE,
+  a plain insert that leaves server-generated values unset). Set
+  \`TRUE\` to have every create inside a \[with.Engine()\] block return
+  its IDENTITY/SERIAL key and column defaults without having to ask per
+  block. Individual blocks and creates can still override it, and
+  creates outside a transaction always flush. Get a connection to the
+  database
 
   Reapplies the configured schema on every connection retrieval to
   ensure consistency after reconnects.
@@ -506,6 +538,97 @@ Logical indicating if a transaction is active
 
 ------------------------------------------------------------------------
 
+### Method `set_autoflush()`
+
+Set the flush default that \[Record\$create()\] uses while a transaction
+is open, overriding the engine's \`.autoflush\` setting for the rest of
+the session. \[with.Engine()\] uses this to apply its own \`.autoflush\`
+argument for the duration of a block, restoring the previous value on
+exit. It is not read outside a transaction, where creates always flush.
+
+#### Usage
+
+    Engine$set_autoflush(state)
+
+#### Arguments
+
+- `state`:
+
+  Logical. \`TRUE\` to flush inserts made inside a transaction,
+  populating records with server-generated values.
+
+#### Returns
+
+The previous value, invisibly.
+
+------------------------------------------------------------------------
+
+### Method `get_autoflush()`
+
+Retrieve the in-transaction flush default currently in force.
+
+#### Usage
+
+    Engine$get_autoflush()
+
+#### Returns
+
+Logical indicating whether creates inside a transaction flush.
+
+------------------------------------------------------------------------
+
+### Method `set_transaction_connection()`
+
+Pin a single connection for the duration of a transaction so that
+\[with.Engine()\] and every operation inside the block share one
+connection. Used internally for pooled engines, where each call would
+otherwise check out a different connection. Pass \`NULL\` to clear.
+
+#### Usage
+
+    Engine$set_transaction_connection(conn)
+
+#### Arguments
+
+- `conn`:
+
+  A DBIConnection, or NULL to release the pin.
+
+#### Returns
+
+The Engine object, invisibly.
+
+------------------------------------------------------------------------
+
+### Method `push_savepoint()`
+
+Reserve a fresh savepoint name for a nested transaction block and bump
+the nesting depth.
+
+#### Usage
+
+    Engine$push_savepoint()
+
+#### Returns
+
+A unique savepoint name (character).
+
+------------------------------------------------------------------------
+
+### Method `pop_savepoint()`
+
+Release the most recently reserved savepoint name.
+
+#### Usage
+
+    Engine$pop_savepoint()
+
+#### Returns
+
+NULL, invisibly.
+
+------------------------------------------------------------------------
+
 ### Method [`qualify()`](https://kent-orr.github.io/oRm/reference/qualify.md)
 
 Qualify a table name with a schema
@@ -588,6 +711,7 @@ The objects of this class are cloneable with this method.
 ## Examples
 
 ``` r
+
 ## ------------------------------------------------
 ## Method `Engine$model`
 ## ------------------------------------------------

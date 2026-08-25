@@ -13,6 +13,7 @@ looks for a function with the naming pattern `method.dialect` and falls
 back to `method.default` when a dialect-specific method is not defined.
 
 ``` r
+
 # simplified dispatch
 dispatch_method <- function(x, method, ...) {
     dialect <- get_dialect(x)
@@ -28,6 +29,19 @@ dispatch_method <- function(x, method, ...) {
 The dialect is typically stored on an `Engine` and propagates to
 associated `TableModel` and `Record` objects.
 
+`Engine$new()` normally infers the dialect from the driver, but a driver
+does not always identify the backend — every `odbc` connection presents
+the same driver class regardless of which database it targets. Pass
+`.dialect` to select one explicitly:
+
+``` r
+
+engine <- Engine$new(drv = odbc::odbc(), dsn = "MyWarehouse", .dialect = "mydialect")
+```
+
+Any dialect string is accepted, so a dialect shipped in your own package
+can be selected the same way.
+
 ## Required methods
 
 To register a new dialect, create a file like `R/Dialect-mydialect.R`
@@ -35,13 +49,27 @@ and implement methods using the dispatch naming convention. The
 following functions are commonly needed:
 
 - `flush.mydialect(x, table, data, con, commit = TRUE, ...)`: Insert a
-  row and return inserted data or identifiers.
+  row and return the inserted row as a one-row data frame, so
+  `Record$flush()` can copy server-generated values back onto the
+  record.
 - `qualify.mydialect(x, tablename, .schema)`: Qualify a table name with
   its schema if supported.
 - `set_schema.mydialect(x, .schema)`: Switch the current schema on the
   connection.
 - `check_schema_exists.mydialect(x, .schema)`: (Optional) Check whether
   a schema exists.
+- `create_schema.mydialect(x, .schema)`: (Optional) Create a schema.
+- `sql_create_table.mydialect(x, conn, tablename, quoted_name, body, if_not_exists)`:
+  (Optional) Assemble the `CREATE TABLE` statement. Only needed when
+  your backend cannot spell `CREATE TABLE IF NOT EXISTS`; SQL Server,
+  for instance, wraps the statement in an `IF OBJECT_ID(...) IS NULL`
+  block.
+- `reflect_columns.mydialect(x, tablename, ...)`: (Optional) Return a
+  named list of `Column`/`ForeignKey` objects so `engine$reflect()` can
+  capture types, keys, nullability, defaults, and relationships. Without
+  it, reflection falls back to column names and best-effort types.
+- `reflect_tables.mydialect(x, .schema, ...)`: (Optional) List the base
+  tables in a schema, used by `engine$reflect_schema()`.
 
 Each function will be called through
 [`dispatch_method()`](https://kent-orr.github.io/oRm/reference/dispatch_method.md)
@@ -55,6 +83,7 @@ their notes with `@describeIn`, which appends a subsection to the same
 page and keeps everything discoverable via `?` or F1.
 
 ``` r
+
 #' @rdname check_schema_exists
 check_schema_exists.default <- function(x, .schema) {
     # ...

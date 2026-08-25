@@ -7,6 +7,8 @@ SQLITE_RO open flag and so its method is a no-op.
 ## Usage
 
 ``` r
+apply_read_only.mssql(x, con)
+
 apply_read_only.mysql(x, con)
 
 apply_read_only.postgres(x, con)
@@ -29,6 +31,11 @@ apply_read_only.sqlite(x, con)
   A DBI connection object.
 
 ## Functions
+
+- `apply_read_only.mssql()`: SQL Server has no session-level read-only
+  mode (\`ApplicationIntent\` only routes to availability-group
+  replicas), so read-only engines fall back to oRm's application-level
+  statement guard.
 
 - `apply_read_only.mysql()`: MySQL enforces read-only at the session
   level.

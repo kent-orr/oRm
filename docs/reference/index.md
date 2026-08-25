@@ -18,6 +18,8 @@
   : TableModel Class
 - [`define_relationship()`](https://kent-orr.github.io/oRm/reference/define_relationship.md)
   : Define a relationship between two models
+- [`register_db_tools()`](https://kent-orr.github.io/oRm/reference/register_db_tools.md)
+  : Augment an 'ellmer' Chat with database CRUD tools
 - [`render_constraint()`](https://kent-orr.github.io/oRm/reference/render_constraint.md)
   : Write teh sql for a foreign key column
 - [`render_field()`](https://kent-orr.github.io/oRm/reference/render_field.md)
