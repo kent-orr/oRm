@@ -436,14 +436,15 @@ TableModel <- R6::R6Class(
     #' @param .mode Mode for reading records. One of "all", "one_or_none", "get", "data.frame", or "tbl". If NULL, uses `default_mode`.
     #'     "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
     #'     "tbl" returns the uncollected dbplyr table.
-    #' @param .limit Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
-    #'     Positive values return the first N records, negative values return the last N records.
+    #' @param .limit Integer. Maximum number of records to return. Defaults to NULL,
+    #'     which returns every matching record. Positive values return the first N
+    #'     records, negative values return the last N records.
     #' @param .offset Integer. Offset for pagination. Default is 0.
     #' @param .order_by Unquoted expressions for ordering. Defaults to NULL (no order). Calls dplyr::arrange() so can take multiple args / desc()
     read = function(
         ...,
         .mode = NULL,
-        .limit = 100,
+        .limit = NULL,
         .offset=0,
         .order_by = list()
     ) {
@@ -453,10 +454,6 @@ TableModel <- R6::R6Class(
         }
         .mode <- match.arg(.mode, c("all", "one_or_none", "get", "data.frame", "tbl"))
         tbl_ref <- self$tbl()
-
-        if (.mode == "tbl" && missing(.limit)) {
-        .limit <- NULL
-        }
 
         filters <- rlang::enquos(...)
         if (length(filters) > 0) {

@@ -458,3 +458,81 @@ test_that("set-level writes are blocked on a read-only engine", {
   expect_error(Rm$update(id == 1, name = "X"), "read-only")
   expect_error(Rm$delete(id == 1), "read-only")
 })
+
+test_that("read() returns every matching row when .limit is not supplied", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+
+  Item <- engine$model(
+    "unlimited_items",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    position = Column("INTEGER", nullable = FALSE)
+  )
+  Item$create_table()
+
+  n <- 150L
+  with(engine, {
+    for (i in seq_len(n)) {
+      Item$record(id = i, position = i)$create()
+    }
+  })
+
+  # No .limit: every row comes back, not a silent first 100.
+  expect_equal(length(Item$read(.mode = "all")), n)
+  expect_equal(nrow(Item$read(.mode = "data.frame")), n)
+  expect_equal(nrow(dplyr::collect(Item$read(.mode = "tbl"))), n)
+
+  # Filters still narrow the result, and still are not truncated.
+  expect_equal(length(Item$read(position > 20, .mode = "all")), n - 20L)
+
+  # An explicit .limit is still honoured, including NULL and negative values.
+  expect_equal(length(Item$read(.mode = "all", .limit = 5)), 5)
+  expect_equal(length(Item$read(.mode = "all", .limit = NULL)), n)
+  expect_equal(length(Item$read(.mode = "all", .limit = -5)), 5)
+
+  # .offset without .limit runs to the end of the table.
+  expect_equal(length(Item$read(.mode = "all", .offset = 100)), n - 100L)
+
+  engine$close()
+})
+
+test_that("all() and relationship traversal are not capped at 100 rows", {
+  engine <- Engine$new(
+    drv = RSQLite::SQLite(),
+    dbname = ":memory:",
+    persist = TRUE
+  )
+
+  User <- engine$model(
+    "cap_users",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE)
+  )
+  Post <- engine$model(
+    "cap_posts",
+    id = Column("INTEGER", primary_key = TRUE, nullable = FALSE),
+    user_id = Column("INTEGER", nullable = FALSE)
+  )
+  define_relationship(User, "id", "one_to_many", Post, "user_id",
+                      ref = "posts", backref = "user")
+
+  User$create_table()
+  Post$create_table()
+
+  n <- 150L
+  with(engine, {
+    User$record(id = 1L)$create()
+    for (i in seq_len(n)) {
+      Post$record(id = i, user_id = 1L)$create()
+    }
+  })
+
+  expect_equal(length(Post$all()), n)
+
+  user <- User$read(id == 1L, .mode = "get")
+  expect_equal(length(user$relationship("posts")), n)
+
+  engine$close()
+})

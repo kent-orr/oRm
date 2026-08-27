@@ -509,7 +509,7 @@ Read records using dynamic filters and return in the specified mode.
 \if{html}{\out{<div class="r">}}\preformatted{TableModel$read(
   ...,
   .mode = NULL,
-  .limit = 100,
+  .limit = NULL,
   .offset = 0,
   .order_by = list()
 )}\if{html}{\out{</div>}}
@@ -524,8 +524,9 @@ Read records using dynamic filters and return in the specified mode.
 "data.frame" returns the raw result of `dplyr::collect()` rather than Record objects.
 "tbl" returns the uncollected dbplyr table.}
 
-\item{\code{.limit}}{Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
-Positive values return the first N records, negative values return the last N records.}
+\item{\code{.limit}}{Integer. Maximum number of records to return. Defaults to NULL,
+which returns every matching record. Positive values return the first N
+records, negative values return the last N records.}
 
 \item{\code{.offset}}{Integer. Offset for pagination. Default is 0.}
 

@@ -1,5 +1,24 @@
 # oRm 0.7.0.9000 (development)
 
+## Breaking Changes
+
+* **`TableModel$read()` no longer caps results at 100 rows.** `.limit` defaulted
+  to `100`, so any read wider than a hundred rows was silently truncated -- the
+  result looked complete and carried no warning. Every caller inherited the cap,
+  including `all()`, `one_or_none()`, `get()`, `Record$relationship()`, and
+  `TableModel$relationship()`, so a one-to-many traversal over a large parent
+  quietly lost rows, and code that counted or aggregated the result was wrong
+  rather than merely short.
+
+  `.limit` now defaults to `NULL`, meaning "return every matching row". Explicit
+  limits are unchanged: a positive `.limit` still returns the first N rows, a
+  negative one the last N, and `.offset` still paginates. Code that relied on
+  the implicit cap must now pass `.limit = 100` itself.
+
+  `.mode = "tbl"` previously worked around the cap by resetting `.limit` to
+  `NULL` when the argument was missing; that special case is gone, so all modes
+  now share one default.
+
 ## New Features
 
 * **`.autoflush` returns server-generated values for inserts made inside a
