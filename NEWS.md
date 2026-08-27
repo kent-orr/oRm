@@ -1,4 +1,4 @@
-# oRm 0.7.0.9000 (development)
+# oRm 0.8.0
 
 ## Breaking Changes
 
