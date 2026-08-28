@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -241,12 +241,24 @@ call, it should work here as well, and that includes the designation of
 <h3 id="offsets-and-limits">Offsets and Limits<a class="anchor" aria-label="anchor" href="#offsets-and-limits"></a>
 </h3>
 <p>The read method also accepts an offset and a limit argument. These
-arguments are used to control the pagination of the results. Unlike a
-dataframe, the printing of a list of records will not truncate itself
-neatly, and with no filter all of the records will return. There is a
-default limt of 100 records to ensure that you don’t get too much data
-at once. You can set this to NULL to override.</p>
-<p>Used in conjunction, you can effectivly paginate your records.</p>
+arguments are used to control the pagination of the results.</p>
+<p><code>.limit</code> defaults to <code>NULL</code>, meaning every
+matching record is returned. Pass a positive integer to cap the result
+at the first N records, or a negative integer to take the last N. Note
+that, unlike a data frame, a list of records does not truncate itself
+neatly when printed, so an unfiltered read of a large table will print
+every row.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Classes</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.limit <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">id</span><span class="op">)</span>     <span class="co"># first two</span></span>
+<span><span class="co">#&gt; [1] 1 2</span></span>
+<span><span class="va">Classes</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.limit <span class="op">=</span> <span class="op">-</span><span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">id</span><span class="op">)</span>    <span class="co"># last two</span></span>
+<span><span class="co">#&gt; [1]  9 10</span></span></code></pre></div>
+<p>Used in conjunction with <code>.offset</code>, you can effectively
+paginate your records.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Classes</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span>.limit <span class="op">=</span> <span class="fl">2</span>, .offset <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 3 4</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="table-level-methods">Table-Level Methods<a class="anchor" aria-label="anchor" href="#table-level-methods"></a>
@@ -255,7 +267,7 @@ at once. You can set this to NULL to override.</p>
 <code><a href="../reference/Method.html">Method()</a></code> function. Table-level methods operate on the
 entire table and are useful for custom queries, bulk operations, or
 complex business logic:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Classes</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>    tablename <span class="op">=</span> <span class="st">"classes"</span>,</span>
 <span>    id <span class="op">=</span> <span class="fu"><a href="../reference/Column.html">Column</a></span><span class="op">(</span><span class="st">'INTEGER'</span>, primary_key <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -303,7 +315,7 @@ complex business logic:</p>
 <span><span class="co">#&gt; [1] 10</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $avg_grade</span></span>
-<span><span class="co">#&gt; [1] 80.89422</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 82.34833</span></span></code></pre></div>
 <p>Table methods have access to <code>self</code>, which refers to the
 TableModel instance. This allows you to call any TableModel method like
 <code>self$read()</code>, <code>self$record()</code>, or
@@ -320,7 +332,7 @@ confirmation before proceeding:</p>
 <pre><code>Are you sure you want to overwrite classes? [y/N]</code></pre>
 <p>Pass <code>ask = FALSE</code> to bypass the prompt in scripts or
 automated workflows:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Classes</span><span class="op">$</span><span class="fu">create_table</span><span class="op">(</span>overwrite <span class="op">=</span> <span class="cn">TRUE</span>, ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -335,7 +347,7 @@ columns you want to exclude - You want a safe, scoped view of a
 production table (especially combined with
 <code>.read_only = TRUE</code>) - You are not the table owner and do not
 want to replicate every column in your model</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Suppose 'users' also has 'ssn' and 'internal_notes' columns in the database</span></span>
 <span><span class="va">UserView</span> <span class="op">&lt;-</span> <span class="va">engine</span><span class="op">$</span><span class="fu">model</span><span class="op">(</span></span>
 <span>  <span class="st">"users"</span>,</span>

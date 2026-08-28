@@ -152,13 +152,31 @@ Classes$read(.order_by = c(subject, desc(id))) |>
 ### Offsets and Limits
 
 The read method also accepts an offset and a limit argument. These
-arguments are used to control the pagination of the results. Unlike a
-dataframe, the printing of a list of records will not truncate itself
-neatly, and with no filter all of the records will return. There is a
-default limt of 100 records to ensure that you don’t get too much data
-at once. You can set this to NULL to override.
+arguments are used to control the pagination of the results.
 
-Used in conjunction, you can effectivly paginate your records.
+`.limit` defaults to `NULL`, meaning every matching record is returned.
+Pass a positive integer to cap the result at the first N records, or a
+negative integer to take the last N. Note that, unlike a data frame, a
+list of records does not truncate itself neatly when printed, so an
+unfiltered read of a large table will print every row.
+
+``` r
+
+Classes$read(.limit = 2) |> sapply(function(x) x$data$id)     # first two
+#> [1] 1 2
+Classes$read(.limit = -2) |> sapply(function(x) x$data$id)    # last two
+#> [1]  9 10
+```
+
+Used in conjunction with `.offset`, you can effectively paginate your
+records.
+
+``` r
+
+Classes$read(.limit = 2, .offset = 2) |>
+    sapply(function(x) x$data$id)
+#> [1] 3 4
+```
 
 ### Table-Level Methods
 
@@ -216,7 +234,7 @@ print(stats)
 #> [1] 10
 #> 
 #> $avg_grade
-#> [1] 80.89422
+#> [1] 82.34833
 ```
 
 Table methods have access to `self`, which refers to the TableModel

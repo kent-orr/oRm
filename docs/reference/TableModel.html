@@ -11,7 +11,7 @@ with the database table."><meta property="og:image" content="https://kent-orr.gi
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -507,7 +507,7 @@ User$delete(.all = TRUE)
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">TableModel</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span></span>
 <span>  <span class="va">...</span>,</span>
 <span>  .mode <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  .limit <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  .limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  .offset <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  .order_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
@@ -526,8 +526,9 @@ User$delete(.all = TRUE)
 
 
 <dt><code>.limit</code></dt>
-<dd><p>Integer. Maximum number of records to return. Defaults to 100. NULL means no limit.
-Positive values return the first N records, negative values return the last N records.</p></dd>
+<dd><p>Integer. Maximum number of records to return. Defaults to NULL,
+which returns every matching record. Positive values return the first N
+records, negative values return the last N records.</p></dd>
 
 
 <dt><code>.offset</code></dt>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">oRm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,9 +58,17 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.7.0.9000" id="orm-0709000-development">oRm 0.7.0.9000 (development)<a class="anchor" aria-label="anchor" href="#orm-0709000-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.8.0" id="orm-080">oRm 0.8.0<a class="anchor" aria-label="anchor" href="#orm-080"></a></h2>
 <div class="section level3">
-<h3 id="new-features-0-7-0-9000">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-7-0-9000"></a></h3>
+<h3 id="breaking-changes-0-8-0">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-8-0"></a></h3>
+<ul><li>
+<p><strong><code>TableModel$read()</code> no longer caps results at 100 rows.</strong> <code>.limit</code> defaulted to <code>100</code>, so any read wider than a hundred rows was silently truncated – the result looked complete and carried no warning. Every caller inherited the cap, including <code><a href="https://rdrr.io/r/base/all.html" class="external-link">all()</a></code>, <code>one_or_none()</code>, <code><a href="https://rdrr.io/r/base/get.html" class="external-link">get()</a></code>, <code>Record$relationship()</code>, and <code>TableModel$relationship()</code>, so a one-to-many traversal over a large parent quietly lost rows, and code that counted or aggregated the result was wrong rather than merely short.</p>
+<p><code>.limit</code> now defaults to <code>NULL</code>, meaning “return every matching row”. Explicit limits are unchanged: a positive <code>.limit</code> still returns the first N rows, a negative one the last N, and <code>.offset</code> still paginates. Code that relied on the implicit cap must now pass <code>.limit = 100</code> itself.</p>
+<p><code>.mode = "tbl"</code> previously worked around the cap by resetting <code>.limit</code> to <code>NULL</code> when the argument was missing; that special case is gone, so all modes now share one default.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-8-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-8-0"></a></h3>
 <ul><li>
 <p><strong><code>.autoflush</code> returns server-generated values for inserts made inside a transaction.</strong> Inside a transaction <code>Record$create()</code> defaults to a plain insert, so IDENTITY/SERIAL keys and column defaults stay <code>NULL</code> on the record – the surprise reported in <a href="https://github.com/kent-orr/oRm/issues/122" class="external-link">#122</a>, where a parent key was needed for a child insert. Two new controls change that default, and the innermost one wins:</p>
 <ul><li>
@@ -72,12 +80,12 @@
 </li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-0-7-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-0-9000"></a></h3>
+<h3 id="bug-fixes-0-8-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-8-0"></a></h3>
 <ul><li>
 <strong>SQL Server: records on trigger-bearing tables now recover their IDENTITY key.</strong> <code>OUTPUT INSERTED</code> is rejected on tables with triggers (error 334), so <code>flush.mssql</code> fell back to a keyed re-read that only worked when the caller supplied every primary key value; an IDENTITY key raised an error instead. The fallback now recovers the IDENTITY key with <code>SCOPE_IDENTITY()</code> in the same batch as the insert and returns the full row, so <code>Record$create()</code> behaves the same on trigger tables as on trigger-free ones. Keys that are neither supplied nor IDENTITY (a <code>DEFAULT NEWID()</code> GUID, say) still fail with a clear message.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-0-7-0-9000">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-7-0-9000"></a></h3>
+<h3 id="documentation-0-8-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-8-0"></a></h3>
 <ul><li><p><strong><code><a href="../reference/with.Engine.html">with.Engine()</a></code> now documents its flush behaviour.</strong> Inside a transaction, <code>Record$create()</code> leaves server-generated values (IDENTITY/SERIAL keys, column defaults) unset unless it is asked to flush. The help page now says so, spells out all three ways to get them back (<code>flush_record = TRUE</code> on one insert, <code>autoflush = TRUE</code> on the block, <code>.autoflush = TRUE</code> on the engine), and shows the parent/child insert pattern; <code>create()</code>’s own docs cross-reference it (<a href="https://github.com/kent-orr/oRm/issues/122" class="external-link">#122</a>).</p></li>
 <li><p><strong>The Engine vignette gains a “Server-generated values inside a transaction” section</strong>, showing with live output how <code>create()</code> returns generated keys outside a transaction but not inside one, and working through all three ways to change that (per insert, per block, per engine), plus the bulk-load opt-out and a demonstration that a flushed insert still rolls back with its transaction. The Records vignette’s <code>flush_record</code> paragraph is corrected – it described the in-transaction default as waiting for commit – and now links to that section.</p></li>
 </ul></div>

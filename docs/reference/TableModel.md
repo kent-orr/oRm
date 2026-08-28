@@ -494,7 +494,7 @@ Read records using dynamic filters and return in the specified mode.
     TableModel$read(
       ...,
       .mode = NULL,
-      .limit = 100,
+      .limit = NULL,
       .offset = 0,
       .order_by = list()
     )
@@ -514,9 +514,9 @@ Read records using dynamic filters and return in the specified mode.
 
 - `.limit`:
 
-  Integer. Maximum number of records to return. Defaults to 100. NULL
-  means no limit. Positive values return the first N records, negative
-  values return the last N records.
+  Integer. Maximum number of records to return. Defaults to NULL, which
+  returns every matching record. Positive values return the first N
+  records, negative values return the last N records.
 
 - `.offset`:
 
