@@ -1429,3 +1429,45 @@ test_that("postgres: an engine built with .autoflush = TRUE needs no per-block f
     expect_null(bulk$data$id)
     expect_true(engine$get_autoflush())
 })
+
+# ---------------------------------------------------------------------------
+# tbl() COLUMN CACHE ON POSTGRESQL (#127)
+#
+# The column probe is a real round trip on a remote Postgres server, so the
+# cache is asserted here as well as on SQLite.
+# ---------------------------------------------------------------------------
+
+test_that("postgres: reads reuse the probed column list", {
+    conn_info <- tryCatch({
+        use_postgres_test_db()
+    }, error = function(e) {
+        testthat::skip(paste("Could not connect to PostgreSQL test database:", e$message))
+    })
+    withr::defer(clear_postgres_test_tables())
+
+    engine <- do.call(Engine$new, conn_info)
+    withr::defer(engine$close())
+
+    model <- engine$model(
+        "pg_cache_users",
+        id = Column("SERIAL", primary_key = TRUE),
+        name = Column("TEXT")
+    )
+    model$create_table(overwrite = TRUE)
+    model$record(name = "Alice")$create()
+    model$record(name = "Bob")$create()
+
+    log <- local_query_log()
+    first <- model$read(.mode = "data.frame")
+    second <- model$read(.mode = "data.frame")
+    bob <- model$all(name == "Bob")
+
+    expect_equal(probe_count(log), 1L)
+    expect_equal(first, second)
+    expect_length(bob, 1L)
+    expect_equal(bob[[1]]$data$name, "Bob")
+
+    model$create_table(overwrite = TRUE)
+    invisible(model$tbl())
+    expect_equal(probe_count(log), 2L)
+})

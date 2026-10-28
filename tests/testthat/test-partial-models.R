@@ -168,3 +168,29 @@ test_that("relationships traverse between two partial models over existing table
   expect_equal(owner$data$name, "Bob")
   expect_false("ssn" %in% names(owner$data))
 })
+
+test_that("a partial model keeps projecting to declared columns once its columns are cached", {
+  engine <- make_engine()
+  on.exit(engine$close(), add = TRUE)
+  seed_prod_schema(engine)
+
+  UserView <- TableModel$new(
+    tablename = "users",
+    engine = engine,
+    id    = Column("INTEGER", primary_key = TRUE),
+    email = Column("TEXT")
+  )
+
+  log <- local_query_log()
+  first <- UserView$read(.mode = "data.frame")
+  second <- UserView$read(.mode = "data.frame")
+  expect_equal(probe_count(log), 1L)
+  expect_equal(first, second)
+  expect_setequal(names(second), c("id", "email"))
+
+  # The cached column list is the table's full set, so the select() in read()
+  # is still a real projection and the SQL never names an undeclared column.
+  sql <- dbplyr::remote_query(UserView$read(.mode = "tbl"))
+  expect_false(grepl("ssn", sql))
+  expect_false(grepl("\\*", sql))
+})

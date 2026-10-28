@@ -87,7 +87,13 @@ org <- kent$relationship("organization")
 org$data$name
 
 org$relationship("users")  # list of user records
+
+# Drop down to dbplyr whenever you need to
+User$read(.mode = "tbl") |> dplyr::count(organization_id) |> dplyr::collect()
+User$tbl() |> dplyr::filter(name == "Kent") |> dplyr::collect()
 ```
+
+A model probes its table's columns once and remembers them, so repeated reads do not pay a round trip before the query itself. Pass `.refresh = TRUE` to `tbl()` after a schema change made outside the model.
 
 ### 6. CRUD API
 

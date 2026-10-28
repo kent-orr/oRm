@@ -1,3 +1,24 @@
+# oRm 0.8.1
+
+## Performance
+
+* **`TableModel$tbl()` no longer probes the table's columns on every read**
+  (#127). dbplyr learns a table's columns by sending a zero-row `SELECT` to
+  the server, and every `read()` starts from `tbl()`, so every read paid that
+  round trip before its own query ran. The model now probes once and remembers
+  the column list, passing it to `dplyr::tbl()` as `vars` on later calls. The
+  lazy table it returns is unchanged: same columns, same SQL, and
+  `dplyr::rows_*(in_place = TRUE)` still works on it.
+
+  `create_table()` and `drop_table()` forget the cached columns. A schema
+  change made outside the model, such as an `ALTER TABLE`, is picked up with
+  `model$tbl(.refresh = TRUE)`.
+
+## Documentation
+
+* The TableModel vignette now describes the `data.frame` and `tbl` read modes
+  and has a "Lazy Tables" section covering `tbl()` and the column cache.
+
 # oRm 0.8.0
 
 ## Breaking Changes
