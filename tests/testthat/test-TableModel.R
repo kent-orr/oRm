@@ -536,3 +536,79 @@ test_that("all() and relationship traversal are not capped at 100 rows", {
 
   engine$close()
 })
+
+# ---------------------------------------------------------------------------
+# tbl() COLUMN CACHE (#127)
+#
+# dbplyr learns a table's columns by sending `SELECT * ... WHERE (0 = 1)`.
+# Every read starts from tbl(), so without a cache every read pays that round
+# trip. The model remembers the probed columns and passes them as `vars` on
+# later calls.
+# ---------------------------------------------------------------------------
+
+make_cache_model <- function() {
+    engine <- Engine$new(drv = RSQLite::SQLite(), dbname = ":memory:", persist = TRUE)
+    model <- engine$model(
+        "cache_users",
+        id = Column("INTEGER", primary_key = TRUE),
+        name = Column("TEXT")
+    )
+    model$create_table()
+    model$record(id = 1L, name = "Alice")$create()
+    model$record(id = 2L, name = "Bob")$create()
+    list(engine = engine, model = model)
+}
+
+test_that("tbl() probes the table's columns once per model, not once per read", {
+    fx <- make_cache_model()
+    withr::defer(fx$engine$close())
+    model <- fx$model
+
+    log <- local_query_log()
+    first <- model$read(.mode = "data.frame")
+    second <- model$read(.mode = "data.frame")
+    third <- model$all(name == "Bob")
+
+    expect_equal(probe_count(log), 1L)
+    expect_equal(first, second)
+    expect_length(third, 1L)
+    expect_equal(third[[1]]$data$id, 2L)
+    expect_equal(colnames(model$tbl()), c("id", "name"))
+})
+
+test_that("tbl(.refresh = TRUE) re-probes the table", {
+    fx <- make_cache_model()
+    withr::defer(fx$engine$close())
+    model <- fx$model
+
+    invisible(model$tbl())
+    DBI::dbExecute(model$get_connection(), "ALTER TABLE cache_users ADD COLUMN nickname TEXT")
+
+    log <- local_query_log()
+    expect_equal(colnames(model$tbl()), c("id", "name"))
+    expect_equal(probe_count(log), 0L)
+
+    expect_equal(colnames(model$tbl(.refresh = TRUE)), c("id", "name", "nickname"))
+    expect_equal(probe_count(log), 1L)
+    expect_equal(colnames(model$tbl()), c("id", "name", "nickname"))
+    expect_equal(probe_count(log), 1L)
+})
+
+test_that("create_table() and drop_table() forget the cached columns", {
+    fx <- make_cache_model()
+    withr::defer(fx$engine$close())
+    model <- fx$model
+
+    log <- local_query_log()
+    invisible(model$tbl())
+    expect_equal(probe_count(log), 1L)
+
+    model$drop_table(ask = FALSE)
+    model$create_table()
+    invisible(model$tbl())
+    expect_equal(probe_count(log), 2L)
+
+    model$create_table(overwrite = TRUE, ask = FALSE)
+    invisible(model$tbl())
+    expect_equal(probe_count(log), 3L)
+})

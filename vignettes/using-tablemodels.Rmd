@@ -95,6 +95,38 @@ There are five modes for reading data: 'get', 'one_or_none', 'all', 'data.frame'
 
 The big difference between 'get' and the other two is that get will return the object itself, while the other two will always return a list if not NULL. This allows your code to enforce data integrity when you're trying to get a single record, and be the same whether your filter returns one or multiple records.
 
+The remaining two modes skip `Record` objects entirely:
+
+-   'data.frame' collects the query and returns the rows as a data frame.
+-   'tbl' returns the uncollected `dbplyr` lazy table with the filters, ordering and pagination already applied, so you can keep composing `dplyr` verbs before calling `collect()`.
+
+```{r}
+Classes$read(subject == "Math", .mode = "data.frame") |> head(3)
+
+Classes$read(.mode = "tbl") |>
+    dplyr::count(subject) |>
+    dplyr::collect()
+```
+
+## Lazy Tables
+
+Every read starts from `tbl()`, which returns the model's table as a `dbplyr` lazy table, exactly as `dplyr::tbl()` would build it. You can call it directly for ad hoc queries and joins.
+
+```{r}
+Classes$tbl() |>
+    dplyr::filter(teacher_id == 1) |>
+    dplyr::collect()
+```
+
+`dbplyr` needs to know a table's column names before it can build a query, and it learns them by sending a zero-row `SELECT` to the server. On a remote database that is a full round trip. The model does it once, the first time `tbl()` is called, and remembers the answer, so later reads go straight to their own query. `create_table()` and `drop_table()` forget the remembered columns. If the table changes under the model some other way, an `ALTER TABLE` run elsewhere for instance, ask for a fresh look with `.refresh = TRUE`:
+
+```{r}
+DBI::dbExecute(engine$get_connection(), "ALTER TABLE classes ADD COLUMN room TEXT")
+
+colnames(Classes$tbl())                   # still the remembered columns
+colnames(Classes$tbl(.refresh = TRUE))    # probed again, now includes room
+```
+
 ## Sorting Returned Records
 
 Ordering your returned records can be achieved with the .order_by argument. It's a list of unquoted column names that will get applied to `dplyr::arrange()`. So if it works in `arrange` call, it should work here as well, and that includes the designation of `desc()` to sort in descending order.

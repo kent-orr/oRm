@@ -507,3 +507,36 @@ test_that("flush reports a clear error when a trigger table key is neither suppl
         "trigger"
     )
 })
+
+# ---------------------------------------------------------------------------
+# tbl() COLUMN CACHE ON SQL SERVER (#127)
+# ---------------------------------------------------------------------------
+
+test_that("reads reuse the probed column list", {
+    engine <- mssql_test_engine()
+    withr::defer(clear_mssql_test_tables())
+    withr::defer(engine$close())
+
+    model <- engine$model(
+        "cache_users",
+        id = Column("INT IDENTITY(1,1)", primary_key = TRUE),
+        name = Column("NVARCHAR(100)")
+    )
+    model$create_table(overwrite = TRUE, ask = FALSE)
+    model$record(name = "Alice")$create()
+    model$record(name = "Bob")$create()
+
+    log <- local_query_log()
+    first <- model$read(.mode = "data.frame")
+    second <- model$read(.mode = "data.frame")
+    bob <- model$all(name == "Bob")
+
+    expect_equal(probe_count(log), 1L)
+    expect_equal(first, second)
+    expect_length(bob, 1L)
+    expect_equal(bob[[1]]$data$name, "Bob")
+
+    model$create_table(overwrite = TRUE, ask = FALSE)
+    invisible(model$tbl())
+    expect_equal(probe_count(log), 2L)
+})

@@ -89,7 +89,7 @@ dplyr::left_join(class_tbl, student_tbl, by = c(id = "class_id")) |>
     dplyr::collect()
 ```
 
-That is a beutiful join that finds all students in class 1. Ready for all kinds of analysis now. But what if you're not trying to read and analyze the data, but make a change? What if we need to apply a curve to the grades in class 1? We can splice things `dplyr` style and hope to get our joins right, or, we could rely on a previously described relationship to get the necessary records and apply the curve.
+That is a beautiful join that finds all students in class 1. Each `tbl()` call returns a plain `dbplyr` lazy table, and the model remembers the table's columns after the first call, so building these costs nothing on later calls (see [Lazy Tables](using-tablemodels.html#lazy-tables)). Ready for all kinds of analysis now. But what if you're not trying to read and analyze the data, but make a change? What if we need to apply a curve to the grades in class 1? We can splice things `dplyr` style and hope to get our joins right, or, we could rely on a previously described relationship to get the necessary records and apply the curve.
 
 
 ```{r}

@@ -495,10 +495,28 @@ User$delete(.all = TRUE)
 \if{latex}{\out{\hypertarget{method-TableModel-tbl}{}}}
 \subsection{Method \code{tbl()}}{
 Generate a dbplyr tbl() object to be consumed by the model.
+
+dbplyr learns a table's columns by sending a zero-row `SELECT` to the
+server. The model does that once and remembers the result, so later
+calls build the lazy table without a round trip. `create_table()` and
+`drop_table()` forget the cached columns; a schema change made outside
+the model (an `ALTER TABLE`, say) is picked up with `.refresh = TRUE`.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableModel$tbl()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TableModel$tbl(.refresh = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.refresh}}{Logical. If TRUE, discard the cached column list and
+probe the table again. Default is FALSE.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A lazy `tbl_lazy` over the model's table, exactly as
+    `dplyr::tbl()` would build it.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-TableModel-read"></a>}}

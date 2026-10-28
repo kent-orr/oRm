@@ -244,6 +244,7 @@ TableModel <- R6::R6Class(
         return(sql)
         }
 
+        private$column_cache <- NULL
         self$engine$execute(sql)
         return(self)
     },
@@ -278,6 +279,7 @@ TableModel <- R6::R6Class(
         }
 
         if (grepl('y', resp, ignore.case = TRUE)) {
+        private$column_cache <- NULL
         self$engine$execute(drop_sql)
         } else {
         message("Table not dropped.")
@@ -424,10 +426,25 @@ TableModel <- R6::R6Class(
 
     #' @description
     #' Generate a dbplyr tbl() object to be consumed by the model.
-    tbl = function() {
-        con = self$get_connection()
+    #'
+    #' dbplyr learns a table's columns by sending a zero-row `SELECT` to the
+    #' server. The model does that once and remembers the result, so later
+    #' calls build the lazy table without a round trip. `create_table()` and
+    #' `drop_table()` forget the cached columns; a schema change made outside
+    #' the model (an `ALTER TABLE`, say) is picked up with `.refresh = TRUE`.
+    #' @param .refresh Logical. If TRUE, discard the cached column list and
+    #'     probe the table again. Default is FALSE.
+    #' @return A lazy `tbl_lazy` over the model's table, exactly as
+    #'     `dplyr::tbl()` would build it.
+    tbl = function(.refresh = FALSE) {
+        con <- self$get_connection()
         formatted_name <- self$engine$format_tablename(self$tablename)
-        dplyr::tbl(con, I(formatted_name))
+        if (.refresh || is.null(private$column_cache)) {
+            lazy <- dplyr::tbl(con, I(formatted_name))
+            private$column_cache <- colnames(lazy)
+            return(lazy)
+        }
+        dplyr::tbl(con, I(formatted_name), vars = private$column_cache)
     },
 
     #' @description
@@ -716,5 +733,11 @@ TableModel <- R6::R6Class(
         invisible(self)
     }
 
+    ),
+    private = list(
+        # Column names learned from the first dplyr::tbl() probe, passed as
+        # `vars` on later calls so dbplyr does not probe again. NULL until the
+        # first tbl() call and after create_table() / drop_table().
+        column_cache = NULL
     )
 )
